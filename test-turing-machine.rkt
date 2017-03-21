@@ -21,17 +21,17 @@
   (make-turing-machine '0 '(T F) report? 'B 'b ; T/F final state for accepted/rejected input.
   '((0               ; Initial state. No + encountered yet.
      (x (0 x R))            
-     (+ (1 x R))            ; Replace + by x. At end one x will be erased.
-     (B (3 b L)))           ; The input has no + and is accepted. Go rewind the tape.
+     (+ (1 x R))               ; Replace + by x. At end one x will be erased.
+     (B (3 b L)))              ; The input has no + and is accepted. Go rewind the tape.
     (1               ; A + has been encountered.
      (x (1 x R)) 
-     (+ (F + L))            ; After + do not accept a second +.
-     (B (2 b L)))           ; Go erase an x in order to account for the x produced by +.
+     (+ (F + L))               ; After + do not accept a second +.
+     (B (2 b L)))              ; Go erase an x in order to account for the x produced by +.
     (2               ; Erase one x. In this state the current tape-symbol always is x.
-     (x (3 b L)))           ; Go rewind the tape.
+     (x (3 b L)))              ; Go rewind the tape.
     (3               ; Rewind the tape (just for pleasure)
-     (x (3 x L))            ; Keep on rewinding.
-     (B (T b R))))))        ; Accept the input.
+     (x (3 x L))               ; Keep on rewinding.
+     (B (T ignore ignore)))))) ; Accept the input. 'ignore' will be ignored indeed.
  
  (define (test lst expected-state expected-tape)
   (when report? (printf "~nTest on ~s~n" lst))
@@ -60,7 +60,8 @@
  (define nr-of-failures 0)
  (define nr-of-errors 0)
  
- (when report? (eprintf "~nCheck at the end of all output that all is well.~n"))
+ (when report? (eprintf "~nCheck at the end of all output that ")
+                (printf "all is well.~n"))
 
  (test '()                  'T '())
  (test '(x x x + x x)       'T '(x x x x x))
@@ -87,14 +88,14 @@
  (test '(y + x z x) 'F '())
  
  (when report?
-  (printf "~nThe following test report should show no failures,~n~
-             but must show as many errors as tests.~n"))
+  (printf  "~nThe following test report should show no failures,~n")
+  (eprintf "but must show as many errors as tests.~n"))
  
  (define all:ok (and all-ok (zero? nr-of-failures) (= nr-of-tests nr-of-errors)))
  
  (test-report)
  
- (when report? (eprintf "Check below that all is well.~n"))
+ (when report? (eprintf "Check below that ") (printf "all is well.~n"))
  
  (if all:ok (printf "All is well.~n") (error "One or more tests failed.")))
 
