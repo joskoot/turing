@@ -17,31 +17,25 @@
  
  (define turing-machine
   (make-turing-machine '0 '(T F) report? 'B 'b
-  '((0            ; Check that the input does not contain b.
-     (x (0 x R))    ; Ok, continue checking.
-     (+ (0 + R))    ; Ok, continue checking.
-     (b (F b L))    ; Wrong.
-     (B (1 b L)))   ; End of tape reached. Go rewind the tape.
-    (1            ; Rewind the tape.
-     (x (1 x L))
-     (+ (1 + L))
-     (B (2 b R)))   ; Start of tape reached. Find the first x.
-    (2            ; Find first x.
-     (x (3 x R))    ; Start the addition.
-     (+ (2 b R))    ; Ignore heading +.
-     (b (T b L))    ; No x or + present. Result (b).
-     (B (T b L)))   ; No x or + present. Result (b).
-    (3            ; The addition.
-     (x (3 x R))    ; Accept x.
-     (+ (4 x L))    ; Replace + by x and go remove the first x.
-     (B (T b L))    ; Done.
-     (b (T b L)))   ; Done.
-    (4            ; Go to start of tape.
-     (x (4 x L))
-     (b (5 b R))    ; Start encountered. Go remove first x.
-     (B (5 b R)))   ; Start encountered. Go remove first x.
-    (5            ; Remove first x and continue addition.
-     (x (3 b R))))))
+  '(((0 x) (0 x R))    ; Ok, continue checking.
+    ((0 +) (0 + R))    ; Ok, continue checking.
+    ((0 b) (F b L))    ; Wrong.
+    ((0 B) (1 b L))    ; End of tape reached. Go rewind the tape.
+    ((1 x) (1 x L))    ; Rewibnd the tape.
+    ((1 +) (1 + L))
+    ((1 B) (2 b R))    ; Start of tape reached. Find the first x.
+    ((2 x) (3 x R))    ; Start the addition.
+    ((2 +) (2 b R))    ; Ignore heading +.
+    ((2 b) (T b L))    ; No x or + present. Result (b).
+    ((2 B) (T b L))    ; No x or + present. Result (b).
+    ((3 x) (3 x R))    ; Accept x.
+    ((3 +) (4 x L))    ; Replace + by x and go remove the first x.
+    ((3 B) (T b L))    ; Done.
+    ((3 b) (T b L))    ; Done.
+    ((4 x) (4 x L))    ; Go to start of tape.
+    ((4 b) (5 b R))    ; Start encountered. Go remove first x.
+    ((4 B) (5 b R))    ; Start encountered. Go remove first x.
+    ((5 x) (3 b R))))) ; Remove first x and continue addition.
  
  (define (test lst expected-state expected-tape)
   (when report? (printf "~nTest on ~s~n" lst))
@@ -111,4 +105,4 @@
 
 ;===================================================================================================
 
-(test-turing-machine #t)
+(test-turing-machine #f)

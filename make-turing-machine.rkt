@@ -39,12 +39,13 @@ final-states   : (state ...)
 machine-blank  : tape-symbol (not allowed to be written, for extension of the tape only)
 user-blank     : tape-symbol (allowed to be written, must not be equal to machine-blank)
 report?        : any/c
-rules          : ((state (tape-symbol (new-state written-symbol move)) ...)
+rules          : (rule ...)
+rule           : ((state tape-symbol) (new-state new-symbol move))
 state          : any/c
 final-state    : state
 new-state      : state
 tape-symbol    : any/c
-written-symbol : tape-symbol
+new-symbol     : tape-symbol
 move           : R | L
 turing-machine : (tape-symbol ...) -> final-state output
 input          : (tape-symbol ...), but no machine-blanks.
@@ -141,11 +142,9 @@ Heading and trailing user-blanks and machine-blanks are removed from the output 
     (turing-machine new-state new-tape))))
  
  (define (find-rule state symbol rules)
-  (let ((entry (assoc state rules)))
-   (unless entry (error 'turing-machine "unknown state: ~s" state))
-   (let ((entry (assoc symbol (cdr entry))))
-    (unless entry (error 'turing-machine "no rule for tape-symbol ~s in state ~s" symbol state))
-    (apply values (cadr entry)))))
+  (let ((entry (assoc (list state symbol) rules)))
+   (unless entry (error 'turing-machine "no rule for state: ~s, with symbol: ~s" state symbol))
+   (apply values (cadr entry))))
 
  (define (main input)
   (unless (list? input)

@@ -5,33 +5,29 @@
 
 ;===================================================================================================
 ;
-; The following tm terminates for every list of symbols x and +.
+; The following Turing machine terminates for every list of symbols x and +.
 ; A correct input is (x ... [+ x ...]).
 ; The result of a correct input is the input without +.
 ; This is like adding two natural numbers.
 ; Without + the tm returns the input.
 ; When encountering a + it is replaced by x and at the end one x will be erased.
-; A correct input halts with state T.
-; An erroneous input containing no other tape-symbols than x and + halts in state F.
+; With a correct input the machine halts in state T.
+; With erroneous input containing no other tape-symbols than x and + the machine halts in state F.
 ; An input containing any other tape-symbol than x or + causes an error to be raised.
 
 (define (test-turing-machine report?)
  
  (define turing-machine
   (make-turing-machine '0 '(T F) report? 'B 'b ; T/F final state for accepted/rejected input.
-  '((0               ; Initial state. No + encountered yet.
-     (x (0 x R))            
-     (+ (1 x R))               ; Replace + by x. At end one x will be erased.
-     (B (3 b L)))              ; The input has no + and is accepted. Go rewind the tape.
-    (1               ; A + has been encountered.
-     (x (1 x R)) 
-     (+ (F + L))               ; After + do not accept a second +.
-     (B (2 b L)))              ; Go erase an x in order to account for the x produced by +.
-    (2               ; Erase one x. In this state the current tape-symbol always is x.
-     (x (3 b L)))              ; Go rewind the tape.
-    (3               ; Rewind the tape (just for pleasure)
-     (x (3 x L))               ; Keep on rewinding.
-     (B (T ignore ignore)))))) ; Accept the input. 'ignore' will be ignored indeed.
+  '(((0 x) (0 x R))        ; Accept the x and process the remainder.
+    ((0 +) (1 x R))        ; Replace + by x. At the end one x will be erased.
+    ((0 B) (3 b L))        ; The input has no + and is accepted. Go rewind the tape.
+    ((1 x) (1 x R))        ; Accept the x and process the remainder.
+    ((1 +) (F + L))        ; After + do not accept a second +.
+    ((1 B) (2 b L))        ; Go erase an x in order to account for the x produced by +.
+    ((2 x) (3 b L))        ; Go rewind the tape.
+    ((3 x) (3 x L))        ; Keep on rewinding.
+    ((3 B) (T b R)))))     ; Accept the input.
  
  (define (test lst expected-state expected-tape)
   (when report? (printf "~nTest on ~s~n" lst))
@@ -39,8 +35,7 @@
   (let/ec ec
    (parameterize
     ((current-error-port (if report? (current-error-port) (open-output-nowhere)))
-     (error-escape-handler
-      (λ () (set! nr-of-errors (add1 nr-of-errors)) (ec))))
+     (error-escape-handler (λ () (set! nr-of-errors (add1 nr-of-errors)) (ec))))
     (with-handlers ((exn:fail? (λ (exn) (raise exn))))
      (define-values (state tape) (turing-machine lst))
      (unless (and (equal? state expected-state) (equal? tape expected-tape))
