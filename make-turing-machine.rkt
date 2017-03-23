@@ -39,14 +39,16 @@ final-states   : (state ...)
 machine-blank  : tape-symbol (not allowed to be written, for extension of the tape only)
 user-blank     : tape-symbol (allowed to be written, must not be equal to machine-blank)
 report?        : any/c
-rules          : ((state (new-state tape-symbol move)) ...)
+rules          : ((state (tape-symbol (new-state written-symbol move)) ...)
 state          : any/c
-new-state      : any/c
+final-state    : state
+new-state      : state
 tape-symbol    : any/c
+written-symbol : tape-symbol
 move           : R | L
-turing-machine : (tape-symbol ...) -> state output
+turing-machine : (tape-symbol ...) -> final-state output
 input          : (tape-symbol ...), but no machine-blanks.
-output         : (tape-symbol ...)
+output         : (tape-symbol ...), without heading or trailing blanks.
 
 When [report?] is not #f, each move is reported.
 Each line of the report shows the new state,
@@ -126,14 +128,14 @@ Heading and trailing user-blanks and machine-blanks are removed from the output 
    ((set-member? set-of-final-states state)
     (values state (tape->list tape)))
    (else
-    (define-values (new-state symbol move) (find-rule state (tape-get tape) rules))
+    (define-values (new-state new-tape-symbol move) (find-rule state (tape-get tape) rules))
     (define new-tape
      (case move
-      ((R) (move-R (tape-put tape symbol)))
-      ((L) (move-L (tape-put tape symbol)))))
+      ((R) (move-R (tape-put tape new-tape-symbol)))
+      ((L) (move-L (tape-put tape new-tape-symbol)))))
     (when report?
      (printf "old state ~s, new state: ~s, new tape-symbol: ~s, move: ~s, "
-      state new-state symbol move)
+      state new-state new-tape-symbol move)
      (printf "new content: ~s~n"
       (list (reverse (tape-head new-tape)) (tape-tail new-tape))))
     (turing-machine new-state new-tape))))
