@@ -129,14 +129,15 @@ Heading and trailing machine-blanks and user-blanks are removed from the output 
    ((set-member? set-of-final-states state)
     (values state (tape->list tape)))
    (else
+    (define old-tape-symbol (tape-get tape))
     (define-values (new-state new-tape-symbol move) (find-rule state (tape-get tape) rules))
     (define new-tape
      (case move
       ((R) (move-R (tape-put tape new-tape-symbol)))
       ((L) (move-L (tape-put tape new-tape-symbol)))))
     (when report?
-     (printf "old state ~s, new state: ~s, new tape-symbol: ~s, move: ~s, "
-      state new-state new-tape-symbol move)
+     (printf "old state ~s, new state: ~s, tape-symbol ~s -> ~s, move: ~s, "
+      state new-state old-tape-symbol new-tape-symbol move)
      (printf "new content: ~s~n"
       (list (reverse (tape-head new-tape)) (tape-tail new-tape))))
     (Turing-machine new-state new-tape))))
