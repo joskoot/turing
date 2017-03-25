@@ -10,63 +10,8 @@
              racket (only-in typed/racket Setof Exact-Nonnegative-Integer Sequenceof))
   (for-syntax racket))
 
-@(define (underline . es)
-  (define ul-attrs '((style . "text-decoration: underline")))
-  (apply elem es #:style (style #f (list (attributes ul-attrs)))))
-
 @(define-syntax-rule (rack x) (nonbreaking(racket x)))
-
-@(define (make-color-style color elem)
-  (define prop:color (color-property color))
-  (define color-style (style #f (list prop:color)))
-  (element color-style elem))
-
-@(define (red elem) (make-color-style "red" elem))
-@(define (green elem) (make-color-style "green" elem))
-
-@(define example-ns (make-base-namespace))
-
-@(parameterize ((current-namespace example-ns))
-  (namespace-require 'racket)
-  (namespace-require '"make-Turing-machine.rkt"))
-
-@(define-syntax-rule (eval-example expr)
-  (nonbreaking (element 'tt (begin (random-seed 0) (format "~s" (eval 'expr example-ns))))))
-
-@(define-syntax (example stx)
-  (syntax-case stx ()
-   ((_ a)
-  #'(begin
-     (rack a)
-     (hspace 1)
-     "→"
-     (hspace 1)
-     (eval-example a)
-     (linebreak)))))
-
-@(define-syntax (example/n stx)
-  (syntax-case stx ()
-   ((_ a)
-  #'(begin
-     (rack a)
-     (hspace 1)
-     "→"
-     (linebreak)
-     (eval-example a)))))
-
-@(define-syntax-rule (example-table x ...)
-  (tabular (list (list @rack[x] "→" (eval-example x)) ...) #:sep (hspace 1)))
-
-@(define(minus) (element 'tt "-"))
-@(define(-?) (element "roman" ?-))
-@(define (note . x) (inset (apply smaller x)))
 @(define (inset . x) (apply nested #:style 'inset x))
-@(define-syntax-rule (linespacebreak) @↑{@(hspace 1)@(linebreak)})
-@(define (expt-1) @↑{@(minus)1})
-@(define ↑ superscript)
-@(define ↓ subscript)
-@(define (ignore . x) "")
-@;(define ignore note)
          
 @title[#:version ""]{Turing machines}
 @author{Jacob J. A. Koot}
@@ -148,7 +93,7 @@ Procedure @rack[make-Turing-machine] produces a Turing machine represented by a 
 (Turing-machine (input (listof tape-symbol))) (values final-state (listof tape-symbol))]{
 The @rack[input] must not contain @rack[machine-blank]s.
 The returned list of @rack[tape-symbol]s has no heading or trailing blanks.
-When @rack[report?] is not @rack[#f], the @elemref["Turing-machine" "Turing-machine"]
+When @rack[report?] is not @rack[#f], the @(elemref "Turing-machine" (element 'tt "Turing-machine"))
 reports each move. Each line of the report shows:
 
 @itemlist[
