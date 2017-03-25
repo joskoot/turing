@@ -4,71 +4,48 @@
 
 #|==================================================================================================
 
-Turing machine
-
-The reader is supposed to be familiar with Turing machines.
-The combination of the content of the tape and the current position of the read/write-head
-is represented by two lists: head and tail.
-The content of the represented tape is (append (reverse head) tail).
-The read/write-head of the tape always is upon the first element of the tail, which never is empty.
-Initially the head is empty and the tail contains the input. If the input is empty,
-the tail initially consists of one machine-blank.
-A move is determined by the current state and the tape-symbol under the read/write-head.
-It consists of assuming a new state,
-replacing the tape-symbol under the read/write-head and
-moving the read/write-head one step to the right or to the left.
-The representation of the tape makes moving fast, independent of the size of the content.
-The machine refuses to write machine-blanks, but can write user-blanks.
-Machine-blanks are used only to extend the tape at the left or at the right of the current content.
-When moving the tape head before the start or beyond the end of the current content of the tape,
-a machine-blank is added and the read/write-head is positioned at this machine-blank.
-In this way an infinite tape is simulated with an infinite number of machine-blanks
-both at the left and at the right of the actual content.
-The machine repeats moves until a final state is reached.
-The input must not contain machine-blanks.
-States and tape-symbols can be arbitrary Racket values,
-but usually symbols and exact integer numbers will be preferred.
-Procedure [equal?] is used for comparison of two states or two tape-symbols.
-The Turing machine is not confused when a state is the same as a tape-symbol.
-
-Procedure: (make-Turing-machine starting-state final-states report? machine-blank user-blank rules)
-           -> Turing-machine
-
-Procedure: (Turing-machine input) -> final-state output
-
-starting-state : state
-final-states   : (state ...)
-machine-blank  : tape-symbol (not allowed to be written, for extension of the tape only)
-user-blank     : tape-symbol (allowed to be written, must not be equal to machine-blank)
-report?        : any/c
-rules          : (rule ...)
-rule           : ((state tape-symbol) (new-state new-symbol move))
-state          : any/c
-final-state    : state
-new-state      : state
-tape-symbol    : any/c
-new-symbol     : tape-symbol
-move           : R | L
-input          : (tape-symbol ...), but no machine-blanks.
-output         : (tape-symbol ...), without heading or trailing blanks.
-
-When [report?] is not #f, each move is reported.
-Each line of the report shows the old state, the new state, the tape-symbol written, the move and
-the new content of the tape.
-In the report the tape is written as (list (reverse head) tail), blanks included.
-If no rule can be found for the current state and the tape-symbol below the read/write-head,
-an exception is raised.
-Heading and trailing machine-blanks and user-blanks are removed from the output before returning it.
+Module make-Turing-machine.scrbl produces documentation.
 
 ==================================================================================================|#
 
 (define (make-Turing-machine starting-state final-states report? machine-blank user-blank rules)
 
- (define (check-arguments) "Yet to do")
+ (define (check-arguments)
+  ; There may be more than one error. Only the first one detected is raised.
+  (define (rule? x)
+   (and
+    (list? x)
+    (= (length x) 2)
+    (list? (car x)) (= (length (car x)) 2)
+    (list? (cadr x)) (= (length (cadr x)) 3)))
+  (define (rule-state rule) (car (car rule)))
+ ;(define (rule-symbol rule) (cadr (car rule))) ; Currently not used.
+  (define (rule-new-state rule) (car (cadr rule)))
+  (define (rule-new-symbol rule) (cadr (cadr rule)))
+  (define (rule-move rule) (caddr (cadr rule)))
+  (when (equal? machine-blank user-blank)
+   (error 'make-Turing-machine "machine-blank must differ from user-blank: ~s" user-blank))
+  (unless (list? final-states)
+   (error 'make-Turing-machine "incorrect argument for final-states: ~s" final-states))
+  (unless (list? rules)
+   (error 'make-Turing-machine "incorrect argument for rules: ~s" rules))
+  (for ((rule (in-list rules)))
+   (unless (rule? rule)
+    (error 'make-Turing-machine "incorrect rule: ~s" rule)))
+  (define states (apply set (append final-states (map rule-state rules))))
+  (for ((rule (in-list rules)))
+   (unless (set-member? states (rule-new-state rule))
+    (error 'make-Turing-machine "new state in rule ~s not final nor accepted by any rule" rule))
+   (when (equal? (rule-new-symbol rule) machine-blank)
+    (error 'make-Turing-machine "machine-blank ~s not allowed as new symbol in rule ~s"
+           (rule-new-symbol rule) rule))
+   (define move (rule-move rule))
+   (unless (or (eq? move 'R) (eq? move 'L))
+    (error 'make-Turing-machine "move must be R or L, given: ~s in rule: ~s" move rule))))
 
  (check-arguments)
 
- (define set-of-final-states (apply set final-states))
+ (define set-of-final-states (apply set final-states)) ; Uses equal? for comparison of states.
 
  ; Define printf-tape before defining the struct-type for tapes.
 
@@ -84,13 +61,13 @@ Heading and trailing machine-blanks and user-blanks are removed from the output 
 
  (define (tape-get tape) (car (tape-tail tape)))
 
- (define (tape-put tape symbol)
-  (when (equal? symbol machine-blank)
+ (define (tape-put tape tape-symbol)
+  (when (equal? tape-symbol machine-blank)
    (error 'Turing-machine "machine-blank ~s not allowed to be written." machine-blank))
   (let ((head (tape-head tape)) (tail (tape-tail tape)))
    (cond
-    ((null? tail) (make-tape head (list symbol)))
-    (else (make-tape head (cons symbol (cdr tail)))))))
+    ((null? tail) (make-tape head (list tape-symbol)))
+    (else (make-tape head (cons tape-symbol (cdr tail)))))))
 
  (define (move-R tape)
   (let ((head (tape-head tape)) (tail (tape-tail tape)))
@@ -124,7 +101,7 @@ Heading and trailing machine-blanks and user-blanks are removed from the output 
 
  (define (remove-trailing-blanks lst) (reverse (remove-heading-blanks (reverse lst))))
  
- (define (Turing-machine state tape)
+ (define (Turing-machine-proper state tape)
   (cond
    ((set-member? set-of-final-states state)
     (values state (tape->list tape)))
@@ -138,24 +115,26 @@ Heading and trailing machine-blanks and user-blanks are removed from the output 
     (when report?
      (printf "old state ~s, new state: ~s, tape-symbol ~s -> ~s, move: ~s, "
       state new-state old-tape-symbol new-tape-symbol move)
-     (printf "new content: ~s~n"
+     (printf "new tape: ~s~n"
       (list (reverse (tape-head new-tape)) (tape-tail new-tape))))
-    (Turing-machine new-state new-tape))))
+    (Turing-machine-proper new-state new-tape))))
  
- (define (find-rule state symbol rules)
-  (let ((entry (assoc (list state symbol) rules)))
-   (unless entry (error 'Turing-machine "no rule for state: ~s, with symbol: ~s" state symbol))
+ (define (find-rule state tape-symbol rules)
+  (let ((entry (assoc (list state tape-symbol) rules))) ; assoc uses equal?
+   (unless entry (error 'Turing-machine "no rule for state: ~s, with symbol: ~s" state tape-symbol))
    (apply values (cadr entry))))
 
- (define (main input)
+ (define initial-padding (make-string 51 #\.))
+
+ (define (Turing-machine input)
   (unless (list? input)
    (error 'Turing-machine "list expected, given: ~s" input))
   (when (member machine-blank input)
    (error 'Turing-machine "machine-blank ~s not allowed in input" machine-blank))
   (define tape (list->tape input))
-  (when report? (printf "~a initial content: ~s~n" (make-string 51 #\.) tape))
-  (Turing-machine starting-state tape))
+  (when report? (printf "~a initial tape: ~s~n" initial-padding tape))
+  (Turing-machine-proper starting-state tape))
 
- main)
+ Turing-machine)
 
 ;===================================================================================================
