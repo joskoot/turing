@@ -155,7 +155,7 @@ Each line of the report shows:
 @item{the @rack[tape-symbol] encountered before replacing it}
 @item{the @rack[tape-symbol] that is written}
 @item{the move (@rack[R] or @rack[L])}
-@item{the new content of the tape: @rack[(append (reverse head) tail)]}]
+@item{the new content of the tape shown as @rack[(list (reverse head) tail)]}]
 
 If no rule can be found for the current @rack[state] and the
 @rack[tape-symbol] below the read/write-head, an exception is raised.}}
