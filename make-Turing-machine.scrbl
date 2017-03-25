@@ -104,11 +104,11 @@ Equivalence relation @rack[equal?] is used for comparison of two @rack[state]s
 or two @rack[tape-symbol]s.
 The Turing machine will not be confused when the intersection of the set of @rack[state]s and
 the set of @rack[tape-symbol]s is not empty.
-After reaching a @rack[final-state] the Turing-machine returns it output as
-@rack[(append (reverse head) tail)],
+After reaching a @rack[final-state] the Turing machine
+returns its output as @rack[(append (reverse head) tail)],
 but without heading and trailing @rack[machine-blank]s or @rack[user-blank]s.
-The output can contain non-heading and/or non-trailing @rack[user-blank]s,
-but never contains a @rack[machine-blank].
+The output can contain @rack[user-blank]s but not at the start or the end.
+The ouput never contains a @rack[machine-blank].
 
 @defform[#:kind "procedure"
 (make-Turing-machine
@@ -124,15 +124,16 @@ but never contains a @rack[machine-blank].
 (final-states    (state ...))
 (machine-blank   tape-symbol)
 (user-blank      tape-symbol)
-(report?         #,(rack any/c))
 (rules           (rule ...))
 (rule            ((state tape-symbol) (new-state new-symbol move)))
-(state           #,(rack any/c))
 (final-state     state)
 (new-state       state)
-(tape-symbol     #,(rack any/c))
 (new-symbol      tape-symbol)
-(move            #,(rack 'R) #,(rack 'L)))]{
+)
+#:contracts ((move (or/c 'R 'L))
+             (report? any/c)
+             (state any/c)
+             (tape-symbol any/c))]{
 The @rack[user-blank] and the @rack[machine-blank] must not be the same
 (in the sense of @rack[equal?]).
 A @rack[new-symbol] must not be a @rack[machine-blank].
@@ -140,14 +141,15 @@ Each @rack[new-state] must be the @rack[state] of a @rack[rule] or one of the @r
 @rack[move] @rack['L] indicates a move to the left.
 @rack[move] @rack['R] indicates a move to the right.
 
-Procedure @rack[make-Turing-machine] produces a Turing-machine represented by a procedure:
+@(elemtag "Turing-machine" "")
+Procedure @rack[make-Turing-machine] produces a Turing machine represented by a procedure:
 
 @defproc[#:kind "procedure" #:link-target? #f
-(Turing-machine (input (tape-symbol ...))) (tape-symbol ...)]{
+(Turing-machine (input (listof tape-symbol))) (values final-state (listof tape-symbol))]{
 The @rack[input] must not contain @rack[machine-blank]s.
 The returned list of @rack[tape-symbol]s has no heading or trailing blanks.
-When @rack[report?] is not @rack[#f], the @rack[Turing-machine] reports each move.
-Each line of the report shows:
+When @rack[report?] is not @rack[#f], the @elemref["Turing-machine" "Turing-machine"]
+reports each move. Each line of the report shows:
 
 @itemlist[
 @item{the old @rack[state]}
