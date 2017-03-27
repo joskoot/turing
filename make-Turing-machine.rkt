@@ -1,6 +1,6 @@
 #lang racket
 
-(provide make-Turing-machine Turing-report?)
+(provide make-Turing-machine Turing-report)
 
 #|==================================================================================================
 
@@ -8,7 +8,7 @@ Module make-Turing-machine.scrbl produces documentation.
 
 ==================================================================================================|#
 
-(define Turing-report? (make-parameter #f (λ (x) (and x #t))))
+(define Turing-report (make-parameter #f (λ (x) (and x #t))))
 
 (define (make-Turing-machine starting-state final-states machine-blank user-blank dummy rules)
 
@@ -120,7 +120,7 @@ Module make-Turing-machine.scrbl produces documentation.
       ((R) (move-R (tape-put tape new-tape-symbol)))
       ((L) (move-L (tape-put tape new-tape-symbol)))
       ((N) (tape-put tape new-tape-symbol))))
-    (when (Turing-report?)
+    (when (Turing-report)
      (printf "old state ~s, new state: ~s, tape-symbol ~s -> ~s, move: ~s, "
       state new-state old-tape-symbol new-tape-symbol move)
      (printf "new tape: ~s~n"
@@ -172,7 +172,7 @@ Module make-Turing-machine.scrbl produces documentation.
   (when (member dummy input)
    (error 'Turing-machine "dummy ~s not allowed in input" dummy))
   (define tape (list->tape input))
-  (when (Turing-report?) (printf "~a initial tape: ~s~n" initial-padding tape))
+  (when (Turing-report) (printf "~a initial tape: ~s~n" initial-padding tape))
   (Turing-machine-proper starting-state tape))
 
  Turing-machine)

@@ -41,7 +41,7 @@
 
 (define Turing-machine (make-Turing-machine '0 '(T F) 'B 'b '_ rules))
 
-(Turing-report? #t)
+(Turing-report #t)
 
 (test Turing-machine '()                'T '())
 (test Turing-machine '(x x x + x x)     'T '(x x x x x))

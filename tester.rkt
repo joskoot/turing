@@ -4,7 +4,7 @@
 (provide test test-report)
 
 (define (test Turing-machine lst expected-state expected-tape)
- (define report? (Turing-report?))
+ (define report? (Turing-report))
  (when report? (printf "~nTest on ~s~n" lst))
  (set! nr-of-tests (add1 nr-of-tests))
  (let/ec ec

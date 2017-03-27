@@ -30,7 +30,7 @@
    ((3 x) (3 x L))    ; Keep on rewinding.
    ((3 B) (T b R))))) ; Accept the input.
 
-(Turing-report? #t)
+(Turing-report #t)
 
 (test Turing-machine '()                  'T '())
 (test Turing-machine '(x x x + x x)       'T '(x x x x x))

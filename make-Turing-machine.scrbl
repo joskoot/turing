@@ -31,7 +31,7 @@ the tail initially consists of one @rack[machine-blank].
 A move is determined by the current state and the @rack[tape-symbol] under the read/write-head.
 A move consists of assuming a new @rack[state], replacing the
 @rack[tape-symbol] under the read/write-head and
-moving the read/write-head one step to the right or to the left or not moving it.
+moving the read/write-head one step to the right or to the left or leaving it where it is.
 The representation of the tape allows fast implementation of moves, independent of the size of
 the content. The machine refuses to write @rack[machine-blanks] and @rack[dummy-symbol]s,
 but can write @rack[user-blanks].
@@ -90,13 +90,15 @@ Each @rack[new-state] must be the @rack[state] of a @rack[rule] or one of the @r
 @rack[move] @rack['R] indicates a move to the right.
 @rack[move] @rack['N] indicates that no move is to be made.
 The machine chooses the first rule that applies.
-A rule of the form @rack[((state dummy-symbol) (new-state new-symbol move))]
+A rule of the form
+@inset[@rack[((state dummy-symbol) (new-state new-symbol move))]]
 accepts every arbitrary @rack[tape-symbol].
-A rule of the form @rack[((state dummy-symbol) (new-state dummy-symbol move))]
-or @rack[((state tape-symbol) (new-state dummy-symbol move))]
+A rule of the form
+ @inset[@rack[((state dummy-symbol) (new-state dummy-symbol move))] " or"@(linebreak)
+        @rack[((state tape-symbol) (new-state dummy-symbol move))]]
 does not alter the @rack[tape-symbol] under the the read/write-head.
 However, if the @rack[tape-symbol] is the @rack[machine-blank],
-a @rack[machine-blank] is replaced by a @rack[user-blank].
+it is replaced by a @rack[user-blank].
 
 @(elemtag "Turing-machine" "")
 Procedure @rack[make-Turing-machine] produces a Turing machine represented by a procedure:
@@ -105,8 +107,13 @@ Procedure @rack[make-Turing-machine] produces a Turing machine represented by a 
 (Turing-machine (input (listof tape-symbol))) (values final-state (listof tape-symbol))]{
 The @rack[input] must not contain @rack[machine-blank]s or @rack[dummy-symbol]s.
 The returned list of @rack[tape-symbol]s has no heading or trailing blanks.
-When @rack[report?] is not @rack[#f], the @(elemref "Turing-machine" (element 'tt "Turing-machine"))
-reports each move. Each line of the report shows:
+If no rule can be found for the current @rack[state] and the
+@rack[tape-symbol] below the read/write-head, an exception is raised.}
+
+@defparam*[Turing-report on/off any/c boolean?]{
+When @rack[(Turing-report)] is not @rack[#f],
+a @(elemref "Turing-machine" (element 'tt "Turing-machine")) reports each move.
+Each line of the report shows:
 
 @itemlist[
 @item{the old @rack[state]}
@@ -117,5 +124,5 @@ reports each move. Each line of the report shows:
 @item{the new position of the tape-head and the new content shown as
     @rack[(list (reverse head) tail)]}]
 
-If no rule can be found for the current @rack[state] and the
-@rack[tape-symbol] below the read/write-head, an exception is raised.}}
+If @rack[on/off] is not @rack[#f] the parameter is set to @rack[#t].}}
+
