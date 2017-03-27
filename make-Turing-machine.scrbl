@@ -44,7 +44,7 @@ of the tape, a @rack[machine-blank] is added and the read/write-head is position
 In this way an infinite tape is simulated with an infinite number of @rack[machine-blank]s both
 at the left and at the right of the actual content.
 The machine repeats moves until a @rack[final-state] is obtained.
-The input must not contain @rack[machine-blank]s.
+The input must not contain @rack[machine-blank]s nor @rack[dummy-symbol]s.
 @rack[state]s and @rack[tape-symbol]s can be arbitrary Racket values,
 but usually symbols and exact integer numbers are the most convenient ones.
 Equivalence relation @rack[equal?] is used for comparison of two @rack[state]s
@@ -55,7 +55,7 @@ After reaching a @rack[final-state] the Turing machine
 returns its output as @rack[(append (reverse head) tail)],
 but without heading and trailing @rack[machine-blank]s or @rack[user-blank]s.
 The output can contain @rack[user-blank]s but not at the start or the end.
-The ouput never contains a @rack[machine-blank].
+The ouput never contains a @rack[machine-blank] or a @rack[dummy-symbol].
 
 @defform[#:kind "procedure"
 (make-Turing-machine
@@ -64,6 +64,7 @@ The ouput never contains a @rack[machine-blank].
  report?
  machine-blank
  user-blank
+ dummy-symbol
  rules)
 #:grammar(
 (starting-state  state)
@@ -81,17 +82,21 @@ The ouput never contains a @rack[machine-blank].
              (report? any/c)
              (state any/c)
              (tape-symbol any/c))]{
-The @rack[user-blank], the @rack[machine-blank] and the @rack[dummy-symbol] must not be distinct
+The @rack[user-blank], the @rack[machine-blank] and the @rack[dummy-symbol] must be distinct
 (in the sense of @rack[equal?]).
 A @rack[new-symbol] must not be a @rack[machine-blank].
 Each @rack[new-state] must be the @rack[state] of a @rack[rule] or one of the @rack[final-state]s.
 @rack[move] @rack['L] indicates a move to the left.
 @rack[move] @rack['R] indicates a move to the right.
-@rack[move] @rack['N] indicates tah no move is to be made.
+@rack[move] @rack['N] indicates that no move is to be made.
 The machine chooses the first rule that applies.
 A rule of the form @rack[((state dummy-symbol) (new-state new-symbol move))]
 accepts every arbitrary @rack[tape-symbol].
-If the @rack[new-symbol] is the @rack[dummy-symbol]
+A rule of the form @rack[((state dummy-symbol) (new-state dummy-symbol move))]
+or @rack[((state tape-symbol) (new-state dummy-symbol move))]
+does not alter the @rack[tape-symbol] under the the read/write-head.
+However, if the @rack[tape-symbol] is the @rack[machine-blank],
+a @rack[machine-blank] is replaced by a @rack[user-blank].
 
 @(elemtag "Turing-machine" "")
 Procedure @rack[make-Turing-machine] produces a Turing machine represented by a procedure:

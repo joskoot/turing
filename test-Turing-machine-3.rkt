@@ -14,7 +14,7 @@
 (Turing-report? #t)
 
 (test Turing-machine '()                'T '())
-(test Turing-machine '(x x x + x x)     'T '(x x x + x x))
+(test Turing-machine '(p q r s t)       'T '(p q r s t))
 (test Turing-machine '(x x y x x)       'F '(x x y x x))
 
 (test-report)
