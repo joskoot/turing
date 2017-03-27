@@ -16,7 +16,12 @@
 (test Turing-machine '()                'T '())
 (test Turing-machine '(p q r s t)       'T '(p q r s t))
 (test Turing-machine '(x x b x x)       'F '(x x b x x))
+(test Turing-machine '(_)               'F '())
 
-(test-report)
+(call-with-values test-report
+ (λ (a b c)
+  (if (and (zero? b) (= c 1))
+   (printf "All is well, test report as expected.~n")
+   (error "Test report not as expected"))))
 
 ;===================================================================================================
