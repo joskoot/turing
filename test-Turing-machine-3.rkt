@@ -7,8 +7,7 @@
 (define rules
 '(((0 b) (F _ N))
   ((0 B) (T _ N))
-  ((0 _) (0 _ R))
-  ((1 B) (T _ L))))
+  ((0 _) (0 _ R))))
 
 (define Turing-machine (make-Turing-machine '0 '(T F) 'B 'b '_ rules))
 
