@@ -3,12 +3,50 @@
 @(require
   scribble/core
   scribble/eval
+  racket/match
   racket
   scribble/html-properties
   "make-Turing-machine.rkt"
   (for-label "make-Turing-machine.rkt"
              racket (only-in typed/racket Setof Exact-Nonnegative-Integer Sequenceof))
   (for-syntax racket))
+
+@(define (defform-remove-empty-lines the-defform)
+   (match the-defform
+     [(box-splice
+       (list
+        before ...
+        (nested-flow nf-style
+                     (list
+                      (table t-style
+                             (list other ...
+                                   (list
+                                    (table (style "specgrammar" tspec-style)
+                                           (list lines ...)))
+                                   more ...))))
+        after ...))
+      (define without-empty-lines
+        ;; an empty lines is a sequence of five empty columns:
+        (remove* (list
+                  (list
+                   (paragraph (style #f '(omitable)) (element #f (list (element 'tt '(nbsp)))))
+                   (paragraph (style #f '(omitable)) (element #f (list (element 'tt '(nbsp)))))
+                   (paragraph (style #f '(omitable)) (element #f (list (element 'tt '(nbsp)))))
+                   (paragraph (style #f '(omitable)) (element #f (list (element 'tt '(nbsp)))))
+                   (paragraph (style #f '(omitable)) (element #f (list (element 'tt '(nbsp)))))))
+                 lines))
+      (box-splice
+       (append
+        before
+        (list (nested-flow nf-style
+                           (list
+                            (table t-style
+                                   (append other
+                                           (list (list
+                                                  (table (style "specgrammar" tspec-style)
+                                                         without-empty-lines)))
+                                           more)))))
+        after))]))
 
 @(define-syntax-rule (rack x) (nonbreaking(racket x)))
 @(define (inset . x) (apply nested #:style 'inset x))
@@ -17,6 +55,7 @@
 @author{Jacob J. A. Koot}
 @(defmodule "make-Turing-machine.rkt" #:packages ())
 
+@section{Introduction}
 The reader is supposed to be familiar with Turing machines.
 The combination of the current content of the tape and
 the current position of the read/write-head is
@@ -57,7 +96,7 @@ a @italic{@element['tt "machine-blank"]} is added and
 the read/write-head is positioned at this @italic{@element['tt "machine-blank"]}.
 In this way an infinite tape is simulated with an infinite number of
 @italic{@element['tt "machine-blank"]}s both at the left and at the right of the actual content.
-The @italic{@element['tt "dummy-symbol"]} is used in rules only.
+The @italic{@element['tt "dummy-symbol"]} is for use in @italic{@element['tt "rules"]} only.
 The machine repeats moves until a @italic{@element['tt "final-state"]} is obtained.
 The input must not contain @italic{@element['tt "machine-blank"]}s nor
 @italic{@element['tt "dummy-symbol"]}s.
@@ -66,7 +105,9 @@ can be arbitrary Racket values,
 but usually symbols and exact integer numbers are the most convenient ones.
 Equivalence relation @rack[equal?] is used for comparison of two @italic{@element['tt "state"]}s
 or two @italic{@element['tt "tape-symbol"]}s.
-The Turing machine will not be confused when the intersection of the set of
+@italic{@element['tt "state"]}s and @italic{@element['tt "tape-symbol"]}s
+live in separate worlds. They never are compared to each other.
+Hence the Turing machine will not be confused when the intersection of the set of
 @italic{@element['tt "state"]}s and the set of @italic{@element['tt "tape-symbol"]}s is not empty
 or when a @italic{@element['tt "state"]} equals the @italic{@element['tt "dummy-symbol"]} or
 the @italic{@element['tt "machine-blank"]}.
@@ -78,7 +119,9 @@ The output can contain @italic{@element['tt "user-blank"]}s but not at the start
 The ouput never contains a @italic{@element['tt "machine-blank"]} or a
 @italic{@element['tt "dummy-symbol"]}.
 
-@defform[#:kind "procedure"
+@section{Procedures}
+@; With thanks to Dupéron Georges
+@defform-remove-empty-lines[@defform[#:kind "procedure"
 (make-Turing-machine
  starting-state
  final-states
@@ -154,5 +197,5 @@ Each line of the report shows:
 @item{the @rack[tape-symbol] that is written}
 @item{the move (@rack['R], @rack['L] or @rack['N])}
 @item{the new position of the tape-head and the new content shown as
-    @rack[(list (reverse head) tail)]}]}}
+    @rack[(list (reverse head) tail)]}]}}]
 
