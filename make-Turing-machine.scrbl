@@ -18,27 +18,30 @@
 @(defmodule "make-Turing-machine.rkt" #:packages ())
 
 The reader is supposed to be familiar with Turing machines.
-The combination of the content of the tape and the current position of the read/write-head is
+The combination of the current content of the tape and
+the current position of the read/write-head is
 represented by two lists: @rack[head] and @rack[tail].
 The content of the represented tape is
 
 @inset[@rack[(append (reverse head) tail)]]
 
 The @rack[tail] never is empty.
-The first element of the @rack[tail] marks the current position of the read/write-head of the tape.
-Initially the @rack[head] is empty and the @rack[tail] contains the input.
-If the input is empty,
+The first element of the @rack[tail] marks the current position of the read/write-head.
+Initially the @rack[head] is empty and the @rack[tail] contains the @italic{@element['tt "input"]},
+which is a list of @italic{@element['tt "tape-symbol"]}s.
+If the @italic{@element['tt "input"]} is empty,
 the @rack[tail] initially consists of one @italic{@element['tt "machine-blank"]}.
 A move is determined by the current @italic{@element['tt "state"]} and
 the element currently under the read/write-head.
 A move consists of assuming a new @italic{@element['tt "state"]},
 replacing the element under the read/write-head and
 moving the read/write-head one step to the right or to the left or leaving it where it is.
-(We assume the start of the input at the left,
+(We assume the start of the @italic{@element['tt "input"]} to be at the left,
 the tape to keep in place and the read/write-head being moved.
 A move to the right/left of the read/write-head is the same as
 moving the tape left/right with fixed read/write-head.
-Assuming the start of the input to be at the right causes the same exchange of right and left) 
+Assuming the start of the @italic{@element['tt "input"]}
+to be at the right causes the same exchange of right and left) 
 The representation of the tape and the current position of the read/write-head
 allows fast implementation of moves,
 independent of the size of the content.
@@ -134,13 +137,13 @@ Procedure @rack[make-Turing-machine] produces a Turing machine represented by a 
 @defproc[#:kind "procedure" #:link-target? #f
 (Turing-machine (input (listof tape-symbol)))
 (values final-state (listof tape-symbol))]{
-The @rack[input] must not contain @rack[machine-blank]s or @rack[dummy-symbol]s.
-The returned list of @rack[tape-symbol]s has no heading or trailing blanks.
+Heading and trailing blanks are removed from the output before it is returned.
 If no rule can be found for the current state and the
 element below the read/write-head, an exception is raised.}
 
 @defparam*[Turing-report on/off any/c boolean?]{
-When @rack[(Turing-report)] is not @rack[#f],
+If @rack[on/off] is not @rack[#f], the new value is @rack[#t].
+When the value of parameter @rack[Turing-report] is true,
 a @(elemref "Turing-machine" (element 'tt "Turing-machine")) reports each move.
 Each line of the report shows:
 
@@ -151,7 +154,5 @@ Each line of the report shows:
 @item{the @rack[tape-symbol] that is written}
 @item{the move (@rack['R], @rack['L] or @rack['N])}
 @item{the new position of the tape-head and the new content shown as
-    @rack[(list (reverse head) tail)]}]
-
-If @rack[on/off] is not @rack[#f] the parameter is set to @rack[#t].}}
+    @rack[(list (reverse head) tail)]}]}}
 
