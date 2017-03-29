@@ -50,7 +50,8 @@
 
 @(define-syntax-rule (rack x) (nonbreaking(racket x)))
 @(define (inset . x) (apply nested #:style 'inset x))
-         
+@(define (note . x) (inset (apply smaller x)))
+        
 @title[#:version ""]{Turing machines}
 @author{Jacob J. A. Koot}
 @(defmodule "make-Turing-machine.rkt" #:packages ())
@@ -75,12 +76,19 @@ the element currently under the read/write-head.
 A move consists of assuming a new @italic{@element['tt "state"]},
 replacing the element under the read/write-head and
 moving the read/write-head one step to the right or to the left or leaving it where it is.
-(We assume the start of the @italic{@element['tt "input"]} to be at the left,
-the tape to keep in place and the read/write-head being moved.
-A move to the right/left of the read/write-head is the same as
-moving the tape left/right with fixed read/write-head.
-Assuming the start of the @italic{@element['tt "input"]}
-to be at the right causes the same exchange of right and left) 
+We consider the last element of the tail to be at the right end of the content of the tape.
+
+@note{In real life tape equipment it is usually the tape that moves,
+the read/write-head remaining in fixed position.
+Moving the read/write-head has the same effect as keeping it in fixed position and moving
+the tape in opposit direction.
+Hence interchange `moving to the left' with `moving to the right' if you
+prefer to think in terms of moving the tape while the read-write/head remains at fixed position.
+In fact, the words `left' and `right' can be confusing.
+For example, looking to the north, west is at your left,
+but looking to the south puts west at your right.
+We consider the first element of a list to be at the left and the last element to be at the right.}
+
 The representation of the tape and the current position of the read/write-head
 allows fast implementation of moves,
 independent of the size of the content.
@@ -181,7 +189,8 @@ Procedure @rack[make-Turing-machine] produces a Turing machine represented by a 
 (Turing-machine (input (listof tape-symbol)))
 (values final-state (listof tape-symbol))]{
 Heading and trailing blanks are removed from the output before it is returned.
-If no rule can be found for the current state and the
+If during the execution of the @elemref["Turing-machine" "Turing-machine"]
+no rule can be found for the current state and the
 element below the read/write-head, an exception is raised.}
 
 @defparam*[Turing-report on/off any/c boolean?]{
