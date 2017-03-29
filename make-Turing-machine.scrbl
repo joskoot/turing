@@ -206,5 +206,75 @@ Each line of the report shows:
 @item{the @rack[tape-symbol] that is written}
 @item{the move (@rack['R], @rack['L] or @rack['N])}
 @item{the new position of the tape-head and the new content shown as
-    @rack[(list (reverse head) tail)]}]}}]
+    @rack[(list (reverse head) tail)]}]
 
+The report is best readable when the printed form of every @rack[state]
+consists of the same number of characters, preferably one character only.
+The same holds for @rack[tape-symbol]s.}}]
+
+@(define (tt x) (element 'tt x))
+
+@section{Example}
+The following Turing machine terminates for every list of symbols @tt["x"] and @tt["+"].
+A correct input is @tt["(x ... [+ x ...] ...)"].
+The result of a correct input is the input without @tt["+"].
+This is like addition of zero, one or more natural numbers.
+With a correct input the machine halts in state @tt["T"].
+With incorrect input the machine halts in state @tt["F"]. The states are:
+
+state 0 : Check that the input is correct.@(linebreak)
+state 1 : Rewind the tape.@(linebreak)
+state 2 : Find leftmost x.@(linebreak)
+state 3 : Do the addition@(linebreak)
+state 4 : Rewind the tape.@(linebreak)
+state 5 : Remove left-most x and continue the addition.
+
+@tt["B"] is the machine-blank, @tt["b"] the user-blank and @tt["_"] the dummy-symbol.
+
+@interaction[
+(require racket "make-Turing-machine.rkt")
+(define rules
+'(((0 x) (0 x R))   (code:comment "Ok, continue checking the input.")
+  ((0 +) (0 + R))   (code:comment "Ok, continue checking the input.")
+  ((0 B) (1 b L))   (code:comment "End of the input. It is correct. Go rewind the tape.")
+  ((0 _) (F _ N))   (code:comment "The input contains an unacceptable symbol.")
+  ((1 x) (1 x L))   (code:comment "Keep on rewinding.")
+  ((1 +) (1 + L))   (code:comment "Keep on rewinding.")
+  ((1 B) (2 b R))   (code:comment "Start of tape reached. Find the first x.")
+  ((2 x) (3 x R))   (code:comment "Start the addition.")
+  ((2 +) (2 b R))   (code:comment "Ignore heading +.")
+  ((2 b) (T b N))   (code:comment "No x or + present.")
+  ((2 B) (T b N))   (code:comment "No x or + present.")
+  ((3 x) (3 x R))   (code:comment "Accept x.")
+  ((3 +) (4 x L))   (code:comment "Replace + by x and go remove the first x.")
+  ((3 B) (T b N))   (code:comment "Done.")
+  ((3 b) (T b N))   (code:comment "Done.")
+  ((4 x) (4 x L))   (code:comment "Go to start of tape.")
+  ((4 b) (5 b R))   (code:comment "Start encountered. Go remove first x.")
+  ((4 B) (5 b R))   (code:comment "Start encountered. Go remove first x.")
+  ((5 x) (3 b R))   (code:comment "Remove first x and continue addition.")
+  ))
+
+(define Turing-machine (make-Turing-machine '0 '(T F) 'B 'b '_ rules))
+
+(Turing-machine '())
+(Turing-machine '(x + x))
+(Turing-machine '(x x x + x x))
+(Turing-machine '(x + x x + x x x))
+(Turing-machine '(x x x +))
+(Turing-machine '(+ x x))
+(Turing-machine '(+))
+(Turing-machine '(x x x x x))
+(Turing-machine '(x))
+(Turing-machine '(+ +))
+(Turing-machine '(+ x +))
+(Turing-machine '(x x + x + x))
+(code:comment "The following examples yield state F.")
+(Turing-machine '(x x b x x))
+(Turing-machine '(z))
+(Turing-machine '(y x x z x x))
+(Turing-machine '(y + x z x))
+(code:comment "Example of report.")
+(Turing-report #t)
+(Turing-machine '(x x + x x))
+]
