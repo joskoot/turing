@@ -215,48 +215,46 @@ The same holds for @rack[tape-symbol]s.}}]
 @(define (tt x) (element 'tt x))
 
 @section{Example}
-The following Turing machine terminates for every list of symbols @tt["x"] and @tt["+"].
-A correct input is @tt["(x ... [+ x ...] ...)"].
+The following Turing machine always terminates.
+A correct input is @nonbreaking{@tt["(x ... [+ x ...] ...)"]}.
 The result of a correct input is the input without @tt["+"].
 This is like addition of zero, one or more natural numbers.
 With a correct input the machine halts in state @tt["T"].
-With incorrect input the machine halts in state @tt["F"]. The states are:
-
-state 0 : Check that the input is correct.@(linebreak)
-state 1 : Rewind the tape.@(linebreak)
-state 2 : Find leftmost x.@(linebreak)
-state 3 : Do the addition@(linebreak)
-state 4 : Rewind the tape.@(linebreak)
-state 5 : Remove left-most x and continue the addition.
-
+With incorrect input the machine halts in state @tt["F"].
 @tt["B"] is the machine-blank, @tt["b"] the user-blank and @tt["_"] the dummy-symbol.
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
+(code:comment "")
 (define rules
-'(((0 x) (0 x R))   (code:comment "Ok, continue checking the input.")
-  ((0 +) (0 + R))   (code:comment "Ok, continue checking the input.")
-  ((0 B) (1 b L))   (code:comment "End of the input. It is correct. Go rewind the tape.")
-  ((0 _) (F _ N))   (code:comment "The input contains an unacceptable symbol.")
-  ((1 x) (1 x L))   (code:comment "Keep on rewinding.")
-  ((1 +) (1 + L))   (code:comment "Keep on rewinding.")
-  ((1 B) (2 b R))   (code:comment "Start of tape reached. Find the first x.")
-  ((2 x) (3 x R))   (code:comment "Start the addition.")
-  ((2 +) (2 b R))   (code:comment "Ignore heading +.")
-  ((2 b) (T b N))   (code:comment "No x or + present.")
-  ((2 B) (T b N))   (code:comment "No x or + present.")
-  ((3 x) (3 x R))   (code:comment "Accept x.")
-  ((3 +) (4 x L))   (code:comment "Replace + by x and go remove the first x.")
-  ((3 B) (T b N))   (code:comment "Done.")
-  ((3 b) (T b N))   (code:comment "Done.")
-  ((4 x) (4 x L))   (code:comment "Go to start of tape.")
-  ((4 b) (5 b R))   (code:comment "Start encountered. Go remove first x.")
-  ((4 B) (5 b R))   (code:comment "Start encountered. Go remove first x.")
-  ((5 x) (3 b R))   (code:comment "Remove first x and continue addition.")
+'((code:comment "       State 0 : Inspect the very first element.")
+  (code:comment "                 Mark start x with y or start + with p.")
+  (code:comment "                 This way we can avoid moving left")
+  (code:comment "                 of the start of the input.")
+  ((0 x) (1 y R))  (code:comment "Ok, continue checking the input.")
+  ((0 +) (1 p R))  (code:comment "Ok, continue checking the input.")
+  ((0 B) (T b N))  (code:comment "Empty input accepted.")
+  ((0 _) (F _ N))  (code:comment "Reject incorrect input.")
+  (code:comment "       State 1 : Check the remainder of the input.")
+  ((1 x) (1 x R))  (code:comment "Ok, continue the check.")
+  ((1 +) (1 + R))  (code:comment "Ok, continue the check.")
+  ((1 B) (2 b L))  (code:comment "Input is ok. Start the addition.")
+  ((1 _) (F _ N))  (code:comment "Reject incorrect input.")
+  (code:comment "       State 2 : Do the addition from left to right.")
+  ((2 x) (2 x L))  (code:comment "Leave x as it is and continue addition.")
+  ((2 y) (T x N))  (code:comment "Start of input reached. Done.")
+  ((2 +) (3 x R))  (code:comment "Replace + by x and go erase the last x.")
+  ((2 p) (3 y R))  (code:comment "Replace p by y and go erase the last x.")
+  (code:comment "       State 3 : Go to end of tape.")
+  ((3 x) (3 x R))  (code:comment "Keep looking for end of input.")
+  ((3 b) (4 b L))  (code:comment "End of input reached. Go erase one x.")
+  (code:comment "       State 4 : Erase the last x.")
+  ((4 x) (2 b L))  (code:comment "Erase x and continue addition.")
+  ((4 y) (T b N))  (code:comment "Erase y (which was an x) and accept.")
   ))
-
+(code:comment "")
 (define Turing-machine (make-Turing-machine '0 '(T F) 'B 'b '_ rules))
-
+(code:comment "")
 (Turing-machine '())
 (Turing-machine '(x + x))
 (Turing-machine '(x x x + x x))
@@ -269,12 +267,19 @@ state 5 : Remove left-most x and continue the addition.
 (Turing-machine '(+ +))
 (Turing-machine '(+ x +))
 (Turing-machine '(x x + x + x))
+(code:comment "")
 (code:comment "The following examples yield state F.")
+(code:comment "")
 (Turing-machine '(x x b x x))
 (Turing-machine '(z))
 (Turing-machine '(y x x z x x))
 (Turing-machine '(y + x z x))
+(code:comment "")
+(code:comment "The following example yields an exception.")
+(code:comment "")
+(Turing-machine '(x x x B x x x))
+(code:comment "")
 (code:comment "Example of report.")
+(code:comment "")
 (Turing-report #t)
-(Turing-machine '(x x + x x))
-]
+(Turing-machine '(x x + x x))]
