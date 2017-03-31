@@ -11,6 +11,7 @@
              racket (only-in typed/racket Setof Exact-Nonnegative-Integer Sequenceof))
   (for-syntax racket))
 
+@; With thanks to Dupéron Georges
 @(define (defform-remove-empty-lines the-defform)
    (match the-defform
      [(box-splice
@@ -111,6 +112,8 @@ The input must not contain @italic{@element['tt "machine-blank"]}s nor
 The @italic{@element['tt "state"]}s and @italic{@element['tt "tape-symbol"]}s
 can be arbitrary Racket values,
 but usually symbols and exact integer numbers are the most convenient ones.
+Using lists for @italic{@element['tt "tape-symbol"]}s
+allows the simulation of multi-tape Turing-machines.
 Equivalence relation @rack[equal?] is used for comparison of two @italic{@element['tt "state"]}s
 or two @italic{@element['tt "tape-symbol"]}s.
 @italic{@element['tt "state"]}s and @italic{@element['tt "tape-symbol"]}s
@@ -128,7 +131,6 @@ The ouput never contains a @italic{@element['tt "machine-blank"]} or a
 @italic{@element['tt "dummy-symbol"]}.
 
 @section{Procedures}
-@; With thanks to Dupéron Georges
 @defform-remove-empty-lines[@defform[#:kind "procedure"
 (make-Turing-machine
  starting-state
@@ -214,13 +216,20 @@ The same holds for @rack[tape-symbol]s.}}]
 
 @(define (tt x) (element 'tt x))
 
-@section{Example}
+@section{Examples}
+
+Some of the ideas used in the examples are based on material of Jay McCarthy
+that can be found in @hyperlink["http://jeapostrophe.github.io/2013-10-29-tmadd-post.html"
+                                "http://jeapostrophe.github.io/2013-10-29-tmadd-post.html"].
+
+@subsection{Erase elements}
 The following Turing machine always terminates.
 A correct input is @nonbreaking{@tt["(x ... [+ x ...] ...)"]}.
 The result of a correct input is the input without @tt["+"].
 This is like addition of zero, one or more natural numbers.
 With a correct input the machine halts in state @tt["T"].
 With incorrect input the machine halts in state @tt["F"].
+The machine never moves left of the start of the input.
 @tt["B"] is the machine-blank, @tt["b"] the user-blank and @tt["_"] the dummy-symbol.
 
 @interaction[
@@ -229,10 +238,11 @@ With incorrect input the machine halts in state @tt["F"].
 (define rules
 '((code:comment "       State 0 : Inspect the very first element.")
   (code:comment "                 Mark start x with y or start + with p.")
-  (code:comment "                 This way we can avoid moving left")
+  (code:comment "                 This way we can detect the start of the input")
+  (code:comment "                 when moving left and avoid moving left")
   (code:comment "                 of the start of the input.")
-  ((0 x) (1 y R))  (code:comment "Ok, continue checking the input.")
-  ((0 +) (1 p R))  (code:comment "Ok, continue checking the input.")
+  ((0 x) (1 y R))  (code:comment "Ok, go check the remainder of the input.")
+  ((0 +) (1 p R))  (code:comment "Ok, go check the remainder of the input.")
   ((0 B) (T b N))  (code:comment "Empty input accepted.")
   ((0 _) (F _ N))  (code:comment "Reject incorrect input.")
   (code:comment "       State 1 : Check the remainder of the input.")
@@ -240,7 +250,8 @@ With incorrect input the machine halts in state @tt["F"].
   ((1 +) (1 + R))  (code:comment "Ok, continue the check.")
   ((1 B) (2 b L))  (code:comment "Input is ok. Start the addition.")
   ((1 _) (F _ N))  (code:comment "Reject incorrect input.")
-  (code:comment "       State 2 : Do the addition from left to right.")
+  (code:comment "       State 2 : Do the addition from right to left.")
+  (code:comment "                 The content starts with y or p and ends with b.")
   ((2 x) (2 x L))  (code:comment "Leave x as it is and continue addition.")
   ((2 y) (T x N))  (code:comment "Start of input reached. Done.")
   ((2 +) (3 x R))  (code:comment "Replace + by x and go erase the last x.")
@@ -248,9 +259,9 @@ With incorrect input the machine halts in state @tt["F"].
   (code:comment "       State 3 : Go to end of tape.")
   ((3 x) (3 x R))  (code:comment "Keep looking for end of input.")
   ((3 b) (4 b L))  (code:comment "End of input reached. Go erase one x.")
-  (code:comment "       State 4 : Erase the last x.")
+  (code:comment "       State 4 : Erase the last x or the y if there is no x.")
   ((4 x) (2 b L))  (code:comment "Erase x and continue addition.")
-  ((4 y) (T b N))  (code:comment "Erase y (which was an x) and accept.")
+  ((4 y) (T b N))  (code:comment "Erase y and accept.")
   ))
 (code:comment "")
 (define Turing-machine (make-Turing-machine '0 '(T F) 'B 'b '_ rules))
@@ -283,3 +294,266 @@ With incorrect input the machine halts in state @tt["F"].
 (code:comment "")
 (Turing-report #t)
 (Turing-machine '(x x + x x))]
+
+@subsection{Binary addition}
+The following Turing machine adds two binary numbers.
+The machine always terminates.
+A correct input is defined as follows:
+
+@inset{@verbatim[
+"input   = (operand + operand)
+operand = bit bit ...
+bit     = 0
+bit     = 1"]}
+
+An incorrect input yields state @element['tt "F"].
+A correct input yields state @element['tt "T"] and output
+@nonbreaking{(bit bit ...)}
+showing the sum of the two operands.
+More precisely the output is @nonbreaking{(1 bit ...)} or (0),
+id est, without leading zeros.
+@element['tt "B"] is the machine-blank,
+@element['tt "b"] the user-blank and @element['tt "_"] the dummy-symbol.
+The first operand is modified such as to result in the sum.
+A 0 bit is replaced by symbol @element['tt "x"] and a 1 bit by symbol
+@element['tt "y"] as soon as it is known.
+During the addition the content of the tape is
+@nonbreaking{(bit-0-or-1 ... x-or-y ... + bit-0-or-1 ...)}.
+Bits of the second operand are processed starting from the least significant one.
+Every such bit is erased before it is processed.
+The significance of the erased bit is the same a that of the right-most bit-0-or-1
+of the first operand.
+After all bits of the second operand have been processed,
+the @element['tt "+"] is erased,
+@element['tt "x"] and @element['tt "y"] are reverted to
+@element['tt "0"] and @element['tt "1"] and leading zeros are removed.
+
+@interaction[
+(require racket "make-Turing-machine.rkt")
+(code:comment "")
+(define rules
+'((code:comment "Check the input.")
+  (code:comment "At least one bit required preceding +.")
+  ((0 0) (1 0 R)) (code:comment "Ok, continue parsing the first operand.")
+  ((0 1) (1 1 R)) (code:comment "Ok, continue parsing the first operand.")
+  ((0 _) (F _ N)) (code:comment "Reject.")
+  (code:comment "Check the remainder of the first operand.")
+  ((1 0) (1 0 R)) (code:comment "Continue checking the first operand.")
+  ((1 1) (1 1 R)) (code:comment "Continue checking the first operand.")
+  ((1 +) (2 + R)) (code:comment "End of first operand, go to second operand.")
+  ((1 _) (F _ N)) (code:comment "Reject.")
+  (code:comment "At least one bit required for the second operand.")
+  ((2 0) (3 0 R)) (code:comment "Ok, continue parsing the second operand.")
+  ((2 1) (3 1 R)) (code:comment "Ok, continue parsing the second operand.")
+  ((2 _) (F _ N)) (code:comment "Reject.")
+  (code:comment "Check the remainder of the second operand.")
+  ((3 0) (3 0 R)) (code:comment "Ok, continue parsing the second operand.")
+  ((3 1) (3 1 R)) (code:comment "Ok, continue parsing the second operand.")
+  ((3 B) (4 b L)) (code:comment "End of correct input. Go to the addition.")
+  ((3 _) (F _ N)) (code:comment "Reject.")
+  (code:comment "Addition")
+  (code:comment "We are at the least significant bit of the second operand.")
+  ((4 0) (5 b L)) (code:comment "Erase the bit and add it to the first operand.")
+  ((4 1) (7 b L)) (code:comment "Erase the bit and add it to the first operand.")
+  (code:comment "Adding bit 0.")
+  (code:comment "Look for the least significant bit of the first operand.")
+  ((5 +) (6 + L)) (code:comment "Least significant bit of first operand found.")
+  ((5 _) (5 _ L)) (code:comment "Continue looking for first operand.")
+  ((6 x) (6 x L)) (code:comment "Skip bits already computed.")
+  ((6 y) (6 y L)) (code:comment "Skip bits already computed.")
+  ((6 0) (A x R)) (code:comment "Mark bit as having been computed.")
+  ((6 1) (A y R)) (code:comment "Mark bit as having been computed.")
+  ((6 B) (A x R)) (code:comment "Add a bit marked as having been computed.")
+  ((6 b) (A x R)) (code:comment "Add a bit marked as having been computed.")
+  (code:comment "Adding bit 1.")
+  (code:comment "Look for the least significant bit of the first operand.")
+  ((7 +) (8 + L)) (code:comment "Least significant bit of first operand found.")
+  ((7 _) (7 _ L)) (code:comment "Continue looking for first operand.")
+  ((8 x) (8 x L)) (code:comment "Skip bits already computed.")
+  ((8 y) (8 y L)) (code:comment "Skip bits already computed.")
+  ((8 0) (A y R)) (code:comment "Put a 1 bit as having been computed.")
+  ((8 1) (9 x L)) (code:comment "Put a zero bit as being computed and process carry.")
+  ((8 b) (A y R)) (code:comment "Add the bit.")
+  ((8 B) (A y R)) (code:comment "Add the bit.")
+  (code:comment "Process a carry.")
+  ((9 0) (A 1 R))
+  ((9 1) (9 0 L))
+  ((9 b) (A 1 R))
+  ((9 B) (A 1 R))
+  (code:comment "Go to next least significant bit of second operand.")
+  ((A b) (B b L)) (code:comment "End of second operand.")
+  ((A _) (A _ R)) (code:comment "Keep on looking.")
+  (code:comment "Here we are at the least significant bit of the second operand.")
+  ((B 0) (5 b L)) (code:comment "Remove bit from the second operand and go add it.")
+  ((B 1) (7 b L)) (code:comment "Remove bit from the second operand and go add it.")
+  ((B +) (C b L)) (code:comment "Second operand totaly processed. Erase the + sign.")
+  (code:comment "Addition is complete.")
+  (code:comment "Revert x to 0 and y to 1.")
+  ((C x) (C 0 L))
+  ((C y) (C 1 L))
+  ((C 0) (C 0 L))
+  ((C 1) (C 1 L))
+  ((C b) (D b R))
+  ((C B) (D b R))
+  (code:comment "Remove heading zeros, but make sure at least one bit remains.")
+  ((D 0) (D b R))
+  ((D 1) (T 1 N))
+  ((D b) (T 0 N))
+  ((D B) (T 0 N))))
+(code:comment "")
+(define adder (make-Turing-machine '0 '(T F) 'B 'b '_ rules))
+(code:comment "")
+(code:comment "Some examples with report.")
+(code:comment "")
+(parameterize ((Turing-report #t))
+ (adder '(0 + 0)))
+(parameterize ((Turing-report #t))
+ (adder '(0 + 1)))
+(parameterize ((Turing-report #t))
+ (adder '(1 + 0)))
+(parameterize ((Turing-report #t))
+ (adder '(1 + 1)))
+(code:comment "")
+(code:comment "Two examples without report.")
+(code:comment "")
+(adder '(1 0 1 0 + 1 1 1 1 1))
+(adder '(1 1 1 1 1 + 1 0 1 0))
+(code:comment "")
+(code:comment "Checking the Turing-machine.")
+(code:comment "We'll need two procedures for conversion between")
+(code:comment "exact nonnegative integer numbers and lists of bits.")
+(code:comment "")
+(code:comment "Procedure exact-nonnegative-integer->list-of-bits converts")
+(code:comment "exact nonnegative integer n to a list of w (or more) bits 0 and 1.")
+(code:comment "")
+(define (exact-nonnegative-integer->list-of-bits n w)
+ (cond
+  ((zero? n)
+   (make-list w 0))
+  ((even? n)
+   (append
+    (exact-nonnegative-integer->list-of-bits (quotient n 2) (max 0 (sub1 w)))
+    (list 0)))
+  (else
+   (append
+    (exact-nonnegative-integer->list-of-bits (quotient n 2) (max 0 (sub1 w)))
+    (list 1)))))
+(code:comment "")
+(code:comment "Procedure list-of-bits->exact-nonnegative-integer converts")
+(code:comment "a list of bits 0 and 1 to an exact nonnegative integer")
+(code:comment "")
+(define (list-of-bits->exact-nonnegative-integer lst)
+ (let loop ((r 0) (lst (reverse lst)) (e 1))
+  (cond
+   ((null? lst) r)
+   ((= (car lst) 0) (loop r (cdr lst) (* 2 e)))
+   ((= (car lst) 1) (loop (+ r e) (cdr lst) (* 2 e))))))
+(code:comment "")
+(code:comment "Check that list-of-bits->exact-nonnegative-integer is")
+(code:comment "the inverse of exact-nonnegative-integer->list-of-bits.")
+(code:comment "")
+(for*/and
+ ((w (in-range 1 20))
+  (n (in-range 0 20)))
+ (= n
+  (list-of-bits->exact-nonnegative-integer
+   (exact-nonnegative-integer->list-of-bits n w))))
+(code:comment "")
+(code:comment "Test the Turing-machine.")
+(code:comment "")
+(for*/and ((w (in-range 1 10)) (code:comment "Width for n.")
+           (n (in-range 0 20))
+           (u (in-range 1 10)) (code:comment "Width for m.")
+           (m (in-range 0 20)))
+ (define-values (state output)
+  (adder
+   (append
+    (exact-nonnegative-integer->list-of-bits n w)
+    (list '+)
+    (exact-nonnegative-integer->list-of-bits m u))))
+ (and (eq? state 'T)
+  (= (list-of-bits->exact-nonnegative-integer output) (+ n m))))]
+
+@subsection{Decimal addition}
+The following machine expects @nonbreaking{@element['tt "((n m) ...)"]} as input,
+where each @element['tt "n"] and each @element['tt "m"] is an exact integer between 0 (inclusive)
+and 10 (exclusive).
+The machine adds the numbers @element['tt "n..."] and @element['tt "m..."] and returns the sum
+@element['tt "s..."]
+However the machine considers the first digit as the least significant one and
+the last digit as the most significant one.
+The machine does one pass through the input only.
+During each step it moves to the right.
+It replaces each input symbol @nonbreaking{@element['tt "(n m)"]} by one decimal digit.
+State @element['tt "0"] indicates that there is no carry.
+State @element['tt "1"] indicates that a carry must be added.
+State @element['tt "0"] is the initial state and @element['tt "T"] the final state.
+
+@interaction[
+(require racket "make-Turing-machine.rkt")
+(code:comment "")
+(define rules
+ (append
+  (for*/list ((n (in-range 0 10)) (m (in-range 0 10)))
+   (list (list 0 (list n m))
+    (let ((sum (+ n m)))
+     (if (> sum 9) (list 1 (- sum 10) 'R)
+                   (list 0 sum 'R)))))
+  (for*/list ((n (in-range 0 10)) (m (in-range 0 10)))
+   (list (list 1 (list n m))
+    (let ((sum (+ n m 1)))
+     (if (> sum 9) (list 1 (- sum 10) 'R)
+                   (list 0 sum 'R)))))
+  (list
+   '((0 Blank) (T b R))
+   '((1 Blank) (T 1 N)))))
+(code:comment "")
+(define TM (make-Turing-machine 0 '(T) 'Blank 'b '_ rules))
+(code:comment "")
+(code:comment "nr->lst takes an exact nonnegative integer and")
+(code:comment "returns its list of digits from least to most significant one.")
+(code:comment "")
+(define (nr->lst n)
+ (define (nr->lst n)
+  (cond
+   ((zero? n) '())
+   (else
+    (define-values (q r) (quotient/remainder n 10))
+    (cons r (nr->lst q)))))
+ (if (zero? n) '(0) (nr->lst n)))
+(code:comment "")
+(code:comment "prepare-input takes two exact nonnegative integers")
+(code:comment "and returns the corresponding input for TM.")
+(code:comment "")
+(define (prepare-input n m)
+ (let ((n (nr->lst n)) (m (nr->lst m)))
+  (define ln (length n))
+  (define lm (length m))
+  (define len (max ln lm))
+  (map list (append n (make-list (- len ln) 0))
+            (append m (make-list (- len lm) 0)))))
+(code:comment "")
+(code:comment "output->nr converts the output of the TM")
+(code:comment "to an exact nonnegative integer.")
+(code:comment "")
+(define (output->nr lst)
+ (if (null? lst) 0
+  (+ (car lst) (* 10 (output->nr (cdr lst))))))
+(code:comment "")
+(code:comment "Example with report.")
+(code:comment "")
+(let ((n 9876) (m 987654))
+ (parameterize ((Turing-report #t))
+  (let-values (((state output) (TM (prepare-input n m))))
+   (define sum (output->nr output))
+   (values sum (= sum (+ n m))))))
+(code:comment "")
+(code:comment "Test the TM.")
+(code:comment "")
+(for/and ((k (in-range 0 1000)))
+ (define n (random 1000000000))
+ (define m (random 1000000000))
+ (or
+  (= (output->nr (call-with-values (λ () (TM (prepare-input n m))) (λ (x y) y)))
+     (+ n m))
+  (error "The test has failed.")))]

@@ -121,7 +121,7 @@ Module make-Turing-machine.scrbl produces documentation.
       ((L) (move-L (tape-put tape new-tape-symbol)))
       ((N) (tape-put tape new-tape-symbol))))
     (when (Turing-report)
-     (printf "state ~s -> ~s, tape-symbol ~s -> ~s, move: ~s, new tape: ~s~n"
+     (printf "state ~s -> ~s, symbol ~s -> ~s, move: ~s, new tape: ~s~n"
       state new-state old-tape-symbol new-tape-symbol move
       (list (reverse (tape-head new-tape)) (tape-tail new-tape))))
     (Turing-machine-proper new-state new-tape))))
@@ -135,33 +135,34 @@ Module make-Turing-machine.scrbl produces documentation.
     ((equal? state (rule-state rule))
      (define old-symbol (rule-symbol rule))
      (define new-symbol (rule-new-symbol rule))
+     (define move (rule-move rule))
      (cond
       ((and (equal? old-symbol dummy) (equal? new-symbol dummy))
        (values
         (rule-new-state rule)
         (if (eq? tape-symbol machine-blank) user-blank tape-symbol)
-        (rule-move rule)))
+        move))
       ((equal? old-symbol dummy)
        (values
         (rule-new-state rule)
         new-symbol
-        (rule-move rule)))
+        move))
       ((and (equal? new-symbol dummy) (equal? old-symbol tape-symbol))
        (values
         (rule-new-state rule)
         (if (eq? tape-symbol machine-blank) user-blank tape-symbol)
-        (rule-move rule)))
+        move))
       ((equal? tape-symbol old-symbol)
        (if (eq? new-symbol dummy)
         (values
          (rule-new-state rule)
          (if (eq? tape-symbol machine-blank) user-blank tape-symbol)
-         (rule-move rule))
+         move)
         (apply values (cadr rule))))
       (else (loop (cdr rules)))))
     (else (loop (cdr rules))))))
  
- (define initial-padding (make-string 38 #\.))
+ (define initial-padding (make-string 33 #\.))
 
  (define (Turing-machine input)
   (unless (list? input)
