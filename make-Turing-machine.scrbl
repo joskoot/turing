@@ -121,7 +121,7 @@ allows the simulation of multi-tape Turing-machines.
 Equivalence relation @rack[equal?] is used for comparison of two @italic{@element['tt "state"]}s
 or two @italic{@element['tt "tape-symbol"]}s.
 The @italic{@element['tt "state"]}s and @italic{@element['tt "tape-symbol"]}s
-live in separate worlds. A @italic{@element['tt "state"]} is never are compared to a
+live in separate worlds. A @italic{@element['tt "state"]} never is compared to a
 @italic{@element['tt "tape-symbol"]}.
 Hence the Turing-machine will not be confused when the intersection of the set of
 @italic{@element['tt "state"]}s and the set of @italic{@element['tt "tape-symbol"]}s is not empty
@@ -156,11 +156,12 @@ The ouput never contains a @italic{@element['tt "machine-blank"]} or a
              (dummy-symbol any/c)
              (move (or/c 'R 'L 'N)))]{
 
-Procedure @rack[make-Turing-machine] checks its arguments to satisfy the following conditions:
+Procedure @rack[make-Turing-machine] checks its arguments to satisfy the following conditions,
+where equality always is to be understood in the sense of @rack[equal?].
 
 @itemlist[
  @item{The @rack[user-blank], the @rack[machine-blank] and the @rack[dummy-symbol]
-       must be distinct (in the sense of @rack[equal?])}
+       must be distinct.}
  @item{A @rack[new-symbol] must not be equal to the @rack[machine-blank].}
  @item{Each @rack[new-state] must appear as the @rack[old-state] of a @rack[rule]
        or must be one of the @rack[final-state]s.}
@@ -168,7 +169,8 @@ Procedure @rack[make-Turing-machine] checks its arguments to satisfy the followi
  @item{Every @rack[move] must be @rack['R], @rack['L] or @rack['N].}]
 
 A rule whose @rack[old-symbol] is not the @rack[dummy-symbol]
-prevails over a rule whose @rack[old-symbol] is the @rack[dummy-symbol].
+prevails over a rule with the same @rack[old-state] and
+whose @rack[old-symbol] is the @rack[dummy-symbol].
 @rack[move] @rack['L] indicates a move to the left.
 @rack[move] @rack['R] indicates a move to the right.
 @rack[move] @rack['N] indicates that no move is to be made.
@@ -207,7 +209,8 @@ element below the read/write-head, an exception is raised.}
 @defparam*[Turing-report on/off any/c boolean?]{
 If @rack[on/off] is not @rack[#f], the new value is @rack[#t].
 When the value of parameter @rack[Turing-report] is true,
-a @(elemref "Turing-machine" (element 'tt "Turing-machine")) reports each move.
+a @(elemref "Turing-machine" (element 'tt "Turing-machine")) reports each move
+on the current output-port.
 Each line of the report shows:
 
 @itemlist[
@@ -217,13 +220,13 @@ Each line of the report shows:
 @item{the @rack[tape-symbol] that is written}
 @item{the move (@rack['R], @rack['L] or @rack['N])}
 @item{the new position of the read/write-head and the new content of the tape shown as
-@rack[(list (reverse head) tail)]}]
+the result of @rack[(list (reverse head) tail)]}]
 
 The report is best readable when the printed form of every @rack[state]
 consists of the same number of characters.
 The same holds for @rack[tape-symbol]s.}}]
 
-@(define (tt x) (element 'tt x))
+@(define (tt x) (nonbreaking (element 'tt x)))
 
 @section{Examples}
 
@@ -233,14 +236,15 @@ that can be found in @hyperlink["http://jeapostrophe.github.io/2013-10-29-tmadd-
 
 @subsection{Erase elements}
 The following Turing-machine always terminates.
-A correct input is @nonbreaking{@tt["(x ... [+ x ...] ...)"]}.
+A correct input is @tt["(x ... [+ x ...] ...)"].
 The result of a correct input is the input without @tt["+"].
 This is like addition of zero, one or more natural numbers,
-where each number is written as `@nonbreaking{@tt["x ..."]}'.
+where natural number n is written as `@tt["x ..."]' with n @tt["x"]s.
 With a correct input the machine halts in state @tt["T"].
 With incorrect input the machine halts in state @tt["F"].
 The machine never moves left of the start of the input.
-@tt["B"] is the machine-blank, @tt["b"] the user-blank and @tt["_"] the dummy-symbol.
+Capital letter @tt["B"] is the machine-blank,
+@tt["b"] the user-blank and @tt["_"] the dummy-symbol.
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
@@ -276,6 +280,8 @@ The machine never moves left of the start of the input.
 (code:comment "")
 (define Turing-machine (make-Turing-machine '0 '(T F) 'B 'b '_ rules))
 (code:comment "")
+(Turing-report #t)
+(code:comment "")
 (Turing-machine '())
 (Turing-machine '(x + x))
 (Turing-machine '(x x x + x x))
@@ -299,11 +305,7 @@ The machine never moves left of the start of the input.
 (code:comment "The following example yields an exception.")
 (code:comment "")
 (Turing-machine '(x x x B x x x))
-(code:comment "")
-(code:comment "Example of report.")
-(code:comment "")
-(Turing-report #t)
-(Turing-machine '(x x + x x))]
+(code:comment "")]
 
 @subsection{Binary addition}
 The following Turing-machine adds two binary numbers.
@@ -567,11 +569,10 @@ State @element['tt "0"] is the initial state and @element['tt "T"] the final sta
  (and (= (output->nr output) (+ n m)) (eq? state 'T)))]
 
 @subsection{Busy beaver}
-3 state, 2 symbol busy beaver:
+3 state busy beaver:
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
-(code:comment "")
 (define rules
  '(((A 0) (B 1 R))
    ((A 1) (C 1 L))
@@ -579,14 +580,8 @@ State @element['tt "0"] is the initial state and @element['tt "T"] the final sta
    ((B 1) (B 1 R))
    ((C 0) (B 1 L))
    ((C 1) (T 1 R))))
-(code:comment "")
-(define TM (make-Turing-machine 'A '(T) 0 'this-user-blank-should-never-be-encountered '_ rules))
-(code:comment "")
+(define TM (make-Turing-machine 'A '(T) 0 'user-blank-not-used '_ rules))
 (Turing-report #t)
-(code:comment "")
-(for ((n (in-range 0 5)))
- (define-values (state result) (TM (make-list n 1)))
- (printf " ~nstate ~s, result ~s~n ~n" state result))]
-
+(TM '())]
 
 @larger{@larger{@bold{The end}}}
