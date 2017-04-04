@@ -53,12 +53,12 @@
 @(define (inset . x) (apply nested #:style 'inset x))
 @(define (note . x) (inset (apply smaller x)))
         
-@title[#:version ""]{Turing machines}
+@title[#:version ""]{Turing-machines}
 @author{Jacob J. A. Koot}
 @(defmodule "make-Turing-machine.rkt" #:packages ())
 
 @section{Introduction}
-The reader is supposed to be familiar with Turing machines.
+The reader is supposed to be familiar with Turing-machines.
 The combination of the current content of the tape and
 the current position of the read/write-head is
 represented by two lists: @rack[head] and @rack[tail].
@@ -68,12 +68,13 @@ The content of the represented tape is
 
 The @rack[tail] never is empty.
 The first element of the @rack[tail] marks the current position of the read/write-head.
-Initially the @rack[head] is empty and the @rack[tail] contains the @italic{@element['tt "input"]},
+Initially the @rack[head] is empty and the @rack[tail] is the @italic{@element['tt "input"]},
 which is a list of @italic{@element['tt "tape-symbol"]}s.
 If the @italic{@element['tt "input"]} is empty,
 the @rack[tail] initially consists of one @italic{@element['tt "machine-blank"]}.
-A move is determined by the current @italic{@element['tt "state"]} and
-the element currently under the read/write-head.
+A move is determined by the current @italic{@element['tt "state"]} of the finite control unit
+and the element currently under the read/write-head.
+The finite control unit makes moves.
 A move consists of assuming a new @italic{@element['tt "state"]},
 replacing the element under the read/write-head and
 moving the read/write-head one step to the right or to the left or leaving it where it is.
@@ -83,12 +84,15 @@ We consider the last element of the tail to be at the right end of the content o
 the read/write-head remaining in fixed position.
 Moving the read/write-head has the same effect as keeping it in fixed position and moving
 the tape in opposit direction.
-Hence interchange `moving to the left' with `moving to the right' if you
-prefer to think in terms of moving the tape while the read-write/head remains at fixed position.
+Hence interchange `left' and `right' if you
+prefer to think in terms of moving the tape rather than the read-write/head.
 In fact, the words `left' and `right' can be confusing.
 For example, looking to the north, west is at your left,
 but looking to the south puts west at your right.
-We consider the first element of a list to be at the left and the last element to be at the right.}
+Looking in a mirror you see your right arm at the right,
+but it is the left arm of the image in the mirror.
+We consider the first element of a list to be at the left and
+the last element to be at the right.}
 
 The representation of the tape and the current position of the read/write-head
 allows fast implementation of moves,
@@ -116,13 +120,14 @@ Using lists for @italic{@element['tt "tape-symbol"]}s
 allows the simulation of multi-tape Turing-machines.
 Equivalence relation @rack[equal?] is used for comparison of two @italic{@element['tt "state"]}s
 or two @italic{@element['tt "tape-symbol"]}s.
-@italic{@element['tt "state"]}s and @italic{@element['tt "tape-symbol"]}s
-live in separate worlds. They never are compared to each other.
-Hence the Turing machine will not be confused when the intersection of the set of
+The @italic{@element['tt "state"]}s and @italic{@element['tt "tape-symbol"]}s
+live in separate worlds. A @italic{@element['tt "state"]} is never are compared to a
+@italic{@element['tt "tape-symbol"]}.
+Hence the Turing-machine will not be confused when the intersection of the set of
 @italic{@element['tt "state"]}s and the set of @italic{@element['tt "tape-symbol"]}s is not empty
 or when a @italic{@element['tt "state"]} equals the @italic{@element['tt "dummy-symbol"]} or
 the @italic{@element['tt "machine-blank"]}.
-After reaching a @italic{@element['tt "final-state"]} the Turing machine
+After reaching a @italic{@element['tt "final-state"]} the Turing-machine
 returns its output as @rack[(append (reverse head) tail)],
 but without heading and trailing @italic{@element['tt "machine-blank"]}s or
 @italic{@element['tt "user-blank"]}s.
@@ -133,12 +138,7 @@ The ouput never contains a @italic{@element['tt "machine-blank"]} or a
 @section{Procedures}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
 (make-Turing-machine
- starting-state
- final-states
- machine-blank
- user-blank
- dummy-symbol
- rules)
+ starting-state final-states machine-blank user-blank dummy-symbol rules)
 #:grammar(
 (starting-state  state)
 (final-states    (state ...))
@@ -148,22 +148,30 @@ The ouput never contains a @italic{@element['tt "machine-blank"]} or a
 (old-state       state)
 (new-state       state)
 (old-symbol      tape-symbol machine-blank dummy-symbol)
-(new-symbol      tape-symbol dummy-symbol)
+(new-symbol      tape-symbol user-blank dummy-symbol)
 (user-blank      tape-symbol))
 #:contracts ((state any/c)
              (tape-symbol any/c)
              (machine-blank any/c)
              (dummy-symbol any/c)
              (move (or/c 'R 'L 'N)))]{
-The @rack[user-blank], the @rack[machine-blank] and the @rack[dummy-symbol] must be distinct
-(in the sense of @rack[equal?]).
-A @rack[new-symbol] must not be a @rack[machine-blank].
-Each @rack[new-state] must be declared as the @rack[old-state] of a @rack[rule]
-or one of the @rack[final-state]s.
+
+Procedure @rack[make-Turing-machine] checks its arguments to satisfy the following conditions:
+
+@itemlist[
+ @item{The @rack[user-blank], the @rack[machine-blank] and the @rack[dummy-symbol]
+       must be distinct (in the sense of @rack[equal?])}
+ @item{A @rack[new-symbol] must not be equal to the @rack[machine-blank].}
+ @item{Each @rack[new-state] must appear as the @rack[old-state] of a @rack[rule]
+       or must be one of the @rack[final-state]s.}
+ @item{Every @rack[rule] must have a distinct combination @rack[(old-state old-symbol)].}
+ @item{Every @rack[move] must be @rack['R], @rack['L] or @rack['N].}]
+
+A rule whose @rack[old-symbol] is not the @rack[dummy-symbol]
+prevails over a rule whose @rack[old-symbol] is the @rack[dummy-symbol].
 @rack[move] @rack['L] indicates a move to the left.
 @rack[move] @rack['R] indicates a move to the right.
 @rack[move] @rack['N] indicates that no move is to be made.
-The machine chooses the first rule that applies.
 A rule of the form
 
 @inset[@rack[((old-state old-symbol) (new-state new-symbol move))]]
@@ -185,14 +193,15 @@ However, if the element is a @rack[machine-blank],
 it is replaced by a @rack[user-blank].
 
 @(elemtag "Turing-machine" "")
-Procedure @rack[make-Turing-machine] produces a Turing machine represented by a procedure:
+Procedure @rack[make-Turing-machine] produces a Turing-machine represented by a procedure:
 
 @defproc[#:kind "procedure" #:link-target? #f
 (Turing-machine (input (listof tape-symbol)))
 (values final-state (listof tape-symbol))]{
-Heading and trailing blanks are removed from the output before it is returned.
+Heading and trailing @rack[user-blank]s and @rack[machine-blank]s
+are removed from the output before it is returned.
 If during the execution of the @elemref["Turing-machine" "Turing-machine"]
-no rule can be found for the current state and the
+no rule can be found matching the current @rack[state] and the
 element below the read/write-head, an exception is raised.}
 
 @defparam*[Turing-report on/off any/c boolean?]{
@@ -207,11 +216,11 @@ Each line of the report shows:
 @item{the @rack[tape-symbol] (or @rack[machine-blank]) encountered before replacing it}
 @item{the @rack[tape-symbol] that is written}
 @item{the move (@rack['R], @rack['L] or @rack['N])}
-@item{the new position of the tape-head and the new content shown as
-    @rack[(list (reverse head) tail)]}]
+@item{the new position of the read/write-head and the new content of the tape shown as
+@rack[(list (reverse head) tail)]}]
 
 The report is best readable when the printed form of every @rack[state]
-consists of the same number of characters, preferably one character only.
+consists of the same number of characters.
 The same holds for @rack[tape-symbol]s.}}]
 
 @(define (tt x) (element 'tt x))
@@ -223,10 +232,11 @@ that can be found in @hyperlink["http://jeapostrophe.github.io/2013-10-29-tmadd-
                                 "http://jeapostrophe.github.io/2013-10-29-tmadd-post.html"].
 
 @subsection{Erase elements}
-The following Turing machine always terminates.
+The following Turing-machine always terminates.
 A correct input is @nonbreaking{@tt["(x ... [+ x ...] ...)"]}.
 The result of a correct input is the input without @tt["+"].
-This is like addition of zero, one or more natural numbers.
+This is like addition of zero, one or more natural numbers,
+where each number is written as `@nonbreaking{@tt["x ..."]}'.
 With a correct input the machine halts in state @tt["T"].
 With incorrect input the machine halts in state @tt["F"].
 The machine never moves left of the start of the input.
@@ -296,7 +306,7 @@ The machine never moves left of the start of the input.
 (Turing-machine '(x x + x x))]
 
 @subsection{Binary addition}
-The following Turing machine adds two binary numbers.
+The following Turing-machine adds two binary numbers.
 The machine always terminates.
 A correct input is defined as follows:
 
@@ -318,7 +328,7 @@ The first operand is modified such as to result in the sum.
 A 0 bit is replaced by symbol @element['tt "x"] and a 1 bit by symbol
 @element['tt "y"] as soon as it is known.
 During the addition the content of the tape is
-@nonbreaking{(bit-0-or-1 ... x-or-y ... + bit-0-or-1 ...)}.
+@nonbreaking{@element['tt "(bit-0-or-1 ... x-or-y ... + bit-0-or-1 ...)"]}.
 Bits of the second operand are processed starting from the least significant one.
 Every such bit is erased before it is processed.
 The significance of the erased bit is the same a that of the right-most bit-0-or-1
@@ -553,7 +563,30 @@ State @element['tt "0"] is the initial state and @element['tt "T"] the final sta
 (for/and ((k (in-range 0 1000)))
  (define n (random 1000000000))
  (define m (random 1000000000))
- (or
-  (= (output->nr (call-with-values (λ () (TM (prepare-input n m))) (λ (x y) y)))
-     (+ n m))
-  (error "The test has failed.")))]
+ (define-values (state output) (TM (prepare-input n m)))
+ (and (= (output->nr output) (+ n m)) (eq? state 'T)))]
+
+@subsection{Busy beaver}
+3 state, 2 symbol busy beaver:
+
+@interaction[
+(require racket "make-Turing-machine.rkt")
+(code:comment "")
+(define rules
+ '(((A 0) (B 1 R))
+   ((A 1) (C 1 L))
+   ((B 0) (A 1 L))
+   ((B 1) (B 1 R))
+   ((C 0) (B 1 L))
+   ((C 1) (T 1 R))))
+(code:comment "")
+(define TM (make-Turing-machine 'A '(T) 0 'this-user-blank-should-never-be-encountered '_ rules))
+(code:comment "")
+(Turing-report #t)
+(code:comment "")
+(for ((n (in-range 0 5)))
+ (define-values (state result) (TM (make-list n 1)))
+ (printf " ~nstate ~s, result ~s~n ~n" state result))]
+
+
+@larger{@larger{@bold{The end}}}
