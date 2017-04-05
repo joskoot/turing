@@ -1,6 +1,6 @@
 #lang racket
 
-(provide make-Turing-machine Turing-report)
+(provide make-Turing-machine Turing-report Turing-limit Turing-move-width)
 
 #|==================================================================================================
 
@@ -9,11 +9,26 @@ Module make-Turing-machine.scrbl produces documentation.
 ==================================================================================================|#
 
 (define Turing-report (make-parameter #f (λ (x) (and x #t))))
+(define (Turing-limit-guard x) (if (exact-positive-integer? x) x #f))
+(define Turing-limit (make-parameter #f Turing-limit-guard))
 
-(define (make-Turing-machine starting-state final-states machine-blank user-blank dummy rules)
+(define (move-counter-width-guard x)
+ (if (exact-nonnegative-integer? x) x
+  (error 'Turing-move-width "exact-nonnegative-integer" x)))
+
+(define Turing-move-width (make-parameter 0 move-counter-width-guard))
+
+(define (make-Turing-machine
+         starting-state
+         final-states
+         machine-blank
+         user-blank
+         dummy rules)
 
  (define (rule-state rule) (car (car rule)))
  (define (rule-symbol rule) (cadr (car rule))) ; Currently not used.
+ (define (rule-old-state rule) (car (car rule)))
+ (define (rule-old-symbol rule) (cadr (car rule)))
  (define (rule-new-state rule) (car (cadr rule)))
  (define (rule-new-symbol rule) (cadr (cadr rule)))
  (define (rule-move rule) (caddr (cadr rule)))
@@ -51,6 +66,29 @@ Module make-Turing-machine.scrbl produces documentation.
     (error 'make-Turing-machine "move must be R or L or N, given: ~s in rule: ~s" move rule))))
 
  (check-arguments)
+
+ (define (print-width x) (string-length (format "~s" x)))
+
+ (define old-state-width
+  (apply max (map print-width (map rule-old-state rules))))
+
+ (define new-state-width
+  (apply max (map print-width (map rule-new-state rules))))
+
+ (define old-symbol-width
+  (apply max (map print-width (map rule-old-symbol rules))))
+
+ (define new-symbol-width
+  (apply max (map print-width (map rule-new-symbol rules))))
+
+ (define (pad-old-state state) (pad state old-state-width))
+ (define (pad-new-state state) (pad state new-state-width))
+ (define (pad-old-symbol symbol) (pad symbol old-symbol-width))
+ (define (pad-new-symbol symbol) (pad symbol new-symbol-width))
+ 
+ (define (pad x n)
+  (define str (format "~s" x))
+  (string-append (make-string (max 0 (- n (string-length str))) #\space) str))
 
  (define set-of-final-states (apply set final-states)) ; Uses equal? for comparison of states.
 
@@ -121,21 +159,37 @@ Module make-Turing-machine.scrbl produces documentation.
       ((L) (move-L (tape-put tape new-tape-symbol)))
       ((N) (tape-put tape new-tape-symbol))))
     (when (Turing-report)
-     (printf "state ~s -> ~s, symbol ~s -> ~s, move: ~s, new tape: ~s~n"
-      state new-state old-tape-symbol new-tape-symbol move
+     (printf "move ~a, state ~a -> ~a, symbol ~a -> ~a, move: ~s, new tape: ~s~n"
+      (pad-move-counter nr-of-moves)
+      (pad-old-state state)
+      (pad-new-state new-state)
+      (pad-old-symbol old-tape-symbol)
+      (pad-new-symbol new-tape-symbol)
+      move
       (list (reverse (tape-head new-tape)) (tape-tail new-tape))))
+    (set! nr-of-moves (add1 nr-of-moves))
+    (when (and (Turing-limit) (not (set-member? final-states new-state)))
+     (when (> nr-of-moves (Turing-limit))
+      (error 'Turing-machine "max nr of moves exceeded: ~s" (Turing-limit))))
     (Turing-machine-proper new-state new-tape))))
+
+ (define (pad-move-counter n)
+  (define str (format "~s" n))
+  (string-append (make-string (max 0 (- (Turing-move-width) (string-length str))) #\space) str))
+
+ (define nr-of-moves #f)
 
  (define-values (normal-hash dummy-hash)
   (let ()
-   (define dummy-rules (filter (λ (x) (equal? (cadar x) dummy)) rules))
-   (define normal-rules (filter (λ (x) (not (equal? (cadar x) dummy))) rules))
+   (define-values (dummy-rules normal-rules)
+    (for/fold ((dr '()) (nr '())) ((rule (in-list rules)))
+     (if (equal? (cadar rule) dummy)
+      (values (cons rule dr) nr)
+      (values dr (cons rule nr)))))
    (define normal-hash (make-hash (map (λ (x) (cons (car x) (cadr x))) normal-rules)))
    (define dummy-hash (make-hash (map (λ (x) (cons (caar x) (cadr x))) dummy-rules)))
    (values normal-hash dummy-hash)))
 
- (define (caddadr x) (car (cddadr x)))
- 
  (define (find-rule state tape-symbol)
   (define (avoid-machine-blank tape-symbol)
    (if (eq? tape-symbol machine-blank) user-blank tape-symbol))
@@ -162,8 +216,15 @@ Module make-Turing-machine.scrbl produces documentation.
      ((equal? new-symbol dummy)
       (values new-state (avoid-machine-blank tape-symbol) move))
      (else (values new-state new-symbol move))))))
- 
- (define initial-padding (make-string 33 #\.))
+
+ (define initial-padding-length
+  (+ 37
+   (max 1 old-symbol-width)
+   (max 1 new-symbol-width)
+   (max 1 old-state-width)
+   (max 1 new-state-width)))
+
+ (define initial-padding #f)
 
  (define (Turing-machine input)
   (unless (list? input)
@@ -173,7 +234,10 @@ Module make-Turing-machine.scrbl produces documentation.
   (when (member dummy input)
    (error 'Turing-machine "dummy ~s not allowed in input" dummy))
   (define tape (list->tape input))
-  (when (Turing-report) (printf "~a initial tape: ~s~n" initial-padding tape))
+  (when (Turing-report)
+   (set! initial-padding (make-string (+ initial-padding-length (min 1 (Turing-move-width))) #\.))
+   (printf "~a initial tape: ~s~n" initial-padding tape))
+  (set! nr-of-moves 1)
   (Turing-machine-proper starting-state tape))
 
  Turing-machine)
