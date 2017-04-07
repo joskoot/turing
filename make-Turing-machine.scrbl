@@ -66,16 +66,15 @@ The content of the represented tape is
 
 @inset[@rack[(append head tail)]]
 
-The elements of the content are @italic{@element['tt "tape-symbol"]s.}
+The elements of the content are @italic{@element['tt "tape-symbol"]}s,
+but the first or last element can be an @italic{@element['tt "empty-cell"]},
+which is not a @italic{@element['tt "tape-symbol"]}.
 The @rack[tail] never is empty.
-The first element of the @rack[head] is the start of the content.
-The last element of the @rack[tail] is the end of the content.
 The first element of the @rack[tail] marks the current position of the read/write-head.
 Initially the @rack[head] is empty and the @rack[tail] is the @italic{@element['tt "input"]},
 which must be a list of @italic{@element['tt "tape-symbol"]}s.
 If the @italic{@element['tt "input"]} is empty,
-the @rack[tail] initially consists of one @italic{@element['tt "empty-cell"]},
-which is not a @italic{@element['tt "tape-symbol"]}.
+the @rack[tail] initially consists of one @italic{@element['tt "empty-cell"]}.
 The finite control unit makes moves.
 A move is determined by the current @italic{@element['tt "state"]} of the finite control unit
 and the element currently under the read/write-head.
@@ -117,6 +116,9 @@ or at the right of the end, an @italic{@element['tt "empty-cell"]} is added and
 the read/write-head is positioned at this @italic{@element['tt "empty-cell"]}.
 In this way an infinite tape is simulated with an infinite number of
 @italic{@element['tt "empty-cell"]}s both at the left and at the right of the actual content.
+In fact the content never has more than one @italic{@element['tt "empty-cell"]}. If it has one,
+it is the first element or the last one and the read/write-head is positioned at this
+@italic{@element['tt "empty-cell"]}.
 The @italic{@element['tt "dummy-symbol"]} is for use in @italic{@element['tt "rules"]} only.
 The machine repeats moves until a @italic{@element['tt "final-state"]} is obtained,
 or remains making moves forever if it never reaches a @italic{@element['tt "final-state"]}.
@@ -164,7 +166,7 @@ The output never contains an @italic{@element['tt "empty-cell"]} or a
              (empty-cell    any/c)
              (dummy-symbol  any/c)
              (move (or/c 'R 'L 'N)))]{
-Procedure @rack[make-Turing-machine] produces a procedure that emulates the Turing-machine.
+Procedure @rack[make-Turing-machine] produces a procedure that emulates a Turing-machine.
 First the arguments are checked to satisfy the following conditions,
 where equality always is to be understood in the sense of @rack[equal?].
 
@@ -216,7 +218,7 @@ say @elemref["Turing-machine" "Turing-machine"], is called as follows:
 @defproc[#:kind "procedure" #:link-target? "Turing-machine"
 (Turing-machine (input (listof tape-symbol)))
 (values final-state output)]{
-The @rack[output] shows the content of the tape after the machine has reached the
+The @rack[output] shows the content of the tape after the machine has reached a
 @rack[final-state], but without
 heading or trailing @rack[blank]s or @rack[empty-cell]s.
 If during the execution of the @elemref["Turing-machine" "Turing-machine"]
@@ -241,7 +243,7 @@ Each line of the report shows:
 @item{The move of the read/write-head (@rack['R], @rack['L] or @rack['N]).}
 @item{The new position of the read/write-head and the new content of the tape shown as
 the result of @rack[(list head tail)],
-the first element of @rack[tail] marking the new position of the read/write-head.}]
+the first element of the @rack[tail] marking the new position of the read/write-head.}]
 
 The report is best readable when the printed forms of @rack[state]s
 do not vary much in their lengths.
@@ -261,8 +263,8 @@ the parameter is set to hold @rack[#f].} Example:
 '(((1 _) (2 _ N))
   ((2 _) (3 _ N))
   ((3 _) (4 _ N))
-  ((4 _) (F _ N))))
-(define TM (make-Turing-machine '1 '(F) 'B 'b '_ rules))
+  ((4 _) (T _ N))))
+(define TM (make-Turing-machine '1 '(T) 'B 'b '_ rules))
 (Turing-report #t)
 (Turing-limit 0)
 (Turing-limit)
@@ -298,6 +300,7 @@ With incorrect input the machine halts in state @tt["F"].
 The machine never moves left of the start of the input.
 Letter @tt["E"] is the empty-cell,
 @tt["B"] the blank and @tt["_"] the dummy-symbol.
+In the comments of the rules, erasing a tape-symbol means replacing it by a blank.
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
@@ -361,15 +364,14 @@ Letter @tt["E"] is the empty-cell,
 (Turing-machine '(x x x E x x x))]
 
 @subsection{Binary addition}
-The following Turing-machine adds two binary numbers.
+The following Turing-machine adds two natural numbers written in binary notation.
 The machine always terminates.
 A correct input is defined as follows:
 
 @inset{@verbatim[
 "input   = (operand + operand)
 operand = bit bit ...
-bit     = 0
-bit     = 1"]}
+bit     = 0 | 1"]}
 
 An incorrect input yields state @element['tt "F"].
 A correct input yields state @element['tt "T"] and output
@@ -380,7 +382,7 @@ id est, without leading zeros.
 @element['tt "E"] is the empty-cell,
 @element['tt "B"] the blank and @element['tt "_"] the dummy-symbol.
 The initial content of the tape is modified such as to result in the sum.
-In the sum 0 bits are written as @element['tt "x"] and a 1 bits as @element['tt "y"].
+In the sum a 0 bit is written as @element['tt "x"] and a 1 bit as @element['tt "y"].
 During the addition the content of the tape is
 @nonbreaking{@element['tt "(bit-0-or-1 ... x-or-y ... + bit-0-or-1 ...)"]}.
 Bits of the second operand are processed starting from the least significant one.
@@ -522,15 +524,15 @@ the @element['tt "+"] is erased,
 (code:comment "Test the Turing-machine.")
 (code:comment "")
 (for*/and ((w (in-range 1 10)) (code:comment "Width for n.")
-           (n (in-range 0 20))
+           (n (in-range 0 25))
            (u (in-range 1 10)) (code:comment "Width for m.")
-           (m (in-range 0 20)))
- (define-values (state output)
-  (adder
-   (append
-    (exact-nonnegative-integer->list-of-bits n w)
-    (list '+)
-    (exact-nonnegative-integer->list-of-bits m u))))
+           (m (in-range 0 25)))
+ (define input
+  (append
+   (exact-nonnegative-integer->list-of-bits n w)
+   (list '+)
+   (exact-nonnegative-integer->list-of-bits m u)))
+ (define-values (state output) (adder input))
  (and (eq? state 'T)
   (= (list-of-bits->exact-nonnegative-integer output) (+ n m))))]
 
