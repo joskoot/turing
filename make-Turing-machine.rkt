@@ -21,8 +21,8 @@ Module make-Turing-machine.scrbl produces documentation.
 (define (make-Turing-machine
          starting-state
          final-states
-         machine-blank
-         user-blank
+         empty-cell
+         blank
          dummy rules)
 
  (define (rule-state rule) (car (car rule)))
@@ -41,8 +41,8 @@ Module make-Turing-machine.scrbl produces documentation.
     (= (length x) 2)
     (list? (car x)) (= (length (car x)) 2)
     (list? (cadr x)) (= (length (cadr x)) 3)))
-  (when (equal? machine-blank user-blank)
-   (error 'make-Turing-machine "machine-blank must differ from user-blank: ~s" user-blank))
+  (when (equal? empty-cell blank)
+   (error 'make-Turing-machine "empty-cell must differ from blank: ~s" blank))
   (unless (list? final-states)
    (error 'make-Turing-machine "incorrect argument for final-states: ~s" final-states))
   (unless (list? rules)
@@ -58,8 +58,8 @@ Module make-Turing-machine.scrbl produces documentation.
    (unless (set-member? states (rule-new-state rule))
     (error 'make-Turing-machine "new state in rule ~s not final nor accepted by any rule" rule))
    (define new-symbol (rule-new-symbol rule))
-   (when (equal? (rule-new-symbol rule) machine-blank)
-    (error 'make-Turing-machine "machine-blank ~s not allowed as new symbol in rule ~s"
+   (when (equal? (rule-new-symbol rule) empty-cell)
+    (error 'make-Turing-machine "empty-cell ~s not allowed as new symbol in rule ~s"
            (rule-new-symbol rule) rule))
    (define move (rule-move rule))
    (unless (or (eq? move 'R) (eq? move 'L) (eq? move 'N))
@@ -69,17 +69,33 @@ Module make-Turing-machine.scrbl produces documentation.
 
  (define (print-width x) (string-length (format "~s" x)))
 
- (define old-state-width
-  (apply max (map print-width (map rule-old-state rules))))
-
- (define new-state-width
-  (apply max (map print-width (map rule-new-state rules))))
+(define-values
+ (old-state-width new-state-width old-symbol-width* new-symbol-width* old-dummy? new-dummy?)
+ (for/fold
+  ((old-state-width 0)
+   (new-state-width 0)
+   (old-symbol-width 0)
+   (new-symbol-width 0)
+   (old-dummy? #f)
+   (new-dummy? #f))
+  ((rule (in-list rules)))
+  (values
+   (max old-state-width (print-width (rule-old-state rule)))
+   (max new-state-width (print-width (rule-new-state rule)))
+   (max old-symbol-width (print-width (rule-old-symbol rule)))
+   (max new-symbol-width (print-width (rule-new-symbol rule)))
+   (or old-dummy? (equal? (rule-old-symbol rule) dummy))
+   (or new-dummy? (equal? (rule-new-symbol rule) dummy)))))
 
  (define old-symbol-width
-  (apply max (map print-width (map rule-old-symbol rules))))
+  (if old-dummy?
+   (max old-symbol-width* new-symbol-width*)
+   old-symbol-width*))
 
  (define new-symbol-width
-  (apply max (map print-width (map rule-new-symbol rules))))
+  (if new-dummy?
+   (max old-symbol-width* new-symbol-width*)
+   new-symbol-width*))
 
  (define (pad-old-state state) (pad state old-state-width))
  (define (pad-new-state state) (pad state new-state-width))
@@ -95,11 +111,11 @@ Module make-Turing-machine.scrbl produces documentation.
  ; Define printf-tape before defining the struct-type for tapes.
 
  (define (print-tape tape port mode)
-  (define head (reverse (tape-head tape)))
+  (define head (reverse (tape-reversed-head tape)))
   (define tail (tape-tail tape))
   (write (list head tail) port))
 
- (struct tape (head tail)
+ (struct tape (reversed-head tail)
   #:property prop:custom-write print-tape
   #:constructor-name make-tape
   #:omit-define-syntaxes)
@@ -107,41 +123,41 @@ Module make-Turing-machine.scrbl produces documentation.
  (define (tape-get tape) (car (tape-tail tape)))
 
  (define (tape-put tape tape-symbol)
-  (when (equal? tape-symbol machine-blank)
-   (error 'Turing-machine "machine-blank ~s not allowed to be written." machine-blank))
-  (let ((head (tape-head tape)) (tail (tape-tail tape)))
+  (when (equal? tape-symbol empty-cell)
+   (error 'Turing-machine "empty-cell ~s not allowed to be written." empty-cell))
+  (let ((reversed-head (tape-reversed-head tape)) (tail (tape-tail tape)))
    (cond
-    ((null? tail) (make-tape head (list tape-symbol)))
-    (else (make-tape head (cons tape-symbol (cdr tail)))))))
+    ((null? tail) (make-tape reversed-head (list tape-symbol)))
+    (else (make-tape reversed-head (cons tape-symbol (cdr tail)))))))
 
  (define (move-R tape)
-  (let ((head (tape-head tape)) (tail (tape-tail tape)))
+  (let ((reversed-head (tape-reversed-head tape)) (tail (tape-tail tape)))
    (cond
-    ((null? tail) (make-tape head (list machine-blank)))
-    ((null? (cdr tail)) (make-tape (cons (car tail) head) (list machine-blank)))
-    (else (make-tape (cons (car tail) head) (cdr tail))))))
+    ((null? tail) (make-tape reversed-head (list empty-cell)))
+    ((null? (cdr tail)) (make-tape (cons (car tail) reversed-head) (list empty-cell)))
+    (else (make-tape (cons (car tail) reversed-head) (cdr tail))))))
 
  (define (move-L tape)
-  (let ((head (tape-head tape)) (tail (tape-tail tape)))
+  (let ((reversed-head (tape-reversed-head tape)) (tail (tape-tail tape)))
    (cond
-    ((null? head) (make-tape head (cons machine-blank tail)))
-    (else (make-tape (cdr head) (cons (car head) tail))))))
+    ((null? reversed-head) (make-tape reversed-head (cons empty-cell tail)))
+    (else (make-tape (cdr reversed-head) (cons (car reversed-head) tail))))))
 
  (define (list->tape lst)
   (if (null? lst)
-   (make-tape '() (list machine-blank))
+   (make-tape '() (list empty-cell))
    (make-tape '() lst)))
  
  (define (tape->list tape)
   (remove-trailing-blanks
    (remove-heading-blanks
-    (append (reverse (tape-head tape)) (tape-tail tape)))))
+    (append (reverse (tape-reversed-head tape)) (tape-tail tape)))))
     
  (define (remove-heading-blanks lst)
   (cond
    ((null? lst) '())
-   ((equal? (car lst) machine-blank) (remove-heading-blanks (cdr lst)))
-   ((equal? (car lst) user-blank) (remove-heading-blanks (cdr lst)))
+   ((equal? (car lst) empty-cell) (remove-heading-blanks (cdr lst)))
+   ((equal? (car lst) blank) (remove-heading-blanks (cdr lst)))
    (else lst)))
 
  (define (remove-trailing-blanks lst) (reverse (remove-heading-blanks (reverse lst))))
@@ -166,7 +182,7 @@ Module make-Turing-machine.scrbl produces documentation.
       (pad-old-symbol old-tape-symbol)
       (pad-new-symbol new-tape-symbol)
       move
-      (list (reverse (tape-head new-tape)) (tape-tail new-tape))))
+      (list (reverse (tape-reversed-head new-tape)) (tape-tail new-tape))))
     (set! nr-of-moves (add1 nr-of-moves))
     (when (and (Turing-limit) (not (set-member? final-states new-state)))
      (when (> nr-of-moves (Turing-limit))
@@ -191,8 +207,8 @@ Module make-Turing-machine.scrbl produces documentation.
    (values normal-hash dummy-hash)))
 
  (define (find-rule state tape-symbol)
-  (define (avoid-machine-blank tape-symbol)
-   (if (eq? tape-symbol machine-blank) user-blank tape-symbol))
+  (define (avoid-empty-cell tape-symbol)
+   (if (eq? tape-symbol empty-cell) blank tape-symbol))
   (define normal-rule (hash-ref normal-hash (list state tape-symbol) #f))
   (cond
    ((not normal-rule)
@@ -206,7 +222,7 @@ Module make-Turing-machine.scrbl produces documentation.
       (define move (caddr dummy-rule))
       (cond
        ((equal? new-symbol dummy)
-        (values new-state (avoid-machine-blank tape-symbol) move))
+        (values new-state (avoid-empty-cell tape-symbol) move))
        (else (values new-state new-symbol move))))))
    (else
     (define new-state (car normal-rule))
@@ -214,7 +230,7 @@ Module make-Turing-machine.scrbl produces documentation.
     (define move (caddr normal-rule))
     (cond
      ((equal? new-symbol dummy)
-      (values new-state (avoid-machine-blank tape-symbol) move))
+      (values new-state (avoid-empty-cell tape-symbol) move))
      (else (values new-state new-symbol move))))))
 
  (define initial-padding-length
@@ -229,8 +245,8 @@ Module make-Turing-machine.scrbl produces documentation.
  (define (Turing-machine input)
   (unless (list? input)
    (error 'Turing-machine "list expected, given: ~s" input))
-  (when (member machine-blank input)
-   (error 'Turing-machine "machine-blank ~s not allowed in input" machine-blank))
+  (when (member empty-cell input)
+   (error 'Turing-machine "empty-cell ~s not allowed in input" empty-cell))
   (when (member dummy input)
    (error 'Turing-machine "dummy ~s not allowed in input" dummy))
   (define tape (list->tape input))
