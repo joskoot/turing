@@ -83,9 +83,9 @@ A move consists of three steps:@(linebreak)
 @itemlist[
 @item{Optionally putting the control unit in another @italic{@element['tt "state"]}.}
 @item{Optionally replacing the @italic{@element['tt "tape-symbol"]} under the read/write-head by
-another one.
-If the read/write-head is positioned at an @italic{@element['tt "empty-cell"]} a
-@italic{@element['tt "tape-symbol"]} is written.
+another one. This step is not optional when
+the read/write-head is positioned at an @italic{@element['tt "empty-cell"]},
+which always is replaced by a @italic{@element['tt "tape-symbol"]}.
 A visited @italic{@element['tt "empty-cell"]} never remains empty.}
 @item{Optionally moving the read/write-head one step to the right or to the left.
 We consider the first element of the content of the tape to be at the left and the last element
@@ -117,8 +117,9 @@ the read/write-head is positioned at this @italic{@element['tt "empty-cell"]}.
 In this way an infinite tape is simulated with an infinite number of
 @italic{@element['tt "empty-cell"]}s both at the left and at the right of the actual content.
 In fact the content never has more than one @italic{@element['tt "empty-cell"]}. If it has one,
-it is the first element or the last one and the read/write-head is positioned at this
-@italic{@element['tt "empty-cell"]}.
+it is the first element or the last one and the read/write-head is positioned at it.
+In this situation either the @italic{@element['tt "empty-cell"]} is immediately replaced by a
+@italic{@element['tt "tape-symbol"]} during the next move or the machine immediately halts.
 The @italic{@element['tt "dummy-symbol"]} is for use in @italic{@element['tt "rules"]} only.
 The machine repeats moves until a @italic{@element['tt "final-state"]} is obtained,
 or remains making moves forever if it never reaches a @italic{@element['tt "final-state"]}.
@@ -141,7 +142,7 @@ or when a @italic{@element['tt "state"]} equals the @italic{@element['tt "dummy-
 an @italic{@element['tt "empty-cell"]}.
 After reaching a @italic{@element['tt "final-state"]} the Turing-machine
 returns its output as @rack[(append head tail)],
-but without heading and trailing @italic{@element['tt "empty-cell"]}s or
+but without heading and trailing @italic{@element['tt "empty-cell"]} or
 @italic{@element['tt "blank"]}s.
 The output can contain @italic{@element['tt "blank"]}s but not at the start or the end.
 The output never contains an @italic{@element['tt "empty-cell"]} or a
@@ -226,6 +227,11 @@ no rule can be found matching the current @rack[state] and the
 element below the read/write-head, the @elemref["Turing-machine" "Turing-machine"]
 halts by raising an exception.}
 
+@interaction[
+(require racket "make-Turing-machine.rkt")
+(code:comment "Missing rule:")
+((make-Turing-machine 'A '(T) 'E 'B '_ '(((A 1) (T 1 N)))) '(2))]
+
 @defparam*[Turing-report on/off any/c boolean?]{
 If @rack[on/off] is not @rack[#f], the new value is @rack[#t].
 The initial value is @rack[#f].
@@ -249,7 +255,7 @@ The report is best readable when the printed forms of @rack[state]s
 do not vary much in their lengths.
 The same holds for @rack[tape-symbol]s.}}]
 
-@defparam*[Turing-limit n any/c boolean?]{
+@defparam*[Turing-limit n any/c (or/c #f exact-positive-integer?)]{
 When the parameter holds an @rack[exact-positive-integer?], say n,
 a @(elemref "Turing-machine" (element 'tt "Turing-machine"))
 halts with an exception when it does not reach a final state within n or less moves.

@@ -168,7 +168,7 @@ Module make-Turing-machine.scrbl produces documentation.
     (values state (tape->list tape)))
    (else
     (define old-tape-symbol (tape-get tape))
-    (define-values (new-state new-tape-symbol move) (find-rule state (tape-get tape)))
+    (define-values (new-state new-tape-symbol move) (find-rule state (tape-get tape) tape))
     (define new-tape
      (case move
       ((R) (move-R (tape-put tape new-tape-symbol)))
@@ -182,11 +182,19 @@ Module make-Turing-machine.scrbl produces documentation.
       (pad-old-symbol old-tape-symbol)
       (pad-new-symbol new-tape-symbol)
       move
-      (list (reverse (tape-reversed-head new-tape)) (tape-tail new-tape))))
+      new-tape))
     (set! nr-of-moves (add1 nr-of-moves))
     (when (and (Turing-limit) (not (set-member? final-states new-state)))
      (when (> nr-of-moves (Turing-limit))
-      (error 'Turing-machine "max nr of moves exceeded: ~s" (Turing-limit))))
+      (error 'Turing-machine
+       "max nr of moves (~s) will be exceeded~n~
+        move-counter: ~s~n~
+        current state: ~s~n~
+        current content: ~s"
+       (Turing-limit)
+       nr-of-moves
+       new-state
+       new-tape)))
     (Turing-machine-proper new-state new-tape))))
 
  (define (pad-move-counter n)
@@ -206,7 +214,7 @@ Module make-Turing-machine.scrbl produces documentation.
    (define dummy-hash (make-hash (map (λ (x) (cons (caar x) (cadr x))) dummy-rules)))
    (values normal-hash dummy-hash)))
 
- (define (find-rule state tape-symbol)
+ (define (find-rule state tape-symbol tape)
   (define (avoid-empty-cell tape-symbol)
    (if (eq? tape-symbol empty-cell) blank tape-symbol))
   (define normal-rule (hash-ref normal-hash (list state tape-symbol) #f))
@@ -215,7 +223,11 @@ Module make-Turing-machine.scrbl produces documentation.
     (define dummy-rule (hash-ref dummy-hash state #f))
     (cond
      ((not dummy-rule)
-      (error 'Turing-machine "no rule for state: ~s, with symbol: ~s" state tape-symbol))
+      (error 'Turing-machine
+       "no rule for state: ~s, with symbol: ~s~n~
+        current content: ~s"
+       state tape-symbol
+       tape))
      (else
       (define new-state (car dummy-rule))
       (define new-symbol (cadr dummy-rule))
