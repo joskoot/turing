@@ -19,7 +19,7 @@ Module make-Turing-machine.scrbl produces documentation.
 (define Turing-move-width (make-parameter 0 move-counter-width-guard))
 
 (define (make-Turing-machine
-         starting-state
+         initial-state
          final-states
          empty-cell
          blank
@@ -54,6 +54,8 @@ Module make-Turing-machine.scrbl produces documentation.
   (when duplicate
    (error 'make-Turing-machine "duplicate move-selector: ~s" duplicate))
   (define states (apply set (append final-states (map rule-state rules))))
+  (unless (set-member? states initial-state)
+   (error 'Turing-machine "No rule found for initial-state ~s" initial-state))
   (for ((rule (in-list rules)))
    (unless (set-member? states (rule-new-state rule))
     (error 'make-Turing-machine "new state in rule ~s not final nor accepted by any rule" rule))
@@ -266,7 +268,7 @@ Module make-Turing-machine.scrbl produces documentation.
    (set! initial-padding (make-string (+ initial-padding-length (min 1 (Turing-move-width))) #\.))
    (printf "~a initial tape: ~s~n" initial-padding tape))
   (set! nr-of-moves 1)
-  (Turing-machine-proper starting-state tape))
+  (Turing-machine-proper initial-state tape))
 
  Turing-machine)
 
