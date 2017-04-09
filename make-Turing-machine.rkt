@@ -14,7 +14,7 @@ Module make-Turing-machine.scrbl produces documentation.
 
 (define (move-counter-width-guard x)
  (if (exact-nonnegative-integer? x) x
-  (error 'Turing-move-width "exact-nonnegative-integer" x)))
+  (raise-argument-error 'Turing-move-width "exact-nonnegative-integer" x)))
 
 (define Turing-move-width (make-parameter 0 move-counter-width-guard))
 

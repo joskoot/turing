@@ -68,7 +68,7 @@ The content of the represented tape is
 @inset[@rack[(append head tail)]]
 
 The @rack[tail] never is empty.
-The first element of the @rack[tail] marks the current position of the read/write-head.
+Its first element marks the current position of the read/write-head.
 The elements of the content are @italic{@element['tt "tape-symbol"]}s,
 but the first or last element can be an @italic{@element['tt "empty-cell"]},
 which is not a @italic{@element['tt "tape-symbol"]}.
@@ -141,6 +141,7 @@ but usually symbols and exact integer numbers are the most convenient ones.
 Using lists for @italic{@element['tt "tape-symbol"]}s
 allows the simulation of multi-tape Turing-machines, although this may require many
 @italic{@element['tt "rules"]}.
+Procedure @rack[make-Turing-machine] is designed primarily for single tape Turing-machines.
 Equivalence relation @rack[equal?] is used for comparison of two @italic{@element['tt "state"]}s
 or two @italic{@element['tt "tape-symbol"]}s.
 The @italic{@element['tt "state"]}s and @italic{@element['tt "tape-symbol"]}s
@@ -184,9 +185,10 @@ depends linearly on the size of the content.}
              (empty-cell   any/c)
              (dummy        any/c)
              (move (or/c 'R 'L 'N)))]{
-Procedure @rack[make-Turing-machine] produces a procedure that emulates a Turing-machine.
-First the arguments are checked to satisfy the following conditions,
-where equality always is to be understood in the sense of @rack[equal?].
+Procedure @rack[make-Turing-machine] returns a procedure that emulates a Turing-machine.
+Before the Turing-machine procedure is produced
+the arguments are checked to satisfy the following conditions,
+equality to be understood in the sense of @rack[equal?].
 
 @itemlist[
  @item{The @rack[blank], the @rack[empty-cell] and the @rack[dummy]
@@ -196,19 +198,12 @@ where equality always is to be understood in the sense of @rack[equal?].
        or must be one of the @rack[final-states].}
  @item{There must be at least one rule whose @rack[old-state] is the @rack[initial-state].}
  @item{The @rack[rules] must have distinct combinations @rack[(old-state old-symbol)].}
- @item{A @rack[move] must be @rack['R], @rack['L] or @rack['N].}]
-
-A @rack[rule] whose @rack[old-symbol] is not the @rack[dummy]
-prevails over a rule with the same @rack[old-state] and
-whose @rack[old-symbol] is the @rack[dummy].
-Hence, read @rack[(old-state dummy)] as applying to all @rack[tape-symbol]s
-(the @rack[empty-cell] possibly included)
-not appearing as an @rack[old-symbol] in a rule with the same @rack[old-state].@(linebreak) 
+ @item{A @rack[move] must be @rack['R], @rack['L] or @rack['N].@(linebreak)
 @rack[move] @rack['L] indicates that the read-write-head moves to the left
 (or the tape to the right).@(linebreak)
 @rack[move] @rack['R] indicates that the read-write-head moves to the right
 (or the tape to the left).@(linebreak)
-@rack[move] @rack['N] indicates that that the read-write-head (or the tape) does not move.
+@rack[move] @rack['N] indicates that that the read-write-head (or the tape) does not move.}]
 
 A rule of the form
 
@@ -217,6 +212,8 @@ A rule of the form
 where the @rack[old-symbol] is not the @rack[dummy]
 applies when the @rack[old-state] equals the current @rack[state]
 and the element currently under the read/write-head equals the @rack[old-symbol].
+Such a @rack[rule] prevails over a rule with the same @rack[old-state] and
+whose @rack[old-symbol] is the @rack[dummy].
 A rule of the form
 
 @inset[@rack[((old-state dummy) (new-state new-symbol move))]]
@@ -244,13 +241,6 @@ If during the execution of the @elemref["Turing-machine" "Turing-machine"]
 no rule can be found matching the current @rack[state] and the
 element below the read/write-head, the @elemref["Turing-machine" "Turing-machine"]
 halts by raising an exception.}
-
-@interaction[
-(require racket "make-Turing-machine.rkt")
-(code:comment "Missing rule:")
-((make-Turing-machine 'A '(T) 'E 'B '_ '(((A 1) (T 1 N)))) '(2))]
-
-More examples in section @secref["Examples"].
 
 @defparam*[Turing-report on/off any/c boolean?]{
 If @rack[on/off] is not @rack[#f], the new value is @rack[#t].
@@ -305,7 +295,8 @@ In a report the move counter is padded with spaces such as to take @rack[n] char
 Move counts requiring more characters are not truncated.
 The initial value is @rack[0].
 For example, when expecting more than 9 but less than 100 moves,
-use @rack[(Turing-move-width 2)] in order to produce a well alligned report.}
+use @rack[(Turing-move-width 2)] in order to produce a well alligned report
+with all move-counts having the same number of characters.}
 
 @(define (tt x) (nonbreaking (element 'tt x)))
 
@@ -317,7 +308,8 @@ that can be found in @hyperlink["http://jeapostrophe.github.io/2013-10-29-tmadd-
 
 @subsection{Erase elements}
 The following Turing-machine always halts.
-A correct input is @tt["(x ... [+ x ...] ...)"].
+A correct input is @tt["(x ... [+ x ...] ...)"],
+where the square brackets indicate an optional part of the input.
 The result of a correct input is the input without @tt["+"].
 This is like addition of zero, one or more natural numbers,
 where natural number n is written as `@tt["x ..."]' with n @tt["x"]s.
@@ -497,10 +489,13 @@ the @element['tt "+"] is removed,
 (code:comment "")
 (Turing-move-width 2)
 (code:comment "")
-(code:comment "Example with report.")
+(code:comment "Examples with report.")
 (code:comment "")
 (parameterize ((Turing-report #t))
  (adder '(1 0 1 1 1 + 1 0 1 1)))
+(code:comment "")
+(parameterize ((Turing-report #t))
+ (adder '(0 0 0 1 1 + 0 0 1 1)))
 (code:comment "")
 (code:comment "Two examples without report.")
 (code:comment "")
@@ -515,16 +510,12 @@ the @element['tt "+"] is removed,
 (code:comment "exact nonnegative integer n to a list of bits 0 and 1.")
 (code:comment "")
 (define (exact-nonnegative-integer->list-of-bits n)
- (cond
-  ((zero? n) '(0))
-  ((even? n)
-   (append
-    (exact-nonnegative-integer->list-of-bits (quotient n 2))
-    (list 0)))
-  (else
-   (append
-    (exact-nonnegative-integer->list-of-bits (quotient n 2))
-    (list 1)))))
+ (reverse
+  (let loop ((n n))
+   (cond
+    ((zero? n) '(0))
+    ((even? n) (cons 0 (loop (quotient n 2))))
+    (else      (cons 1 (loop (quotient n 2))))))))
 (code:comment "")
 (code:comment "Procedure list-of-bits->exact-nonnegative-integer converts")
 (code:comment "a list of bits 0 and 1 to an exact nonnegative integer")
@@ -590,6 +581,7 @@ State @element['tt "0"] is the initial state and @element['tt "T"] the final sta
   (list
    '((0 E) (T B R))
    '((1 E) (T 1 N)))))
+(pretty-print rules)
 (code:comment "")
 (define TM (make-Turing-machine 0 '(T) 'E 'B '_ rules))
 (code:comment "")
