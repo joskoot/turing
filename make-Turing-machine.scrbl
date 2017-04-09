@@ -58,6 +58,7 @@
 @(defmodule "make-Turing-machine.rkt" #:packages ())
 
 @section{Introduction}
+This document describes a tool allowing the construction of procedures that emulate Turing-machines.
 The reader is supposed to be familiar with Turing-machines.
 The combination of the current content of the tape and
 the current position of the read/write-head is
@@ -74,7 +75,7 @@ which is not a @italic{@element['tt "tape-symbol"]}.
 Initially the @rack[head] is empty and the @rack[tail] is the @italic{@element['tt "input"]}.
 If the @italic{@element['tt "input"]} is empty,
 the @rack[tail] initially consists of one @italic{@element['tt "empty-cell"]}.
-The finite control unit makes moves.
+The finite control unit makes moves according to a list of @italic{@element['tt "rule"]}s.
 A move is determined by the current @italic{@element['tt "state"]} of the finite control unit
 and the element currently under the read/write-head.
 A move consists of three steps:
@@ -85,7 +86,8 @@ A move consists of three steps:
 another one. This step is not optional when
 the read/write-head is positioned at an @italic{@element['tt "empty-cell"]},
 which always is replaced by a @italic{@element['tt "tape-symbol"]}.
-A visited @italic{@element['tt "empty-cell"]} never remains empty.}
+A visited @italic{@element['tt "empty-cell"]} never remains empty when the machine has not yet
+reached a @italic{@element['tt "final-state"]}.}
 @item{Optionally moving the read/write-head one step to the right or to the left.
 We consider the first element of the content of the tape to be at the left and the last element
 to be at the right.}]
@@ -102,7 +104,9 @@ In this document the @italic{@element['tt "state"]} refers to the internal
 @italic{@element['tt "state"]} of the control unit only and
 does not include the current content of the tape nor the current position of the read/write-head.
 This note excepted, this document does not refer to the state of a Turing-machine as a whole.
-The internal state always is written as `@italic{@element['tt "state"]}'.}
+The internal state always is written as `@italic{@element['tt "state"]}'.
+When changing the internal @italic{@element['tt "state"]} the words
+`@italic{@element['tt "old-state"]}' and `@italic{@element['tt "new-state"]}' are used.}
 
 The machine refuses to write @italic{@element['tt "dummy"]}s
 nor can it erase a @italic{@element['tt "tape-symbol"]}
@@ -246,9 +250,6 @@ halts by raising an exception.}
 (code:comment "Missing rule:")
 ((make-Turing-machine 'A '(T) 'E 'B '_ '(((A 1) (T 1 N)))) '(2))]
 
-The choice of exception has been made such as to avoid that
-procedure @rack[make-Turing-machine] should require an argument for the alphabet of all allowed
-@italic{@element['tt "tape-symbol"]}s.
 More examples in section @secref["Examples"].
 
 @defparam*[Turing-report on/off any/c boolean?]{
@@ -325,7 +326,6 @@ With incorrect input the machine halts in state @tt["F"].
 The machine never moves left of the start of the input.
 Letter @tt["E"] is the empty-cell,
 @tt["B"] the blank and @tt["_"] the dummy.
-In the comments of the rules, erasing a tape-symbol means replacing it by a blank.
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
@@ -349,14 +349,14 @@ In the comments of the rules, erasing a tape-symbol means replacing it by a blan
   (code:comment "                 The content starts with y or p and ends with B.")
   ((2 x) (2 x L))  (code:comment "Leave x as it is and continue addition.")
   ((2 y) (T x N))  (code:comment "Start of input reached. Done.")
-  ((2 +) (3 x R))  (code:comment "Replace + by x and go erase the last x.")
-  ((2 p) (3 y R))  (code:comment "Replace p by y and go erase the last x.")
+  ((2 +) (3 x R))  (code:comment "Replace + by x and go replacing the last x by a blank.")
+  ((2 p) (3 y R))  (code:comment "Replace p by y and go replacing the last x by a blank.")
   (code:comment "       State 3 : Go to end of tape.")
   ((3 x) (3 x R))  (code:comment "Keep looking for end of input.")
-  ((3 B) (4 B L))  (code:comment "End of input reached. Go erase one x.")
-  (code:comment "       State 4 : Erase the last x or the y if there is no x.")
-  ((4 x) (2 B L))  (code:comment "Erase x and continue addition.")
-  ((4 y) (T B N))  (code:comment "Erase y and accept.")
+  ((3 B) (4 B L))  (code:comment "End of input reached. Replace one x by a blank.")
+  (code:comment "       State 4 : Replace the last x (or the y if there is no x) by a blank.")
+  ((4 x) (2 B L))  (code:comment "Replace x by a blank and continue addition.")
+  ((4 y) (T B N))  (code:comment "Replace y by a blank and accept.")
   ))
 (code:comment "")
 (define Turing-machine (make-Turing-machine '0 '(T F) 'E 'B '_ rules))
@@ -416,7 +416,7 @@ Every such bit is replaced by a blank before it is processed.
 The significance of the blanked bit is the same a that of
 the right-most @nonbreaking{@element['tt "bit-0-or-1"]} of the first operand.
 After all bits of the second operand have been processed,
-the @element['tt "+"] is erased,
+the @element['tt "+"] is removed,
 @element['tt "x"] and @element['tt "y"] are reverted to
 @element['tt "0"] and @element['tt "1"] and leading zeros are removed.
 
