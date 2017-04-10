@@ -59,6 +59,8 @@ Module make-Turing-machine.scrbl produces documentation.
   (for ((rule (in-list rules)))
    (unless (set-member? states (rule-new-state rule))
     (error 'make-Turing-machine "new state in rule ~s not final nor accepted by any rule" rule))
+   (when (set-member? final-states (rule-old-state rule))
+    (error 'make-Turing-machine "old state in rule ~s must not be a final state" rule))
    (define new-symbol (rule-new-symbol rule))
    (when (equal? (rule-new-symbol rule) empty-cell)
     (error 'make-Turing-machine "empty-cell ~s not allowed as new symbol in rule ~s"

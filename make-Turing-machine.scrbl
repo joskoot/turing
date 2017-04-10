@@ -52,15 +52,17 @@
 @(define-syntax-rule (rack x) (nonbreaking(racket x)))
 @(define (inset . x) (apply nested #:style 'inset x))
 @(define (note . x) (inset (apply smaller x)))
+@(define (itel x) (italic (element 'tt x)))
+@(define (tt x) (nonbreaking (element 'tt x)))
 
 @title[#:version ""]{Turing-machines}
 @author{Jacob J. A. Koot}
 @(defmodule "make-Turing-machine.rkt" #:packages ())
 
 @section{Introduction}
-This document describes a tool allowing the construction of procedures that emulate Turing-machines.
+This document describes a tool for the construction of procedures that emulate Turing-machines.
 The reader is supposed to be familiar with Turing-machines.
-The combination of the current content of the tape and
+The combination of the current content of the tape and 
 the current position of the read/write-head is
 represented by two lists: @rack[head] and @rack[tail].
 The content of the represented tape is
@@ -69,25 +71,25 @@ The content of the represented tape is
 
 The @rack[tail] never is empty.
 Its first element marks the current position of the read/write-head.
-The elements of the content are @italic{@element['tt "tape-symbol"]}s,
-but the first or last element can be an @italic{@element['tt "empty-cell"]},
-which is not a @italic{@element['tt "tape-symbol"]}.
-Initially the @rack[head] is empty and the @rack[tail] is the @italic{@element['tt "input"]}.
-If the @italic{@element['tt "input"]} is empty,
-the @rack[tail] initially consists of one @italic{@element['tt "empty-cell"]}.
-The finite control unit makes moves according to a list of @italic{@element['tt "rule"]}s.
-A move is determined by the current @italic{@element['tt "state"]} of the finite control unit
+The elements of the content are @itel["tape-symbols"],
+but the first or last element can be an @itel["empty-cell"],
+which is not a @itel["tape-symbol"].
+Initially the @rack[head] is empty and the @rack[tail] is the @itel["input"].
+If the @itel["input"] is empty,
+the @rack[tail] initially consists of one @itel["empty-cell"].
+The finite control unit makes moves according to its @itel["rules"].
+A move is determined by the current @itel["state"] of the finite control unit
 and the element currently under the read/write-head.
 A move consists of three steps:
 
 @itemlist[
-@item{Optionally putting the control unit in another @italic{@element['tt "state"]}.}
-@item{Optionally replacing the @italic{@element['tt "tape-symbol"]} under the read/write-head by
+@item{Optionally putting the control unit in another @itel["state"].}
+@item{Optionally replacing the @itel["tape-symbol"] under the read/write-head by
 another one. This step is not optional when
-the read/write-head is positioned at an @italic{@element['tt "empty-cell"]},
-which always is replaced by a @italic{@element['tt "tape-symbol"]}.
-A visited @italic{@element['tt "empty-cell"]} never remains empty when the machine has not yet
-reached a @italic{@element['tt "final-state"]}.}
+the read/write-head is positioned at an @itel["empty-cell"],
+which always is replaced by a @itel["tape-symbol"].
+A visited @itel["empty-cell"] never remains empty when the machine has not yet
+reached a @itel["final-state"].}
 @item{Optionally moving the read/write-head one step to the right or to the left.
 We consider the first element of the content of the tape to be at the left and the last element
 to be at the right.}]
@@ -98,73 +100,65 @@ Moving the read/write-head has the same effect as keeping it in fixed position a
 the tape in opposit direction.}
 
 @note{The state of a Turing-machine as a whole usually is defined such as to include
-the internal @italic{@element['tt "state"]} of the control unit,
+the internal @itel["state"] of the control unit,
 the current position of the read/write-head and the current content of the tape.
-In this document the @italic{@element['tt "state"]} refers to the internal
-@italic{@element['tt "state"]} of the control unit only and
-does not include the current content of the tape nor the current position of the read/write-head.
+In this document the @itel["state"] refers to the internal @itel["state"] of the control unit
+only and does not include the current content of the tape nor the current position of the
+read/write-head.
 This note excepted, this document does not refer to the state of a Turing-machine as a whole.
-The internal state always is written as `@italic{@element['tt "state"]}'.
-When changing the internal @italic{@element['tt "state"]} the words
-`@italic{@element['tt "old-state"]}' and `@italic{@element['tt "new-state"]}' are used.}
+The internal state always is written as `@itel["state"]'.
+When changing the internal @itel["state"] the words 
+`@itel["old-state"]' and `@itel["new-state"]' are used.}
 
-The machine refuses to write @italic{@element['tt "dummy"]}s
-nor can it erase a @italic{@element['tt "tape-symbol"]}
-such as to produce an @italic{@element['tt "empty-cell"]}.
-It can write a @italic{@element['tt "blank"]},
-which is a @italic{@element['tt "tape-symbol"]} too.
-@italic{@element['tt "empty-cell"]}s are used only to extend the tape
+The machine refuses to write a @itel["dummy"] nor can it erase a @itel["tape-symbol"]
+such as to produce an @itel["empty-cell"].
+It can write a @itel["blank"], which is a @itel["tape-symbol"].
+@itel["Empty-cells"] are used only to extend the tape
 at the left or at the right of the current content.
 When moving the read/write-head at the left of the begin of the content of the tape
-or at the right of the end, an @italic{@element['tt "empty-cell"]} is added and
-the read/write-head is positioned at this @italic{@element['tt "empty-cell"]}.
+or at the right of the end, an @itel["empty-cell"] is added and
+the read/write-head is positioned at this @itel["empty-cell"].
 In this way an infinite tape is simulated with an infinite number of
-@italic{@element['tt "empty-cell"]}s both at the left and at the right of the actual content.
-In fact the content never has more than one @italic{@element['tt "empty-cell"]}. If it has one,
-it is the first element or the last one and the read/write-head is positioned at it.
-In this situation either the @italic{@element['tt "empty-cell"]} is immediately replaced by a
-@italic{@element['tt "tape-symbol"]} during the next move or,
-when the current move produces a @italic{@element['tt "final-state"]},
-the machine immediately halts without replacing the @italic{@element['tt "empty-cell"]}.
-The @italic{@element['tt "dummy"]} is for use in @italic{@element['tt "rules"]} only.
-The @italic{@element['tt "rules"]} describe how the control unit makes its moves.
-The machine repeats moves until a @italic{@element['tt "final-state"]} is obtained,
-or remains making moves forever if it never reaches a @italic{@element['tt "final-state"]}.
+@itel["empty-cells"] both at the left and at the right of the actual content.
+In fact the content never has more than one @itel["empty-cell"].
+If it has one, it is the first element or the last one and the read/write-head is positioned at it.
+In this situation either the @itel["empty-cell"] is immediately replaced by a
+@itel["tape-symbol"] during the next move or,
+when the current move produces a @itel["final-state"],
+the machine immediately halts without replacing the @itel["empty-cell"].
+The @itel["dummy"] is for use in @itel["rules"] only.
+The @itel["rules"] describe how the control unit makes its moves.
+The machine repeats moves until a @itel["final-state"] is obtained,
+or remains making moves forever if it never reaches a @itel["final-state"].
 It is possible to put a maximum to the number of moves.
 See parameter @rack[Turing-limit].
-It may happen that there is no @italic{@element['tt "rule"]} specifying which move to make
-with the current @rack[state] and the element currently below the read/write-head.
+It may happen that there is no @itel["rule"] specifying which move to make
+with the current @itel["state"] and the element currently below the read/write-head.
 In such a case the procedure that emulates the Turing-machine halts by raising an exception.
-The @italic{@element['tt "state"]}s and @italic{@element['tt "tape-symbol"]}s
-can be arbitrary Racket values,
+The @itel["states"] and @itel["tape-symbols"] can be arbitrary Racket values,
 but usually symbols and exact integer numbers are the most convenient ones.
-Using lists for @italic{@element['tt "tape-symbol"]}s
-allows the simulation of multi-tape Turing-machines, although this may require many
-@italic{@element['tt "rules"]}.
+Using lists for @itel["tape-symbols"] allows the simulation of multi-tape Turing-machines,
+although this may require many @itel["rules"].
 Procedure @rack[make-Turing-machine] is designed primarily for single tape Turing-machines.
-Equivalence relation @rack[equal?] is used for comparison of two @italic{@element['tt "state"]}s
-or two @italic{@element['tt "tape-symbol"]}s.
-The @italic{@element['tt "state"]}s and @italic{@element['tt "tape-symbol"]}s
-live in separate worlds. A @italic{@element['tt "state"]} never is compared to a
-@italic{@element['tt "tape-symbol"]} or the @italic{@element['tt "empty-cell"]}.
+Equivalence relation @rack[equal?] is used for comparison of two @itel["states"]
+or two @itel["tape-symbols"].
+The @itel["states"] and @itel["tape-symbols"] live in separate worlds.
+A @itel["state"] never is compared to a @itel["tape-symbol"] or the @itel["empty-cell"].
 Hence the Turing-machine will not be confused when the intersection of the set of
-@italic{@element['tt "state"]}s and the set of @italic{@element['tt "tape-symbol"]}s is not empty
-or when a @italic{@element['tt "state"]} equals the @italic{@element['tt "dummy"]} or
-an @italic{@element['tt "empty-cell"]}.
-However, this may confuse a human reader when looking at the @italic{@element['tt "rules"]}
+@itel["states"] and the set of @itel["tape-symbols"] is not empty
+or when a @itel["state"] equals the @itel["dummy"] or an @itel["empty-cell"].
+However, this may confuse a human reader when looking at the @itel["rules"]
 that describe the moves.
-After reaching a @italic{@element['tt "final-state"]} the Turing-machine
+After reaching a @itel["final-state"] the Turing-machine
 returns its output as @rack[(append head tail)],
-but without heading and trailing @italic{@element['tt "empty-cell"]} or
-@italic{@element['tt "blank"]}s.
-The output can contain @italic{@element['tt "blank"]}s but not at the start or the end.
-The output never contains an @italic{@element['tt "empty-cell"]} or a
-@italic{@element['tt "dummy"]}.
+but without heading and trailing @itel["empty-cell"] or @itel["blanks"].
+The output can contain @itel["blanks"] but not at the start or the end.
+The output never contains an @itel["empty-cell"] or a @itel["dummy"].
 
 @note{The internal representation of the tape is such that each move is made in constant time,
 independent of the size of the content of the tape and the position of the read/write-head.
-The maximal time needed to prepare the output after reaching a @rack[final-state]
-depends linearly on the size of the content.}
+The maximal time needed to prepare the output after reaching
+a @itel["final-state"] depends linearly on the size of the content.}
 
 @section{Procedures}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
@@ -172,10 +166,11 @@ depends linearly on the size of the content.}
  initial-state final-states empty-cell blank dummy rules)
 #:grammar(
 (initial-state state)
-(final-states  (state ...))
+(final-states  (final-state ...))
 (blank         tape-symbol)
 (rules         (rule ...))
 (rule          ((old-state old-symbol) (new-state new-symbol move)))
+(final-state   state)
 (old-state     state)
 (new-state     state)
 (old-symbol    tape-symbol dummy empty-cell)
@@ -186,8 +181,7 @@ depends linearly on the size of the content.}
              (dummy        any/c)
              (move (or/c 'R 'L 'N)))]{
 Procedure @rack[make-Turing-machine] returns a procedure that emulates a Turing-machine.
-Before the Turing-machine procedure is produced
-the arguments are checked to satisfy the following conditions,
+Before the procedure is produced the arguments are checked to satisfy the following conditions,
 equality to be understood in the sense of @rack[equal?].
 
 @itemlist[
@@ -197,35 +191,41 @@ equality to be understood in the sense of @rack[equal?].
  @item{Each @rack[new-state] must appear as the @rack[old-state] of a @rack[rule]
        or must be one of the @rack[final-states].}
  @item{There must be at least one rule whose @rack[old-state] is the @rack[initial-state].}
+ @item{An @rack[old-state] must not be a @rack[final-state].} 
  @item{The @rack[rules] must have distinct combinations @rack[(old-state old-symbol)].}
- @item{A @rack[move] must be @rack['R], @rack['L] or @rack['N].@(linebreak)
-@rack[move] @rack['L] indicates that the read-write-head moves to the left
-(or the tape to the right).@(linebreak)
-@rack[move] @rack['R] indicates that the read-write-head moves to the right
-(or the tape to the left).@(linebreak)
-@rack[move] @rack['N] indicates that that the read-write-head (or the tape) does not move.}]
+ @item{A @rack[move] must be @rack['R], @rack['L] or @rack['N].@(linebreak)}]
 
-A rule of the form
+The @rack[rules] are interpreted as follows,
+where equality is to be understood in the sense of @rack[equal?].
+Let @rack[current-state] be the current @rack[state] of the control unit and
+@rack[current-element] the element currently below the read/write-head.
 
-@inset[@rack[((old-state old-symbol) (new-state new-symbol move))]]
-
-where the @rack[old-symbol] is not the @rack[dummy]
-applies when the @rack[old-state] equals the current @rack[state]
-and the element currently under the read/write-head equals the @rack[old-symbol].
-Such a @rack[rule] prevails over a rule with the same @rack[old-state] and
-whose @rack[old-symbol] is the @rack[dummy].
-A rule of the form
-
-@inset[@rack[((old-state dummy) (new-state new-symbol move))]]
-
-accepts every arbitrary element currently under the read/write-head.
-A rule of the form
-
-@inset[@rack[((old-state old-symbol) (new-state dummy move))]]
-
-does not alter the element under the the read/write-head.
-However, if the element is an @rack[empty-cell],
-it is replaced by a @rack[blank].
+@itemlist[
+@item{A Turing-machine halts when its @rack[current-state] equals a @rack[final-state].}
+@item{A @rack[rule] applies if its @rack[old-state] equals the @rack[current-state] and
+the @rack[old-symbol] matches the @rack[current-element].}
+@item{The @rack[dummy] matches every @rack[current-element].
+Every other @rack[old-symbol] matches only when equal to the @rack[current-element].}
+@item{A @rack[rule] whose @rack[old-state] equals the @rack[current-state] and
+whose @rack[old-symbol] equals the @rack[current-element]
+prevails over a @rack[rule] with the same @rack[old-state] and
+whose @rack[old-symbol] is the @rack[dummy].}
+@item{When a rule is applied, the @rack[current-state] is changed to the @rack[new-state].}
+@item{If the @rack[new-symbol] is not the @rack[dummy],
+the @rack[current-element] is replaced by the @rack[new-symbol].}
+@item{If the @rack[new-symbol] is the @rack[dummy] and
+the @rack[current-element] is not the @rack[empty-cell],
+the @rack[current-element] remains as it is.}
+@item{If the @rack[new-symbol] is the @rack[dummy] and
+the @rack[current-element] is the @rack[empty-cell],
+the @rack[current-element] is replaced by the @rack[blank].}
+@item{The read/write-head may be moved depending on the @rack[move]
+of the @rack[rule].@(linebreak)
+@rack[move] @rack['L] indicates a move to the left.@(linebreak)
+@rack[move] @rack['R] indicates a move to the right.@(linebreak)
+@rack[move] @rack['N] indicates that that the read-write-head is not moved.}
+@item{When no applying rule can be found,
+the procedure emulating the Turing-machine halts by raising an exception.}]
 
 @(elemtag "Turing-machine" "")
 The procedure returned by @rack[make-Turing-machine],
@@ -237,10 +237,9 @@ say @elemref["Turing-machine" "Turing-machine"], is called as follows:
 The @rack[output] shows the content of the tape after the machine has reached a
 @rack[final-state], but without
 heading or trailing @rack[blank]s or @rack[empty-cell]s.
-If during the execution of the @elemref["Turing-machine" "Turing-machine"]
-no rule can be found matching the current @rack[state] and the
-element below the read/write-head, the @elemref["Turing-machine" "Turing-machine"]
-halts by raising an exception.}
+If during the execution of the @elemref["Turing-machine" "Turing-machine"] no rule can be found
+matching its current @rack[state] and the element below the read/write-head,
+the @elemref["Turing-machine" "Turing-machine"] halts by raising an exception.}
 
 @defparam*[Turing-report on/off any/c boolean?]{
 If @rack[on/off] is not @rack[#f], the new value is @rack[#t].
@@ -297,8 +296,6 @@ The initial value is @rack[0].
 For example, when expecting more than 9 but less than 100 moves,
 use @rack[(Turing-move-width 2)] in order to produce a well alligned report
 with all move-counts having the same number of characters.}
-
-@(define (tt x) (nonbreaking (element 'tt x)))
 
 @section{Examples}
 
@@ -530,7 +527,7 @@ the @element['tt "+"] is removed,
 (code:comment "Check that list-of-bits->exact-nonnegative-integer is")
 (code:comment "the inverse of exact-nonnegative-integer->list-of-bits.")
 (code:comment "")
-(for*/and ((n (in-range 0 20)))
+(for*/and ((n (in-range 0 100)))
  (= n
   (list-of-bits->exact-nonnegative-integer
    (exact-nonnegative-integer->list-of-bits n))))
