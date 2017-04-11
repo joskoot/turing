@@ -169,8 +169,9 @@ Module make-Turing-machine.scrbl produces documentation.
  (define (Turing-machine-proper state tape)
   (cond
    ((set-member? set-of-final-states state)
-    (values state (tape->list tape)))
+    (values nr-of-moves state (tape->list tape)))
    (else
+    (set! nr-of-moves (add1 nr-of-moves))
     (define old-tape-symbol (tape-get tape))
     (define-values (new-state new-tape-symbol move) (find-rule state (tape-get tape) tape))
     (define new-tape
@@ -187,9 +188,8 @@ Module make-Turing-machine.scrbl produces documentation.
       (pad-new-symbol new-tape-symbol)
       move
       new-tape))
-    (set! nr-of-moves (add1 nr-of-moves))
     (when (and (Turing-limit) (not (set-member? final-states new-state)))
-     (when (> nr-of-moves (Turing-limit))
+     (when (>= nr-of-moves (Turing-limit))
       (error 'Turing-machine
        "max nr of moves (~s) will be exceeded~n~
         move-counter: ~s~n~
@@ -269,7 +269,7 @@ Module make-Turing-machine.scrbl produces documentation.
   (when (Turing-report)
    (set! initial-padding (make-string (+ initial-padding-length (min 1 (Turing-move-width))) #\.))
    (printf "~a initial tape: ~s~n" initial-padding tape))
-  (set! nr-of-moves 1)
+  (set! nr-of-moves 0)
   (Turing-machine-proper initial-state tape))
 
  Turing-machine)
