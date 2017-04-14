@@ -55,7 +55,8 @@
 
 @section{Introduction}
 This document describes procedure @rack[make-Turing-machine].
-It is a tool for the construction of procedures that emulate single tape Turing-machines.
+It is a tool for the construction of procedures that emulate single tape
+@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"].
 The reader is supposed to be familiar with Turing-machines.
 The @itel["internal-state"] is the internal state of the control unit.
 The @tt{state} of a Turing-machine as a whole is defined such as to include
@@ -174,11 +175,11 @@ Which @itel{rule} applies is found in constant time because the
 (new-state     internal-state)
 (old-symbol    tape-symbol dummy empty-cell)
 (new-symbol    tape-symbol dummy))
-#:contracts ((internal-state        any/c)
-             (tape-symbol  any/c)
-             (empty-cell   any/c)
-             (dummy        any/c)
-             (move (or/c 'R 'L 'N)))]{
+#:contracts ((internal-state any/c)
+             (   tape-symbol any/c)
+             (    empty-cell any/c)
+             (         dummy any/c)
+             (          move (or/c 'R 'L 'N)))]{
 Procedure @rack[make-Turing-machine] returns a procedure that emulates a Turing-machine.
 Before the machine is produced the arguments are checked to satisfy the following conditions,
 equality or being distinct to be understood in the sense of @rack[equal?].
