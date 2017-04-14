@@ -196,7 +196,7 @@ Module make-Turing-machine.scrbl produces documentation.
   (cond
    ((hash-ref history (list state (tape-reversed-head tape) (tape-tail tape)) #f)
     (error 'Turing-machine
-     "repeated state + tape-content~n~
+     "infinite loop because of repeated state~n~
       internal state: ~s~n~
       tape: ~s"
      state tape))
