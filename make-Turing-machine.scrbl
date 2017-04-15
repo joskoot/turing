@@ -101,7 +101,7 @@ Moving the read/write-head has the same effect as keeping it in fixed position a
 the tape in opposit direction.}
 
 When changing the @itel["internal-state"] of the control unit,
-its @itel["old-state"] is mutated to a @itel["new-state"].
+its internal @itel["old-state"] is mutated to an internal @itel["new-state"].
 The @itel["new-state"] can be the same as the @itel["old-state"].
 The machine refuses to write a @itel["dummy"] nor can it erase a @itel["tape-symbol"]
 by replacing it by an @itel["empty-cell"].
@@ -125,7 +125,9 @@ The @itel["dummy"] is for use in @itel["rules"] only.
 The @itel["rules"] describe how the control unit makes its moves.
 The machine repeats moves until a @itel["final-state"] is obtained,
 or may remain making moves forever if it never reaches a @itel["final-state"].
-It is possible to put a maximum to the number of moves.
+It is possible to put a maximum on the number of moves
+such as to raise an exception when the machine is going to exceed the maximum allowed number of
+moves.
 See parameter @rack[Turing-limit].
 It may happen that there is no @itel["rule"] specifying which move to make
 for a given combination of @itel["internal-state"] and current element.
@@ -152,7 +154,8 @@ The output never contains an @itel["empty-cell"] or a @itel["dummy"].
 
 @note{The internal representation of the tape and the rules is such that
 each move is made in constant time,
-independent of the size of the content of the tape and the position of the read/write-head.
+independent of the number of @itel{rules},
+the size of the content of the tape and the position of the read/write-head.
 In fact procedure @rack[make-Turing-machine] internaly always has the @rack[head]
 in reversed order and puts it in correct order only when printing the content of the tape.
 The maximal time needed to prepare the content of the tape or the @tt["output"] after reaching
@@ -301,9 +304,11 @@ the @seclink["Turing-machine" "Turing-machine"] halts by raising an exception. F
 (code:line (TM '(y)) (code:comment "Error"))]
 
 Because of the Halting problem, not all infinite loops can be detected.
+Some, but not all infinite loops can be deteceted.
+Therefore the @itel{rules} are in now way inspected for infinite loops.
 For example a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 produced by @rack[make-Turing-machine]
-does not try to detect the following infinite loop:
+does not try to detect the following infinite loop, although in this case it would be possible:
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
@@ -313,7 +318,7 @@ does not try to detect the following infinite loop:
 (Turing-report #t)
 (Turing-limit 9)
 (TM '())]
-
+ 
 For more sensible examples see the @seclink["Examples" "next section"].}}]
 
 @section{Examples}
