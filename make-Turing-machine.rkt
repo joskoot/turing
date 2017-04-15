@@ -40,19 +40,11 @@ Module make-Turing-machine.scrbl produces documentation.
     (list? (car x)) (= (length (car x)) 2)
     (list? (cadr x)) (= (length (cadr x)) 3)
     (let*
-     ((key (car x))
-      (instr (cadr x))
-      (old-state (car key))
-      (old-symbol (cadr key))
-      (new-state (car instr))
-      (new-symbol (cadr instr))
-      (move (caddr instr)))
-     (and (member move '(R L N))
-      (not
-       (and (equal? old-state new-state)
-        (equal? old-symbol dummy)
-        (equal? new-symbol dummy)
-        (equal? move 'N)))))))
+     ((new-state (rule-new-state x))
+      (move (rule-move x)))
+     (and
+      (member move '(R L N))
+      (not (equal? new-state empty-cell))))))
   (when (equal? empty-cell blank)
    (error 'make-Turing-machine "empty-cell must differ from blank: ~s" blank))
   (unless (list? final-states)
@@ -64,33 +56,7 @@ Module make-Turing-machine.scrbl produces documentation.
     (error 'make-Turing-machine "incorrect rule: ~s" rule)))
   (define duplicate (check-duplicates (map car rules)))
   (when duplicate
-   (error 'make-Turing-machine "duplicate move-selector: ~s" duplicate))
-  (define states (apply set (append final-states (map rule-old-state rules))))
-  (unless (set-member? states initial-state)
-   (error 'Turing-machine "No rule found for initial-state ~s" initial-state))
-  (for ((rule (in-list rules)))
-   (define new-state (rule-new-state rule))
-   (define old-state (rule-old-state rule))
-   (define old-symbol (rule-old-symbol rule))
-   (define new-symbol (rule-new-symbol rule))
-   (unless (set-member? states new-state)
-    (error 'make-Turing-machine "new state in rule ~s not final nor accepted by any rule" rule))
-   (when (set-member? final-states old-state)
-    (error 'make-Turing-machine "old state in rule ~s must not be a final state" rule))
-   (when (equal? new-symbol empty-cell)
-    (error 'make-Turing-machine "empty-cell ~s not allowed as new symbol in rule ~s"
-           new-symbol rule))
-   (define move (rule-move rule))
-   (unless (or (eq? move 'R) (eq? move 'L) (eq? move 'N))
-    (error 'make-Turing-machine "move must be R or L or N, given: ~s in rule: ~s" move rule))
-   (unless (or
-            (not (equal? move 'N))
-            (not (equal? old-state new-state))
-            (equal? old-symbol empty-cell)
-            (and
-             (not (equal? new-symbol old-symbol))
-             (not (equal? new-symbol dummy))))
-    (error 'make-Turing-machine "the following rule does not alter the state: ~s" rule))))
+   (error 'make-Turing-machine "duplicate move-selector: ~s" duplicate)))
 
  (check-arguments)
 
@@ -190,20 +156,11 @@ Module make-Turing-machine.scrbl produces documentation.
 
  (define (remove-trailing-blanks lst) (reverse (remove-heading-blanks (reverse lst))))
 
- (define history #f)
- 
  (define (Turing-machine-proper state tape)
   (cond
-   ((hash-ref history (list state (tape-reversed-head tape) (tape-tail tape)) #f)
-    (error 'Turing-machine
-     "infinite loop because of repeated state~n~
-      internal state: ~s~n~
-      tape: ~s"
-     state tape))
    ((set-member? set-of-final-states state)
     (values nr-of-moves state (tape->list tape)))
    (else
-    (hash-set! history (list state (tape-reversed-head tape) (tape-tail tape)) #t)
     (set! nr-of-moves (add1 nr-of-moves))
     (define old-tape-symbol (tape-get tape))
     (define-values (new-state new-tape-symbol move) (find-rule state (tape-get tape) tape))
@@ -227,11 +184,10 @@ Module make-Turing-machine.scrbl produces documentation.
       (>= nr-of-moves (Turing-limit))
       (not (set-member? final-states new-state)))
      (error 'Turing-machine
-      "max nr of moves (~s) will be exceeded~n~
+      "no final state within max nr of moves~n~
        move-counter: ~s~n~
        current state: ~s~n~
        current content: ~s"
-      (Turing-limit)
       nr-of-moves
       new-state
       new-tape))
@@ -239,7 +195,9 @@ Module make-Turing-machine.scrbl produces documentation.
 
  (define (pad-move-counter n)
   (define str (format "~s" n))
-  (string-append (make-string (max 0 (- (Turing-move-count-width) (string-length str))) #\space) str))
+  (string-append
+   (make-string (max 0 (- (Turing-move-count-width) (string-length str))) #\space)
+   str))
 
  (define nr-of-moves #f)
 
@@ -307,7 +265,6 @@ Module make-Turing-machine.scrbl produces documentation.
     (make-string (+ initial-padding-length (min 1 (Turing-move-count-width))) #\.))
    (printf "~a initial tape: ~s~n" initial-padding tape))
   (set! nr-of-moves 0)
-  (set! history (make-hash))
   (Turing-machine-proper initial-state tape))
 
  Turing-machine)
