@@ -100,11 +100,7 @@ while the read/write-head remains in fixed position.
 Moving the read/write-head has the same effect as keeping it in fixed position and moving
 the tape in opposit direction.}
 
-When changing the @itel["internal-state"] of the control unit,
-its internal @itel["old-state"] is mutated to an internal @itel["new-state"].
-The @itel["new-state"] can be the same as the @itel["old-state"].
-The machine refuses to write a @itel["dummy"] nor can it erase a @itel["tape-symbol"]
-by replacing it by an @itel["empty-cell"].
+The machine never writes a @itel["dummy"] or @itel["empty-cell"].
 It can erase the current element by writing a @itel["blank"], which is a @itel["tape-symbol"].
 @itel["Empty-cells"] are used only to extend the tape
 at the left or at the right of the current content.
@@ -147,12 +143,12 @@ Hence the Turing-machine will not be confused when the intersection of the set o
 or when an @itel["internal-state"] equals the @itel["dummy"] or an @itel["empty-cell"].
 However, this may confuse a human reader.
 After reaching a @itel["final-state"] the Turing-machine
-returns its output as @rack[(append head tail)],
+returns its @tt{output} as @rack[(append head tail)],
 but without heading and trailing @itel["empty-cell"] or @itel["blanks"].
-The output can contain @itel["blanks"] but not at the start or the end.
-The output never contains an @itel["empty-cell"] or a @itel["dummy"].
+The @tt{output} can contain @itel["blanks"] but not at the start or the end.
+The @tt{output} never contains an @itel["empty-cell"] or a @itel["dummy"].
 
-@note{The internal representation of the tape and the rules is such that
+The internal representation of the tape and the rules is such that
 each move is made in constant time,
 independent of the number of @itel{rules},
 the size of the content of the tape and the position of the read/write-head.
@@ -161,7 +157,7 @@ in reversed order and puts it in correct order only when printing the content of
 The maximal time needed to prepare the content of the tape or the @tt["output"] after reaching
 a @itel["final-state"] depends linearly on the size of the content.
 Which @itel{rule} applies is found in constant time because the
-@itel{rules} are kept in two hash-tables.}
+@itel{rules} are kept in two hash-tables.
 
 @section{Procedures}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
@@ -215,7 +211,7 @@ the current element is not the @rack[empty-cell],
 the current element remains as it is.}
 @item{If the @rack[new-symbol] is the @rack[dummy] and
 the current element is the @rack[empty-cell],
-the current element is replaced by the @rack[blank].}
+the current element is replaced by a @rack[blank].}
 @item{The read/write-head may be moved depending on the @rack[move]
 of the @rack[rule].@(linebreak)
 @rack[move] @rack['L] indicates a move to the left.@(linebreak)
@@ -234,8 +230,8 @@ Each line of the report shows:
 
 @itemlist[
 @item{The move counter, starting from 1.}
-@item{The @rack[old-state].}
-@item{The @rack[new-state], possibly the same as the @rack[old-state].}
+@item{The @rack[old-state] of the control unit.}
+@item{The @rack[new-state] of the control unit, possibly the same as the @rack[old-state].}
 @item{The @rack[tape-symbol] (or @rack[empty-cell]) encountered before replacing it.}
 @item{The @rack[tape-symbol] that is written, possibly the same one as just read.}
 @item{The @rack[move] of the read/write-head (@rack['R], @rack['L] or @rack['N]).}
@@ -253,20 +249,7 @@ a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 halts with an exception when it does not reach a @rack[final-state] within n or less moves.
 The initial value is @rack[#f].
 When @rack[n] is not an @rack[exact-positive-integer?],
-the parameter is set to hold @rack[#f].} Example:
-
-@interaction[
-(require racket "make-Turing-machine.rkt")
-(define rules
-'(((1 _) (2 _ N))
-  ((2 _) (3 _ N))
-  ((3 _) (4 _ N))
-  ((4 _) (T _ N))))
-(define TM (make-Turing-machine '1 '(T) 'B 'b '_ rules))
-(Turing-report #t)
-(parameterize ((Turing-limit 4)) (TM '()))
-(code:comment "The following produces an error:")
-(parameterize ((Turing-limit 3)) (TM '()))]
+the parameter is set to hold @rack[#f].}
 
 @defparam*[Turing-move-count-width n exact-nonnegative-integer? exact-nonnegative-integer?]{
 In a report the move counter is padded with spaces such as to take @rack[n] characters.
@@ -276,13 +259,14 @@ For example, when expecting more than 9 but less than 100 moves,
 use @rack[(Turing-move-count-width 2)] in order to produce a well alligned report
 with all move-counts having the same number of characters.}
 
-@section[#:tag "Turing-machine"]{Calling a Turing-machine}
+@section[#:tag "Turing-machine"]{Running a Turing-machine}
 A procedure returned by @rack[make-Turing-machine],
-say @seclink["Turing-machine" "Turing-machine"], is called as follows:
+say @(seclink "Turing-machine" (element 'tt "Turing-machine")), is called as follows:
 
-@defproc[#:kind "procedure" #:link-target? "Turing-machine"
+@defproc[#:kind "procedure" #:link-target? #f
 (Turing-machine (input (listof tape-symbol)))
 (values nr-of-moves final-state output)]{
+@element['tt @bold{Turing-machine}] : produced by procedure @rack[make-Turing-machine]@(linebreak)
 @rack[nr-of-moves] : @rack[exact-positive-integer?]@(linebreak)
 @rack[output] : @rack[(listof tape-symbol)]
 
@@ -290,9 +274,10 @@ The @rack[output] shows the content of the tape after the machine has reached a
 @rack[final-state], but without
 heading or trailing @rack[blank]s or @rack[empty-cell].
 
-If during the execution of the @seclink["Turing-machine" "Turing-machine"] no rule can be found
-matching its current @rack[internal-state] and the current element,
-the @seclink["Turing-machine" "Turing-machine"] halts by raising an exception. For example:
+If during the execution of the @(seclink "Turing-machine" (element 'tt "Turing-machine"))
+no rule can be found matching its current @rack[internal-state] and the current element,
+the @(seclink "Turing-machine" (element 'tt "Turing-machine")) halts by raising an exception.
+For example:
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
@@ -300,15 +285,20 @@ the @seclink["Turing-machine" "Turing-machine"] halts by raising an exception. F
             'A '(T) 'E 'B '_
             '(((A x) (T _ N)))))
 (Turing-report #t)
-(code:line (TM '(x)) (code:comment "Ok"))
 (code:line (TM '(y)) (code:comment "Error"))]
 
-Because of the Halting problem, not all infinite loops can be detected.
-Some, but not all infinite loops can be deteceted.
-Therefore the @itel{rules} are in now way inspected for infinite loops.
-For example a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
-produced by @rack[make-Turing-machine]
-does not try to detect the following infinite loop, although in this case it would be possible:
+Many @(seclink "Turing-machine" (element 'tt "Turing-machines")) never halt,
+sometimes depending on the @rack[rules] only,
+sometimes depending on both the @rack[rules] and the @rack[input].
+In some cases the problem can be predicted by looking at the @rack[rules]
+or can be detected while a @(seclink "Turing-machine" (element 'tt "Turing-machine")) is running.
+However, because of the @bold{Halting Problem} it is not possible to avoid the problem in all cases
+without putting a @racketlink[Turing-limit "limit"] on the allowed number of moves.
+Procedure @rack[make-Turing-machine] and the
+@(seclink "Turing-machine" (element 'tt "Turing-machines"))
+it produces do no checks at all against non-halting.
+For example, the following trivial @(seclink "Turing-machine" (element 'tt "Turing-machine"))
+clearly will loop forever with arbitrary input:
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
@@ -317,9 +307,21 @@ does not try to detect the following infinite loop, although in this case it wou
             '(((A _) (A _ N)))))
 (Turing-report #t)
 (Turing-limit 9)
-(TM '())]
- 
-For more sensible examples see the @seclink["Examples" "next section"].}}]
+(TM '(x))]
+
+In this example @rack[rule] @rack['((A _) (A _ N))] alone already is easily understood
+to give rise to an infinite loop. While the @rack[TM] is running,
+its state (content of the tape and the position of the read/write-head included)
+remains the same. Procedure @rack[make-Turing-machine] could be adapted such as to
+predict the infinite loop just by checking the rules.
+It also could be adapted such as to produce a
+@(seclink "Turing-machine" (element 'tt "Turing-machine"))
+that can detect a repeated state. These adaptations have not been made,
+for the Halting Problem implies that there always remain cases
+in which a non-halting case cannot be predicted
+by procedure @rack[make-Turing-machine] and cannot be detected while a
+@(seclink "Turing-machine" (element 'tt "Turing-machine")) is running.
+}}]
 
 @section{Examples}
 
@@ -392,7 +394,7 @@ Letter @tt["E"] is the @itel["empty-cell"],
 (Turing-machine '(+ x +))
 (Turing-machine '(x x + x + x))
 (code:comment "")
-(code:comment "The following examples yield internal-state F.")
+(code:comment "The following examples yield final state F.")
 (code:comment "")
 (Turing-machine '(z))
 (Turing-machine '(y x x z x x))
@@ -406,7 +408,7 @@ Letter @tt["E"] is the @itel["empty-cell"],
 
 @subsection{Binary addition}
 The following Turing-machine adds two natural numbers written in binary notation.
-The machine always terminates.
+The machine halts with every arbitrary input.
 A correct input is defined as follows:
 
 @inset{@verbatim[
@@ -415,10 +417,10 @@ operand = bit bit ...
 bit     = 0 | 1"]}
 
 An incorrect input yields final state @element['tt "F"].
-A correct input yields final state @element['tt "T"] and output
+A correct input yields final state @element['tt "T"] and @tt{output}
 @nonbreaking{@rack[(bit bit ...)]}
 showing the sum of the two operands.
-More precisely the output is @nonbreaking{@rack[(1 bit ...)]} or @rack[(0)],
+More precisely the @tt{output} is @nonbreaking{@rack[(1 bit ...)]} or @rack[(0)],
 id est, without leading zeros.
 Letter @tt["E"] is the @itel["empty-cell"],
 @tt["B"] the @itel["blank"] and @tt["_"] the @itel["dummy"].
@@ -560,8 +562,8 @@ the @element['tt "+"] is removed,
    (exact-nonnegative-integer->list-of-bits n)
    (list '+)
    (exact-nonnegative-integer->list-of-bits m)))
- (define-values (nr-of-moves internal-state output) (adder input))
- (and (eq? internal-state 'T)
+ (define-values (nr-of-moves final-state output) (adder input))
+ (and (eq? final-state 'T)
   (= (list-of-bits->exact-nonnegative-integer output) (+ n m))))]
 
 @subsection{Decimal addition}
@@ -603,7 +605,7 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
 (define TM (make-Turing-machine 0 '(T) 'E 'B '_ rules))
 (call-with-values
  (λ () (TM (reverse (map list '(0 0 9) '(0 0 9)))))
- (λ (nr-of-moves internal-state content) (reverse content)))
+ (λ (nr-of-moves final-state content) (reverse content)))
 (code:comment "")
 (code:comment "nr->lst takes an exact nonnegative integer and")
 (code:comment "returns its list of digits from least to most significant one.")
@@ -639,7 +641,7 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
 (code:comment "")
 (let ((n 9876) (m 987654))
  (parameterize ((Turing-report #t))
-  (let-values (((nr-of-moves internal-state output) (TM (prepare-input n m))))
+  (let-values (((nr-of-moves final-state output) (TM (prepare-input n m))))
    (define sum (output->nr output))
    (values sum (= sum (+ n m))))))
 (code:comment "")
@@ -648,11 +650,11 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
 (for/and ((k (in-range 0 1000)))
  (define n (random 1000000000))
  (define m (random 1000000000))
- (define-values (nr-of-moves internal-state output) (TM (prepare-input n m)))
- (and (= (output->nr output) (+ n m)) (eq? internal-state 'T)))]
+ (define-values (nr-of-moves final-state output) (TM (prepare-input n m)))
+ (and (= (output->nr output) (+ n m)) (eq? final-state 'T)))]
 
 @subsection{Busy beaver}
-3 state busy beaver. In fact there are four internal-states, but final state @tt{T} does not count.
+3 state busy beaver. In fact there are four states, but final state @tt{T} does not count.
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
