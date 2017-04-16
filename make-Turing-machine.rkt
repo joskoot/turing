@@ -1,6 +1,6 @@
 #lang racket
 
-(provide make-Turing-machine Turing-report Turing-limit Turing-move-count-width)
+(provide make-Turing-machine Turing-report Turing-limit Turing-pad)
 
 #|==================================================================================================
 
@@ -14,9 +14,9 @@ Module make-Turing-machine.scrbl produces documentation.
 
 (define (move-counter-width-guard x)
  (if (exact-nonnegative-integer? x) x
-  (raise-argument-error 'Turing-move-count-width "exact-nonnegative-integer" x)))
+  (raise-argument-error 'Turing-pad "exact-nonnegative-integer" x)))
 
-(define Turing-move-count-width (make-parameter 0 move-counter-width-guard))
+(define Turing-pad (make-parameter 0 move-counter-width-guard))
 
 (define (make-Turing-machine
          initial-state
@@ -170,7 +170,7 @@ Module make-Turing-machine.scrbl produces documentation.
       ((L) (move-L (tape-put tape new-tape-symbol)))
       ((N) (tape-put tape new-tape-symbol))))
     (when (Turing-report)
-     (printf "move ~a, state ~a -> ~a, symbol ~a -> ~a, move: ~s, new tape: ~s~n"
+     (printf "move ~a, state ~a -> ~a, symbol ~a -> ~a, move ~s, new tape ~s~n"
       (pad-move-counter nr-of-moves)
       (pad-old-state state)
       (pad-new-state new-state)
@@ -196,7 +196,7 @@ Module make-Turing-machine.scrbl produces documentation.
  (define (pad-move-counter n)
   (define str (format "~s" n))
   (string-append
-   (make-string (max 0 (- (Turing-move-count-width) (string-length str))) #\space)
+   (make-string (max 0 (- (Turing-pad) (string-length str))) #\space)
    str))
 
  (define nr-of-moves #f)
@@ -244,7 +244,7 @@ Module make-Turing-machine.scrbl produces documentation.
      (else (values new-state new-symbol move))))))
 
  (define initial-padding-length
-  (+ 37
+  (+ 36
    (max 1 old-symbol-width)
    (max 1 new-symbol-width)
    (max 1 old-state-width)
@@ -262,8 +262,8 @@ Module make-Turing-machine.scrbl produces documentation.
   (define tape (list->tape input))
   (when (Turing-report)
    (set! initial-padding
-    (make-string (+ initial-padding-length (min 1 (Turing-move-count-width))) #\.))
-   (printf "~a initial tape: ~s~n" initial-padding tape))
+    (make-string (+ initial-padding-length (min 1 (Turing-pad))) #\.))
+   (printf "~a initial tape ~s~n" initial-padding tape))
   (set! nr-of-moves 0)
   (Turing-machine-proper initial-state tape))
 

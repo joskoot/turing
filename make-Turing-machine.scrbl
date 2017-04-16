@@ -62,22 +62,15 @@ The @itel["internal-state"] is that of the control unit.
 The state of a Turing-machine as a whole is defined such as to include
 the @itel["internal-state"],
 the current content of the tape and the current position of the read/write-head.
+The first element of the content is considered to be at the left,
+the last element to be at the right.
 The current element is the one currently below the read/write-head.
-The combination of the current content of the tape and 
-the current position of the read/write-head is
-represented by two lists: @tt["head"] and @tt["tail"].
-The content of the represented tape is
-
-@inset[@rack[(append head tail)]]
-
-The @tt["tail"] never is empty.
-Its first element is the current element.
 The elements of the content are @itel["tape-symbols"],
 but the first or last element can be an @itel["empty-cell"],
 which is not a @itel["tape-symbol"].
-Initially the @rack[head] is empty and the @rack[tail] is the @itel["input"].
+Initially the read(write-head is positioned at the leftmost element of the @itel["input"].
 If the @itel["input"] is empty,
-the @tt["tail"] initially consists of one @itel["empty-cell"].
+content of the tape initially consists of one @itel["empty-cell"].
 The control unit makes moves according to its @itel["rules"].
 A move is determined by the @itel["internal-state"]
 of the control unit and the current element under the read/write-head.
@@ -91,9 +84,7 @@ the current element is an @itel["empty-cell"],
 which always is replaced by a @itel["tape-symbol"].
 An @itel["empty-cell"] never remains empty when the machine has not yet
 reached a @itel["final-state"].}
-@item{Optionally moving the read/write-head one step to the right or to the left.
-We consider the first element of the content of the tape to be at the left and the last element
-to be at the right.}]
+@item{Optionally moving the read/write-head one step to the right or to the left.}]
 
 @note{In real life tape equipment usually the tape is moving
 while the read/write-head remains in fixed position.
@@ -122,8 +113,7 @@ The @itel["rules"] describe how the control unit makes its moves.
 The machine repeats moves until a @itel["final-state"] is obtained,
 or may remain making moves forever if it never reaches a @itel["final-state"].
 It is possible to put a maximum on the number of moves
-such as to raise an exception when the machine is going to exceed the maximum allowed number of
-moves.
+such as to raise an exception when the machine needs more moves.
 See parameter @rack[Turing-limit].
 It may happen that there is no @itel["rule"] specifying which move to make
 for a given combination of @itel["internal-state"] and current element.
@@ -142,22 +132,17 @@ Hence the Turing-machine will not be confused when the intersection of the set o
 @itel["internal-states"] and the set of @itel["tape-symbols"] is not empty
 or when an @itel["internal-state"] equals the @itel["dummy"] or an @itel["empty-cell"].
 However, this may confuse a human reader.
-After reaching a @itel["final-state"] the Turing-machine
-returns its @tt{output} as @rack[(append head tail)],
+After reaching a @itel["final-state"] the Turing-machine returns its @tt{output}.
+which consists of the content of the tape,
 but without heading and trailing @itel["empty-cell"] or @itel["blanks"].
 The @tt{output} can contain @itel["blanks"] but not at the start or the end.
 The @tt{output} never contains an @itel["empty-cell"] or a @itel["dummy"].
 
-The internal representation of the tape and the rules is such that
-each move is made in constant time,
-independent of the number of @itel{rules},
+@note{The internal representation of the tape and the rules is such that
+each move is made in constant time, independent of the number of @itel{rules},
 the size of the content of the tape and the position of the read/write-head.
-In fact procedure @rack[make-Turing-machine] internaly always has the @rack[head]
-in reversed order and puts it in correct order only when printing the content of the tape.
-The maximal time needed to prepare the content of the tape or the @tt["output"] after reaching
-a @itel["final-state"] depends linearly on the size of the content.
-Which @itel{rule} applies is found in constant time because the
-@itel{rules} are kept in two hash-tables.
+The maximal time needed to write the content of the tape or the @tt["output"] after reaching
+a @itel["final-state"] depends linearly on the size of the content.}
 
 @section{Procedures}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
@@ -236,8 +221,9 @@ Each line of the report shows:
 @item{The @rack[tape-symbol] that is written, possibly the same one as just read.}
 @item{The @rack[move] of the read/write-head (@rack['R], @rack['L] or @rack['N]).}
 @item{The new position of the read/write-head and the new content of the tape shown as
-the result of @rack[(list head tail)],
-the first element of the @rack[tail] marking the new position of the read/write-head.}]
+@element['tt "((h ...) (t ...))"],
+where @element['tt "(h ... t ...)"] is the content of the tape and the leftmost
+@element['tt "t"] marks the current position of the read/write-head.}]
 
 The report is best readable when the printed forms of @rack[internal-state]s
 do not vary much in their lengths.
@@ -251,12 +237,12 @@ The initial value is @rack[#f].
 When @rack[n] is not an @rack[exact-positive-integer?],
 the parameter is set to hold @rack[#f].}
 
-@defparam*[Turing-move-count-width n exact-nonnegative-integer? exact-nonnegative-integer?]{
+@defparam*[Turing-pad n exact-nonnegative-integer? exact-nonnegative-integer?]{
 In a report the move counter is padded with spaces such as to take @rack[n] characters.
 Move counts requiring more characters are not truncated.
 The initial value is @rack[0].
 For example, when expecting more than 9 but less than 100 moves,
-use @rack[(Turing-move-count-width 2)] in order to produce a well alligned report
+use @rack[(Turing-pad 2)] in order to produce a well alligned report
 with all move-counts having the same number of characters.}
 
 @section[#:tag "Turing-machine"]{Running a Turing-machine}
@@ -307,20 +293,22 @@ clearly will loop forever with arbitrary input:
             '(((A _) (A _ N)))))
 (Turing-report #t)
 (Turing-limit 9)
-(TM '(x))]
+(TM '())]
 
-In this example @rack[rule] @rack['((A _) (A _ N))] alone already is easily understood
-to give rise to an infinite loop. While the @rack[TM] is running,
+In this example @rack[rule] @rack['((A _) (A _ N))] alone already implies an infinite loop.
+While the @rack[TM] is running,
 its state (content of the tape and the position of the read/write-head included)
-remains the same. Procedure @rack[make-Turing-machine] could be adapted such as to
-predict the infinite loop just by checking the rules.
+never changes after the first move.
+
+@note{Procedure @rack[make-Turing-machine] could be adapted such as to
+predict the infinite loop of the above example just by checking the rules.
 It also could be adapted such as to produce a
 @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 that can detect a repeated state. These adaptations have not been made,
 for the Halting Problem implies that there always remain cases
 in which a non-halting case cannot be predicted
 by procedure @rack[make-Turing-machine] and cannot be detected while a
-@(seclink "Turing-machine" (element 'tt "Turing-machine")) is running.
+@(seclink "Turing-machine" (element 'tt "Turing-machine")) is running.}
 }}]
 
 @section{Examples}
@@ -378,7 +366,7 @@ Letter @tt["E"] is the @itel["empty-cell"],
 (code:comment "")
 (define Turing-machine (make-Turing-machine '0 '(T F) 'E 'B '_ rules))
 (code:comment "")
-(Turing-move-count-width 2)
+(Turing-pad 2)
 (Turing-report #t)
 (code:comment "")
 (Turing-machine '())
@@ -512,7 +500,7 @@ the @element['tt "+"] is removed,
 (code:comment "")
 (define adder (make-Turing-machine '0 '(T F) 'E 'B '_ rules))
 (code:comment "")
-(Turing-move-count-width 2)
+(Turing-pad 2)
 (code:comment "")
 (parameterize ((Turing-report #t))
  (adder '(1 0 1 1 1 + 1 0 1 1)))
@@ -680,7 +668,7 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
   'dummy-not-used
   rules))
 (Turing-report #t)
-(Turing-move-count-width 2)
+(Turing-pad 2)
 (TM '())]
 
 @larger{@larger{@bold{The end}}}
