@@ -91,7 +91,9 @@ Moving the read/write-head has the same effect as keeping it in fixed position a
 the tape in opposit direction.}
 
 The machine never writes a @itel["dummy"] or @itel["empty-cell"].
-It can erase the current element by writing a @itel["blank"], which is a @itel["tape-symbol"].
+It cannot erase the current element,
+but can replace it by a @itel["blank"],
+which is a @itel["tape-symbol"].
 @itel["Empty-cells"] are used only to extend the tape
 at the left or at the right of the current content.
 When moving the read/write-head at the left of the begin of the content of the tape
@@ -105,8 +107,9 @@ In this situation either the @itel["empty-cell"] is immediately replaced by a
 @itel["tape-symbol"] during the next move or,
 when the last move has produced a @itel["final-state"],
 the machine immediately halts without replacing the @itel["empty-cell"].
-The distinction between an @itel["empty-cell"] and a @itel["blank"] makes sure that the
-Turing-machine always can find the start and the end of the current content of the tape.
+The distinction between an @itel["empty-cell"] and a @itel["blank"] makes sure that a
+Turing-machine always can be programmed with @itel{rules} such that it always can
+find the start and the end of the current content of the tape.
 The @itel["dummy"] is for use in @itel["rules"] only.
 The @itel["rules"] describe how the control unit makes its moves.
 The machine repeats moves until a @itel["final-state"] is obtained,
@@ -563,8 +566,8 @@ the @element['tt "+"] is removed,
 
 @subsection{Decimal addition}
 The following machine expects @nonbreaking{@element['tt "((n m) ...)"]} as input,
-where each @element['tt "n"] and each @element['tt "m"] is an exact integer between 0 (inclusive)
-and 10 (exclusive).
+where each @element['tt "n"] and each @element['tt "m"] is a decimal digit coded as
+an exact integer between 0 (inclusive) and 10 (exclusive).
 The machine adds the numbers @element['tt "n..."] and @element['tt "m..."] and returns the sum
 @element['tt "s..."]
 However the machine considers the first digit as the least significant one and

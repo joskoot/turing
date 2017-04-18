@@ -23,7 +23,8 @@ Module make-Turing-machine.scrbl produces documentation.
          final-states
          empty-cell
          blank
-         dummy rules)
+         dummy
+         rules)
 
  (define (rule-old-state rule) (car (car rule)))
  (define (rule-old-symbol rule) (cadr (car rule)))
@@ -105,7 +106,7 @@ Module make-Turing-machine.scrbl produces documentation.
 
  (define set-of-final-states (apply set final-states)) ; Uses equal? for comparison of states.
 
- ; Define printf-tape before defining the struct-type for tapes.
+ ; Define print-tape before defining the struct-type for tapes.
 
  (define (print-tape tape port mode)
   (define head (reverse (tape-reversed-head tape)))
