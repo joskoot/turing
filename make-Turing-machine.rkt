@@ -39,14 +39,18 @@ Module make-Turing-machine.scrbl produces documentation.
     (= (length x) 2)
     (list? (car x)) (= (length (car x)) 2)
     (list? (cadr x)) (= (length (cadr x)) 3)
-    (let*
-     ((new-state (rule-new-state x))
+    (let
+     ((new-symbol (rule-new-symbol x))
       (move (rule-move x)))
      (and
       (member move '(R L N))
-      (not (equal? new-state empty-cell))))))
+      (not (equal? new-symbol empty-cell))))))
   (when (equal? empty-cell blank)
    (error 'make-Turing-machine "empty-cell must differ from blank: ~s" blank))
+  (when (equal? empty-cell dummy)
+   (error 'make-Turing-machine "empty-cell must differ from dummy: ~s" dummy))
+  (when (equal? blank dummy)
+   (error 'make-Turing-machine "blank must differ from dummy: ~s" blank))
   (unless (list? final-states)
    (error 'make-Turing-machine "incorrect argument for final-states: ~s" final-states))
   (unless (list? rules)
@@ -126,8 +130,7 @@ Module make-Turing-machine.scrbl produces documentation.
 
  (define (move-R tape)
   (let ((reversed-head (tape-reversed-head tape)) (tail (tape-tail tape)))
-   (cond
-    ((null? tail) (make-tape reversed-head (list empty-cell)))
+   (cond ; The tail never is empty.
     ((null? (cdr tail)) (make-tape (cons (car tail) reversed-head) (list empty-cell)))
     (else (make-tape (cons (car tail) reversed-head) (cdr tail))))))
 
