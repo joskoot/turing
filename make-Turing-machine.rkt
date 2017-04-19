@@ -1,6 +1,6 @@
 #lang racket
 
-(provide make-Turing-machine Turing-report Turing-limit Turing-pad)
+(provide make-Turing-machine Turing-report Turing-limit)
 
 #|==================================================================================================
 
@@ -9,14 +9,14 @@ Module make-Turing-machine.scrbl produces documentation.
 ==================================================================================================|#
 
 (define Turing-report (make-parameter #f (λ (x) (and x #t))))
-(define (Turing-limit-guard x) (if (exact-positive-integer? x) x #f))
+
+(define (Turing-limit-guard x)
+ (cond
+  ((exact-positive-integer? x) x)
+  ((not x) #f)
+  (else (raise-argument-error 'Turing-limit "(or/c #f exact-poistive-integer?)" x))))
+ 
 (define Turing-limit (make-parameter #f Turing-limit-guard))
-
-(define (move-counter-width-guard x)
- (if (exact-nonnegative-integer? x) x
-  (raise-argument-error 'Turing-pad "exact-nonnegative-integer" x)))
-
-(define Turing-pad (make-parameter 0 move-counter-width-guard))
 
 (define (make-Turing-machine
          initial-state
@@ -67,39 +67,6 @@ Module make-Turing-machine.scrbl produces documentation.
 
  (define (print-width x) (string-length (format "~s" x)))
 
- (define-values
-  (old-state-width new-state-width old-symbol-width* new-symbol-width* old-dummy? new-dummy?)
-  (for/fold
-   ((old-state-width 0)
-    (new-state-width 0)
-    (old-symbol-width 0)
-    (new-symbol-width 0)
-    (old-dummy? #f)
-    (new-dummy? #f))
-   ((rule (in-list rules)))
-   (values
-    (max old-state-width (print-width (rule-old-state rule)))
-    (max new-state-width (print-width (rule-new-state rule)))
-    (max old-symbol-width (print-width (rule-old-symbol rule)))
-    (max new-symbol-width (print-width (rule-new-symbol rule)))
-    (or old-dummy? (equal? (rule-old-symbol rule) dummy))
-    (or new-dummy? (equal? (rule-new-symbol rule) dummy)))))
-
- (define old-symbol-width
-  (if old-dummy?
-   (max old-symbol-width* new-symbol-width*)
-   old-symbol-width*))
-
- (define new-symbol-width
-  (if new-dummy?
-   (max old-symbol-width* new-symbol-width*)
-   new-symbol-width*))
-
- (define (pad-old-state state) (pad state old-state-width))
- (define (pad-new-state state) (pad state new-state-width))
- (define (pad-old-symbol symbol) (pad symbol old-symbol-width))
- (define (pad-new-symbol symbol) (pad symbol new-symbol-width))
- 
  (define (pad x n)
   (define str (format "~s" x))
   (string-append (make-string (max 0 (- n (string-length str))) #\space) str))
@@ -122,8 +89,6 @@ Module make-Turing-machine.scrbl produces documentation.
  (define (tape-get tape) (car (tape-tail tape)))
 
  (define (tape-put tape tape-symbol)
-  (when (equal? tape-symbol empty-cell)
-   (error 'Turing-machine "empty-cell ~s not allowed to be written." empty-cell))
   (let ((reversed-head (tape-reversed-head tape)) (tail (tape-tail tape)))
    (cond
     ((null? tail) (make-tape reversed-head (list tape-symbol)))
@@ -160,6 +125,29 @@ Module make-Turing-machine.scrbl produces documentation.
 
  (define (remove-trailing-blanks lst) (reverse (remove-heading-blanks (reverse lst))))
 
+ (define report #f)
+
+ (define (exn-handler exn)
+  (when (Turing-report) (print-report))
+  (raise exn))
+
+ (define (print-report)
+  (define widths (make-vector 5 0))
+  (for* ((line (in-list report)) (i (in-range 0 5)))
+   (vector-set! widths i (max (vector-ref widths i) (print-width (vector-ref line i)))))
+  (define-values (w0 w1 w2 w3 w4) (apply values (vector->list widths)))
+  (for ((line (in-list (reverse report))))
+   (printf
+    "~a (state ~a -> ~a) (symbol ~a -> ~a) move ~s tape ~s~n"
+    (pad (vector-ref line 0) w0)
+    (pad (vector-ref line 1) w1)
+    (pad (vector-ref line 2) w2)
+    (pad (vector-ref line 3) w3)
+    (pad (vector-ref line 4) w4)
+    (vector-ref line 5)
+    (vector-ref line 6)))
+  (set! report '()))
+
  (define (Turing-machine-proper state tape)
   (cond
    ((set-member? set-of-final-states state)
@@ -174,14 +162,16 @@ Module make-Turing-machine.scrbl produces documentation.
       ((L) (move-L (tape-put tape new-tape-symbol)))
       ((N) (tape-put tape new-tape-symbol))))
     (when (Turing-report)
-     (printf "move ~a, state ~a -> ~a, symbol ~a -> ~a, move ~s, new tape ~s~n"
-      (pad-move-counter nr-of-moves)
-      (pad-old-state state)
-      (pad-new-state new-state)
-      (pad-old-symbol old-tape-symbol)
-      (pad-new-symbol new-tape-symbol)
-      move
-      new-tape))
+     (set! report
+      (cons
+       (vector
+        nr-of-moves
+        state new-state
+        old-tape-symbol
+        new-tape-symbol
+        move
+        new-tape)
+      report)))
     (when
      (and
       (Turing-limit)
@@ -196,12 +186,6 @@ Module make-Turing-machine.scrbl produces documentation.
       new-state
       new-tape))
     (Turing-machine-proper new-state new-tape))))
-
- (define (pad-move-counter n)
-  (define str (format "~s" n))
-  (string-append
-   (make-string (max 0 (- (Turing-pad) (string-length str))) #\space)
-   str))
 
  (define nr-of-moves #f)
 
@@ -247,15 +231,6 @@ Module make-Turing-machine.scrbl produces documentation.
       (values new-state (avoid-empty-cell tape-symbol) move))
      (else (values new-state new-symbol move))))))
 
- (define initial-padding-length
-  (+ 36
-   (max 1 old-symbol-width)
-   (max 1 new-symbol-width)
-   (max 1 old-state-width)
-   (max 1 new-state-width)))
-
- (define initial-padding #f)
-
  (define (Turing-machine input)
   (unless (list? input)
    (error 'Turing-machine "list expected, given: ~s" input))
@@ -265,11 +240,14 @@ Module make-Turing-machine.scrbl produces documentation.
    (error 'Turing-machine "dummy ~s not allowed in input" dummy))
   (define tape (list->tape input))
   (when (Turing-report)
-   (set! initial-padding
-    (make-string (+ initial-padding-length (min 1 (Turing-pad))) #\.))
-   (printf "~a initial tape ~s~n" initial-padding tape))
+   (printf "initial state: ~s, initial tape: ~s~n" initial-state tape))
   (set! nr-of-moves 0)
-  (Turing-machine-proper initial-state tape))
+  (set! report '())
+  (define-values (n-moves state output)
+   (with-handlers ((exn:fail? exn-handler))
+    (Turing-machine-proper initial-state tape)))
+  (when (Turing-report) (print-report))
+  (values n-moves state output))
 
  Turing-machine)
 
