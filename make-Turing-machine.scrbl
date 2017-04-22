@@ -58,9 +58,9 @@ This document describes procedure @rack[make-Turing-machine].
 It is a tool for the construction of procedures that emulate single tape
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"].
 The reader is supposed to be familiar with Turing-machines.
+Nevertheless, a survey of the terminology used in this document.
 The @itel["internal-state"] of a Turing-machine is that of the control unit.
-The state of a Turing-machine as a whole is defined such as to include
-the @itel["internal-state"],
+The state of a Turing-machine as a whole includes the @itel["internal-state"],
 the current content of the tape and the current position of the read/write-head.
 The first element of the content is considered to be at the left,
 the last element to be at the right.
@@ -107,9 +107,6 @@ In this situation either the @itel["empty-cell"] is immediately replaced by a
 @itel["tape-symbol"] during the next move or,
 when the last move has produced a @itel["final-state"],
 the machine immediately halts without replacing the @itel["empty-cell"].
-The distinction between an @itel["empty-cell"] and a @itel["blank"] makes sure that a
-Turing-machine always can be programmed with @itel{rules} that can
-find the start and the end of the current content of the tape.
 The @itel["dummy"] is for use in @itel["rules"] only.
 The @itel["rules"] describe how the control unit makes its moves.
 The machine repeats moves until a @itel["final-state"] is obtained,
@@ -177,11 +174,12 @@ equality or being distinct to be understood in the sense of @rack[equal?].
  @item{The @rack[blank], the @rack[empty-cell] and the @rack[dummy]
        must be distinct.}
  @item{The @rack[empty-cell] must not be used as a @rack[new-symbol].}
+ @item{A @rack[final-state] must not be used as an @rack[old-state].}
  @item{The @rack[rules] must have distinct combinations @rack[(old-state old-symbol)].}
  @item{A @rack[move] must be @rack['R], @rack['L] or @rack['N].}]
 
 The @rack[rules] are interpreted as follows,
-where equality is to be understood in the sense of @rack[equal?].
+where equality again is to be understood in the sense of @rack[equal?].
 
 @itemlist[
 @item{A Turing-machine halts when its current @rack[internal-state] equals a @rack[final-state].}
@@ -207,7 +205,7 @@ of the @rack[rule].@(linebreak)
 @rack[move] @rack['L] indicates a move to the left.@(linebreak)
 @rack[move] @rack['R] indicates a move to the right.@(linebreak)
 @rack[move] @rack['N] indicates that that the read-write-head is not moved.}
-@item{When no applying rule can be found,
+@item{When no matching rule can be found,
 the procedure emulating the Turing-machine halts by raising an exception.}]
 
 @defparam*[Turing-report on/off any/c boolean?]{
@@ -228,9 +226,9 @@ Each line of the report shows:
 @item{The new position of the read/write-head and the new content of the tape shown as
 @element['tt "((h ...) (t ...))"],
 where @element['tt "(h ... t ...)"] is the content of the tape and the leftmost
-@element['tt "t"] marks the current position of the read/write-head.
+@element['tt "t"] marks the new position of the read/write-head.
 @element['tt "(h ...)"] may be empty, but @element['tt "(t ...)"] never is empty,
-although the content can consist of the @rack[empty-cell] only.}]
+although it can consist of the @rack[empty-cell] only.}]
 
 The report is best readable when the printed forms of @rack[internal-state]s
 do not vary much in their lengths.
@@ -243,14 +241,12 @@ halts with an exception when it does not reach a @rack[final-state] within n or 
 The initial value is @rack[#f].}
 
 @section[#:tag "Turing-machine"]{Running a Turing-machine}
-A procedure returned by @rack[make-Turing-machine],
-say @(seclink "Turing-machine" (element 'tt "Turing-machine")), is called as follows:
+A procedure returned by procedure @rack[make-Turing-machine],
+say @element['tt @larger{@bold{Turing-machine}}], is called as follows:
 
 @defproc[#:kind "procedure" #:link-target? #f
 (Turing-machine (input (listof tape-symbol)))
 (values nr-of-moves final-state output)]{
-@(seclink "Turing-machine" (element 'tt "Turing-machine")) : as produced by procedure
-@rack[make-Turing-machine]@(linebreak)
 @rack[nr-of-moves] : @rack[exact-positive-integer?]@(linebreak)
 @rack[output] : @rack[(listof tape-symbol)]
 
@@ -334,8 +330,8 @@ for the Halting Problem implies that there always remain cases
 in which a non-halting case cannot be predicted
 by procedure @rack[make-Turing-machine] and cannot be detected while a
 @(seclink "Turing-machine" (element 'tt "Turing-machine")) with given @rack[input] is running.
-Moreover, detection of a repeated state requires a record of all previous states,
-which may require a lot of memory.}}}]
+Moreover, detection of a repeated state requires a record of all visited states,
+which may involve a lot of memory.}}}]
 
 @section{Examples}
 
@@ -351,7 +347,7 @@ The result of a correct input is the input without @tt["+"].
 This is like addition of zero, one or more natural numbers,
 where natural number n is written as `@tt["x ..."]' with n @tt["x"]s.
 With a correct input the machine halts with @rack[final-state] @tt["T"].
-With incorrect input the machine halts with @rack[finall-state] @tt["F"].
+With incorrect input the machine halts with @rack[final-state] @tt["F"].
 The machine never moves left of the start of the input.
 
 @interaction[
@@ -445,11 +441,11 @@ During the addition the content of the tape is (ignoring blanks and empty-cell)
 @nonbreaking{@element['tt "(0-or-1 ... x-or-y ... + 0-or-1 ...)"]}.
 Bits of the second operand are processed starting from the least significant one.
 Every such bit is replaced by a @itel["blank"] before it is processed.
-The significance of the blanked bit is the same a that of
+The significance of the blanked bit is the same as that of
 the right-most @nonbreaking{@element['tt "bit-0-or-1"]} of the first operand.
 After all bits of the second operand have been processed,
 the @element['tt "+"] is removed,
-@element['tt "x"] and @element['tt "y"] are reverted to
+elements @element['tt "x"] and @element['tt "y"] are reverted to
 @element['tt "0"] and @element['tt "1"] and leading zeros are removed.
 
 @interaction[
@@ -533,7 +529,6 @@ the @element['tt "+"] is removed,
                '_ (code:comment "    dummy")
                rules))
 (code:comment "")
-(code:comment "")
 (parameterize ((Turing-report #t))
  (adder '(1 0 1 1 + 1 0 1 1 1)))
 (code:comment "")
@@ -571,7 +566,9 @@ the @element['tt "+"] is removed,
 (code:comment "Check that list-of-bits->exact-nonnegative-integer is")
 (code:comment "the inverse of exact-nonnegative-integer->list-of-bits.")
 (code:comment "")
-(for*/and ((n (in-range 0 100)))
+(random-seed 0)
+(for*/and ((m (in-range 0 100)))
+ (define n (if (< m 50) m (random 30000000)))
  (= n
   (list-of-bits->exact-nonnegative-integer
    (exact-nonnegative-integer->list-of-bits n))))
@@ -610,19 +607,17 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
 (code:comment "")
 (define rules
  (append
-  (for*/list ((n (in-range 0 10)) (m (in-range 0 10)))
-   (list (list 0 (list n m))
-    (let ((sum (+ n m)))
-     (if (> sum 9) (list 1 (- sum 10) 'R)
-                   (list 0 sum 'R)))))
-  (for*/list ((n (in-range 0 10)) (m (in-range 0 10)))
-   (list (list 1 (list n m))
-    (let ((sum (+ n m 1)))
-     (if (> sum 9) (list 1 (- sum 10) 'R)
-                   (list 0 sum 'R)))))
   (list
    '((0 E) (T B R))
-   '((1 E) (T 1 R)))))
+   '((1 E) (T 1 R)))
+  (for*/list
+   ((c (in-range 0 2)) (code:comment " 0 = no carry, 1 = carry")
+    (n (in-range 0 10)) (code:comment "digit of first operand")
+    (m (in-range 0 10)) (code:comment "digit of second operand"))
+   (list (list c (list n m))
+    (let ((sum (+ n m c)))
+     (if (> sum 9) (list 1 (- sum 10) 'R)
+                   (list 0 sum 'R)))))))
 (pretty-print rules)
 (code:comment "")
 (define TM (make-Turing-machine
@@ -728,5 +723,150 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
   rules))
 (Turing-report #t)
 (TM '())]
+
+@subsection{Zeros and ones}
+
+The following Turing-machine halts on every arbitrary input.
+If the input is a list of zeros and ones with as many zeros as ones,
+the final state is @rack['T].
+In all other cases the final state is @rack['F].
+The machine accepts an empty input immediately.
+If the input is not empty, a starting mark @rack['s] is added at the left,
+the input is checked to consist of zeros and ones only
+and an ending mark @rack['e] is added at the end of the input.
+Now the read/write-head is at the element immediately left of the end mark @rack['e].
+The following process is repeated until halted.
+Starting from the right, the machine looks at the left for a @rack[0] or a @rack[1].
+If a @rack[0] is encountered, it is replaced by @rack['e] and a required @rack[1] is looked for.
+If a @rack[1] is encountered, it is replaced by @rack['e] and a required @rack[0] is looked for.
+After finding a required @rack[0] or @rack[1], it is replaced by a blank,
+the read/write-head is positioned at the right of the tape
+and the process is repeated until no more ones or zeros are present.
+If a required @rack[0] or @rack[1] is not found, the machine halts with state @rack['F].
+
+@interaction[
+(require racket "make-Turing-machine.rkt")
+(code:comment " ")
+(define rules
+ '((code:comment "state 0: starting state.")
+   (code:comment "Accept empty input, otherwise add starting mark s.")
+   ((0 E) (T B N)) (code:comment "Accept empty input.")
+   ((0 _) (1 _ L))
+   ((1 E) (2 s R))
+   (code:comment "state 2: Check that we have 0s and 1s only and add an ending mark e.")
+   ((2 0) (2 0 R))
+   ((2 1) (2 1 R))
+   ((2 E) (3 e N))
+   ((2 _) (F _ N))
+   (code:comment "state 3: Go to the end of the tape.")
+   ((3 e) (4 e L))
+   ((3 _) (3 _ R))
+   (code:comment "state 4: look for a 0 or a 1 at the left")
+   ((4 s) (T s N)) (code:comment "Ok, no more 0s or 1s.")
+   ((4 0) (5 e L)) (code:comment "a 1 at the left is required.")
+   ((4 1) (6 e L)) (code:comment "a 0 at the left is required.")
+   ((4 B) (4 e L))
+   (code:comment "state 5: look for a required 1 at the left.")
+   ((5 0) (5 0 L)) (code:comment "skip 0.")
+   ((5 1) (3 B R)) (code:comment "found.")
+   ((5 s) (F s N)) (code:comment "no 1 found.")
+   ((5 B) (5 B L))
+   (code:comment "state 6: look for a required 0 at the left.")
+   ((6 0) (3 B R)) (code:comment "found.")
+   ((6 1) (6 1 L)) (code:comment "skip 1.")
+   ((6 s) (F s N)) (code:comment "no 0 found.")
+   ((6 B) (6 B L))))
+(code:comment " ")
+(define TM
+ (make-Turing-machine
+  0 (code:comment"     initial state")
+  '(T F) (code:comment"final states")
+  'E (code:comment"    empty cell")
+  'B (code:comment"    blank")
+  '_ (code:comment"    dummy")
+  rules))
+(code:comment " ")
+(parameterize ((Turing-report #t)) (TM '(0 1 0 0 1 1 1 0)))
+(code:comment " ")
+(code:comment "Let's do some tests.")
+(code:comment " ")
+(define (test input expected)
+ (define-values (n s t) (TM input))
+ (or (eq? expected s)
+  (error 'test "this is wrong: ~s ~s ~s ~s" input n s t)))
+(code:comment " ")
+(for*/and ((n0 (in-range 0 10)) (n1 (in-range 0 10)))
+ (define input (append (make-list n0 0) (make-list n1 1)))
+ (for/and ((n (in-range 0 100)))
+  (test (shuffle input) (if (= n0 n1) 'T 'F))))]
+
+@subsection{Checking parentheses}
+
+The following machine reads a zero as a left parenthesis
+an a one as a right parenthesis.
+The machine halts in state @rack[T] if the parentheses are well balanced
+and no other elements occur in the @itel{input}.
+In all other cases the machine halts in state @rack[F].
+When counting a 0 as @element['tt "+1"] and a 1 as @element['tt "-1"],
+going from left to right the addition may never go below zero and must end in zero.
+The method is as follows.
+First check that the input consists of zeros and ones only.
+Put @itel{tape-symbol} @rack[s] at the left of the input
+and @itel{tape-symbol} @rack[e] at the right.
+This helps detecting the start and the end of the current content of the tape.
+Starting from the right go left looking for a 1 whose first preceding non-blank is 0.
+When found replace the 0 and the 1 by blanks, go to the right of the input and repeat.
+When looking for a 1 all elements appear to be blanks, the machine halts in state @rack[T].
+
+@interaction[
+(require "make-Turing-machine.rkt")
+
+(define rules
+  (code:comment "state 0")
+  (code:comment "accept empty input.")
+  (code:comment "put start marker s before non-empty input.")
+'(((0 E) (T B N))
+  ((0 _) (1 _ L))
+  ((1 E) (2 s R))
+  (code:comment "state 2")
+  (code:comment "check input.")
+  (code:comment "put end marker e at end of input.")
+  ((2 0) (2 0 R))
+  ((2 1) (2 1 R))
+  ((2 E) (3 e L))
+  ((2 _) (F _ N))
+  (code:comment "state 3")
+  (code:comment "we are at the end of the tape.")
+  (code:comment "look left for 1 immediately preceded by 0.")
+  ((3 B) (3 B L))
+  ((3 s) (7 B R)) (code:comment "all done, go blank the end mark e.")
+  ((3 1) (4 1 L)) (code:comment "found a 1.")
+  ((3 _) (F _ N))
+  ((4 B) (4 B L))
+  ((4 0) (5 B R)) (code:comment "found immediately preceeding 0, blank the 0.")
+  ((4 1) (4 1 L)) (code:comment "found another 1.")
+  ((4 _) (F _ N))
+  (code:comment "state 5")
+  (code:comment "blank the 1 corresponding to the 0 just blanked.")
+  ((5 1) (6 B R)) 
+  ((5 B) (5 B R))
+  (code:comment "state 6")
+  (code:comment "go to end of tape and repeat.")
+  ((6 e) (3 e L))
+  ((6 _) (6 _ R))
+  (code:comment "state 7")
+  (code:comment "blank the e mark and halt in state T.")
+  ((7 e) (T B N))
+  ((7 _) (7 _ R))))
+
+(define TM (make-Turing-machine 0 '(T F) 'E 'B '_ rules))
+
+(Turing-report #t)
+
+(TM '())
+(TM '(0 1))
+(TM '(0 1 0 1 0 1))
+(TM '(0 0 0 1 1 1))
+(TM '(0 0 1 0 1 1))]
 
 @larger{@larger{@bold{The end}}}

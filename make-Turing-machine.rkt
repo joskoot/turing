@@ -32,6 +32,11 @@ Module make-Turing-machine.scrbl produces documentation.
  (define (rule-new-symbol rule) (cadr (cadr rule)))
  (define (rule-move rule) (caddr (cadr rule)))
 
+ (unless (list? final-states)
+  (error 'make-Turing-machine "incorrect argument for final-states: ~s" final-states))
+ 
+ (define set-of-final-states (apply set final-states)) ; Uses equal? for comparison of states.
+
  (define (check-arguments)
   ; There may be more than one error. Only the first one detected is raised.
   (define (rule? x)
@@ -40,20 +45,16 @@ Module make-Turing-machine.scrbl produces documentation.
     (= (length x) 2)
     (list? (car x)) (= (length (car x)) 2)
     (list? (cadr x)) (= (length (cadr x)) 3)
-    (let
-     ((new-symbol (rule-new-symbol x))
-      (move (rule-move x)))
-     (and
-      (member move '(R L N))
-      (not (equal? new-symbol empty-cell))))))
+    (and
+     (not (set-member? set-of-final-states (rule-old-state x)))
+     (member (rule-move x) '(R L N))
+     (not (equal? (rule-new-symbol x) empty-cell)))))
   (when (equal? empty-cell blank)
    (error 'make-Turing-machine "empty-cell must differ from blank: ~s" blank))
   (when (equal? empty-cell dummy)
    (error 'make-Turing-machine "empty-cell must differ from dummy: ~s" dummy))
   (when (equal? blank dummy)
    (error 'make-Turing-machine "blank must differ from dummy: ~s" blank))
-  (unless (list? final-states)
-   (error 'make-Turing-machine "incorrect argument for final-states: ~s" final-states))
   (unless (list? rules)
    (error 'make-Turing-machine "incorrect argument for rules: ~s" rules))
   (for ((rule (in-list rules)))
@@ -70,8 +71,6 @@ Module make-Turing-machine.scrbl produces documentation.
  (define (pad x n)
   (define str (format "~s" x))
   (string-append (make-string (max 0 (- n (string-length str))) #\space) str))
-
- (define set-of-final-states (apply set final-states)) ; Uses equal? for comparison of states.
 
  ; Define print-tape before defining the struct-type for tapes.
 
