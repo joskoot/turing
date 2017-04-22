@@ -802,25 +802,27 @@ If a required @rack[0] or @rack[1] is not found, the machine halts with state @r
 
 @subsection{Checking parentheses}
 
-The following machine reads a zero as a left parenthesis
-an a one as a right parenthesis.
+The following machine reads @rack[L] as a left parenthesis
+an @rack[R] as a right parenthesis.
 The machine halts in state @rack[T] if the parentheses are well balanced
 and no other elements occur in the @itel{input}.
 In all other cases the machine halts in state @rack[F].
-When counting a 0 as @element['tt "+1"] and a 1 as @element['tt "-1"],
+When counting a @rack[L] as @element['tt "+1"] and a @rack[R] as @element['tt "-1"],
 going from left to right the addition may never go below zero and must end in zero.
 The method is as follows.
-First check that the input consists of zeros and ones only.
+First check that the input consists of @rack[L]s and @rack[R]s only.
 Put @itel{tape-symbol} @rack[s] at the left of the input
 and @itel{tape-symbol} @rack[e] at the right.
 This helps detecting the start and the end of the current content of the tape.
-Starting from the right go left looking for a 1 whose first preceding non-blank is 0.
-When found replace the 0 and the 1 by blanks, go to the right of the input and repeat.
-When looking for a 1 all elements appear to be blanks, the machine halts in state @rack[T].
+Starting from the right go left looking for a @rack[R] whose first preceding non-blank is @rack[L].
+When found replace the @rack[L] and the @rack[R] by blanks, go to the right of the input and repeat.
+When looking for a @rack[R] all elements appear to be blanks, the machine halts in state @rack[T].
+When encountering a @rack[L] before encountering a @rack[R] the parentheses are not balanced
+and the machine halts in state @rack[F].
 
 @interaction[
 (require "make-Turing-machine.rkt")
-
+(code:comment " ")
 (define rules
   (code:comment "state 0")
   (code:comment "accept empty input.")
@@ -831,24 +833,24 @@ When looking for a 1 all elements appear to be blanks, the machine halts in stat
   (code:comment "state 2")
   (code:comment "check input.")
   (code:comment "put end marker e at end of input.")
-  ((2 0) (2 0 R))
-  ((2 1) (2 1 R))
+  ((2 L) (2 L R))
+  ((2 R) (2 R R))
   ((2 E) (3 e L))
   ((2 _) (F _ N))
   (code:comment "state 3")
   (code:comment "we are at the end of the tape.")
-  (code:comment "look left for 1 immediately preceded by 0.")
+  (code:comment "look left for R immediately preceded by L.")
   ((3 B) (3 B L))
   ((3 s) (7 B R)) (code:comment "all done, go blank the end mark e.")
-  ((3 1) (4 1 L)) (code:comment "found a 1.")
+  ((3 R) (4 R L)) (code:comment "found a R.")
   ((3 _) (F _ N))
   ((4 B) (4 B L))
-  ((4 0) (5 B R)) (code:comment "found immediately preceeding 0, blank the 0.")
-  ((4 1) (4 1 L)) (code:comment "found another 1.")
+  ((4 L) (5 B R)) (code:comment "found immediately preceeding L, blank the L.")
+  ((4 R) (4 R L)) (code:comment "found another R.")
   ((4 _) (F _ N))
   (code:comment "state 5")
-  (code:comment "blank the 1 corresponding to the 0 just blanked.")
-  ((5 1) (6 B R)) 
+  (code:comment "blank the R corresponding to the L just blanked.")
+  ((5 R) (6 B R)) 
   ((5 B) (5 B R))
   (code:comment "state 6")
   (code:comment "go to end of tape and repeat.")
@@ -858,15 +860,27 @@ When looking for a 1 all elements appear to be blanks, the machine halts in stat
   (code:comment "blank the e mark and halt in state T.")
   ((7 e) (T B N))
   ((7 _) (7 _ R))))
-
+(code:comment " ")
 (define TM (make-Turing-machine 0 '(T F) 'E 'B '_ rules))
-
+(code:comment " ")
 (Turing-report #t)
-
+(code:comment " ")
+(code:comment "The following examples yield final state T")
+(code:comment " ")
 (TM '())
-(TM '(0 1))
-(TM '(0 1 0 1 0 1))
-(TM '(0 0 0 1 1 1))
-(TM '(0 0 1 0 1 1))]
+(TM '(L R))
+(TM '(L R L R L R))
+(TM '(L L L R R R))
+(TM '(L L R L R R))
+(code:comment " ")
+(code:comment "The following examples yield final state F")
+(code:comment " ")
+(TM '(a))
+(TM '(L a R))
+(TM '(R))
+(TM '(L))
+(TM '(R L))
+(TM '(R L R L R L R))
+(TM '(L R L R L R L))]
 
 @larger{@larger{@bold{The end}}}
