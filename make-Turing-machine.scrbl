@@ -239,8 +239,8 @@ The report is gathered in a list and printed after the
 When the @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 raises an error and @rack[Turing-report] is enabled
 the report is printed before the error is raised.
-During this printing breaks are enabled and
-breaking the printing raises the original error.}
+During printing breaks are enabled and a break raises the original error
+but without more printing of the report.}
 
 @defparam*[Turing-limit n (or/c #f exact-positive-integer?) (or/c #f exact-positive-integer?)]{
 When the parameter holds an @rack[exact-positive-integer?], say n,
@@ -891,5 +891,85 @@ and the machine halts in state @rack[F].
 (TM '(R L))
 (TM '(R L R L R L R))
 (TM '(L R L R L R L))]
+
+@subsection{Shifting elements}
+
+The following Turing-machine always halts.
+For an input consisting of @rack['a]'s and @rack['b]'s only
+the final state is @rack['T] and symbol @rack['x] is inserted
+between each @rack['a] and an immediately following @rack['b].
+The insertion of @rack['x] requires that the elements
+preceding the @rack['b] are shifted one cell to the left.
+An input containing anything other than @rack['a] or @rack['b]
+yields final state @rack['F].
+
+@interaction[
+(require racket "make-Turing-machine.rkt")
+(code:comment " ")
+(define rules
+'(
+  (code:comment "Look for a.")
+  ((0 a) (1 a R))
+  ((0 b) (0 b R))
+  ((0 E) (T B N))
+  ((0 _) (F _ N))
+  (code:comment "Next symbol b?")
+  ((1 a) (1 a R)) (code:comment "no, look for next a.")
+  ((1 b) (2 c L)) (code:comment "yes, mark it and proceed.")
+  ((1 _) (F _ N))
+  ((1 E) (T B N))
+  (code:comment "Rewind the tape.")
+  ((2 E) (3 B R))
+  ((2 _) (2 _ L))
+  (code:comment "Shift every symbol one cell to the left up to symbol c.")
+  (code:comment "Replace a or b or x by B.")
+  (code:comment "Replace preceding B by a or b or x.")
+  (code:comment "Replace c by b and replace preceding B by x.")
+  ((3 a) (4a B L))
+  ((3 b) (4b B L))
+  ((3 c) (4c b L))
+  ((3 x) (4x B L))
+  ((4a B) (5 a R)) (code:comment "Continue the shift.")
+  ((4b B) (5 b R)) (code:comment "Continue the shift.")
+  ((4c B) (0 x R)) (code:comment "Look for next a followed by b.")
+  ((4x B) (5 x R)) (code:comment "Continue the shift.")
+  (code:comment "Skip the B and continue the shift.")
+  ((5 B) (3 B R))))
+(code:comment " ")
+(define TM (make-Turing-machine  0 '(T F) 'E 'B  '_ rules))
+(code:comment " ")
+(code:comment "Example:")
+(code:comment " ")
+(parameterize ((Turing-report #t)) (TM '(b a b a b a)))
+(code:comment " ")
+(code:comment "Let's test the TM.")
+(code:comment "The following procedure does the same as the TM")
+(code:comment "It is used to check the results of the TM.")
+(code:comment " ")
+(define (ab->axb input)
+ (cond
+  ((null? input) '())
+  ((null? (cdr input)) input)
+  ((equal? (take input 2) '(a b))
+   (append '(a x b) (ab->axb (cddr input))))
+  (else (cons (car input) (ab->axb (cdr input))))))
+(code:comment " ")
+(random-seed 0)
+(code:comment " ")
+(for*/and ((na (in-range 10)) (nb (in-range 10)))
+ (define ab (append (make-list na 'a) (make-list nb 'b)))
+ (for/and ((k (in-range 100)))
+  (define input1 (shuffle ab))
+  (define input2 (shuffle (cons 'x ab)))
+  (define input3 (shuffle (cons 'c ab)))
+  (define-values (nr-of-moves1 state1 tape1) (TM input1))
+  (define-values (nr-of-moves2 state2 tape2) (TM input2))
+  (define-values (nr-of-moves3 state3 tape3) (TM input3))
+  (define expect (ab->axb input1))
+  (and
+   (equal? (ab->axb input1) tape1)
+   (equal? state1 'T)
+   (equal? state2 'F)
+   (equal? state3 'F))))]
 
 @larger{@larger{@bold{The end}}}
