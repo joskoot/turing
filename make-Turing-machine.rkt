@@ -61,7 +61,7 @@ Module make-Turing-machine.scrbl produces documentation.
    (unless (rule? rule)
     (error 'make-Turing-machine "incorrect rule: ~s" rule)))
   (define duplicate (check-duplicates (map car rules)))
-  (when duplicate
+  (when (check-duplicates (map car rules))
    (error 'make-Turing-machine "duplicate move-selector: ~s" duplicate)))
 
  (check-arguments)
@@ -127,7 +127,10 @@ Module make-Turing-machine.scrbl produces documentation.
  (define report #f)
 
  (define (exn-handler exn)
-  (when (Turing-report) (print-report))
+  (when (Turing-report)
+   (with-handlers (((λ (x) #t) (λ (exn:br) (set! report '()) (raise exn))))
+    (parameterize-break #t (print-report))))
+  (set! report '())
   (raise exn))
 
  (define (print-report)

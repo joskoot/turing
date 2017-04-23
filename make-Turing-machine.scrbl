@@ -112,11 +112,11 @@ The @itel["rules"] describe how the control unit makes its moves.
 The machine repeats moves until a @itel["final-state"] is obtained,
 or may remain making moves forever if it never reaches a @itel["final-state"].
 It is possible to put a maximum on the number of moves
-such as to raise an exception when the machine needs more moves.
+such as to raise an exception when the emulated machine needs more moves.
 See parameter @rack[Turing-limit].
 It may happen that there is no @itel["rule"] specifying which move to make
 for a given combination of @itel["internal-state"] and current element.
-In such a case the procedure that emulates the Turing-machine halts by raising an exception.
+In that case the procedure that emulates the Turing-machine halts by raising an exception.
 The @itel["internal-states"] and @itel["tape-symbols"] can be arbitrary Racket values,
 but usually symbols and exact integer numbers are the most convenient ones.
 Using lists or vectors for @itel["tape-symbols"]
@@ -232,7 +232,15 @@ although it can consist of the @rack[empty-cell] only.}]
 
 The report is best readable when the printed forms of @rack[internal-state]s
 do not vary much in their lengths.
-The same holds for @rack[tape-symbol]s.}
+The same holds for @rack[tape-symbol]s.
+
+The report is gathered in a list and printed after the
+@(seclink "Turing-machine" (element 'tt "Turing-machine")) has finished.
+When the @(seclink "Turing-machine" (element 'tt "Turing-machine"))
+raises an error and @rack[Turing-report] is enabled
+the report is printed before the error is raised.
+During this printing breaks are enabled and
+breaking the printing raises the original error.}
 
 @defparam*[Turing-limit n (or/c #f exact-positive-integer?) (or/c #f exact-positive-integer?)]{
 When the parameter holds an @rack[exact-positive-integer?], say n,
@@ -295,7 +303,7 @@ clearly will loop forever with arbitrary input:
             '_ (code:comment "  dummy")
             '(((A _) (A _ N)))))
 (Turing-report #t)
-(Turing-limit 5)
+(code:line (Turing-limit 5) (code:comment "Prevent the machine to run forever."))
 (TM '())]
 
 In this example @rack[rule] @rack['((A _) (A _ N))] alone already implies an infinite loop.
@@ -352,7 +360,7 @@ The machine never moves left of the start of the input.
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
-(code:comment "")
+(code:comment " ")
 (define rules
 '((code:comment "       State 0 : Inspect the very first element.")
   (code:comment "                 Mark start x with y or start + with p.")
@@ -382,7 +390,7 @@ The machine never moves left of the start of the input.
   (code:comment "       State 4 : Replace the last x (or the y if there is no x) by a blank.")
   ((4 x) (2 B L))  (code:comment "Replace x by a blank and continue addition.")
   ((4 y) (T B N))  (code:comment "Replace y by a blank and accept.")))
-(code:comment "")
+(code:comment " ")
 (define TM (make-Turing-machine
             '0 (code:comment "    initial state")
             '(T F) (code:comment "final states")
@@ -390,27 +398,28 @@ The machine never moves left of the start of the input.
             'B (code:comment "    blank")
             '_ (code:comment "    dummy")
             rules))
-(code:comment "")
+(code:comment " ")
 (Turing-report #t)
 (TM '(x + x x + x x x))
-(code:comment "")
+(code:comment " ")
 (code:comment "The following examples yield final state F.")
-(code:comment "")
+(code:comment " ")
 (TM '(z))
 (TM '(y x x z x x))
 (TM '(x + x z x))
 (TM '(x x x B x x x))
-(code:comment "")
-(code:comment "The following two examples yield exceptions.")
-(code:comment "")
+(code:comment " ")
+(code:comment "The following two examples yield exceptions,")
+(code:comment "even before the TM starts running.")
+(code:comment " ")
 (TM '(x x x E x x x))
 (TM '(x x x _ x x x))
-(code:comment "")
+(code:comment " ")
 (code:comment "More tests:")
-(code:comment "")
+(code:comment " ")
 (Turing-report #f)
 (random-seed 0)
-(code:comment "")
+(code:comment " ")
 (for/and ((nx (in-range 0 50)))
  (define expected (make-list nx 'x))
  (for/and ((n+ (in-range 10)))
@@ -450,7 +459,7 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
-(code:comment "")
+(code:comment " ")
 (define rules
 '((code:comment "Check the input.")
   (code:comment "At least one bit required preceding +.")
@@ -520,7 +529,7 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
   ((D 1) (T 1 N))
   ((D B) (T 0 N))
   ((D E) (T 0 N))))
-(code:comment "")
+(code:comment " ")
 (define adder (make-Turing-machine
                '0 (code:comment "    initial state")
                '(T F) (code:comment "final states")
@@ -528,23 +537,23 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
                'B (code:comment "    blank")
                '_ (code:comment "    dummy")
                rules))
-(code:comment "")
+(code:comment " ")
 (parameterize ((Turing-report #t))
  (adder '(1 0 1 1 + 1 0 1 1 1)))
-(code:comment "")
+(code:comment " ")
 (parameterize ((Turing-report #t))
  (adder '(0 0 0 1 1 + 0 0 1 1)))
-(code:comment "")
+(code:comment " ")
 (parameterize ((Turing-report #t))
  (adder '(0 0 0 + 0 0)))
-(code:comment "")
+(code:comment " ")
 (code:comment "Checking the Turing-machine.")
-(code:comment "We'll need two procedures for conversion between")
+(code:comment "We need two procedures for conversion between")
 (code:comment "exact nonnegative integer numbers and lists of bits.")
-(code:comment "")
+(code:comment " ")
 (code:comment "Procedure exact-nonnegative-integer->list-of-bits converts")
 (code:comment "exact nonnegative integer n to a list of bits 0 and 1.")
-(code:comment "")
+(code:comment " ")
 (define (exact-nonnegative-integer->list-of-bits n)
  (reverse
   (let loop ((n n))
@@ -552,29 +561,29 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
     ((zero? n) '(0))
     ((even? n) (cons 0 (loop (quotient n 2))))
     (else      (cons 1 (loop (quotient n 2))))))))
-(code:comment "")
+(code:comment " ")
 (code:comment "Procedure list-of-bits->exact-nonnegative-integer converts")
 (code:comment "a list of bits 0 and 1 to an exact nonnegative integer")
-(code:comment "")
+(code:comment " ")
 (define (list-of-bits->exact-nonnegative-integer lst)
  (let loop ((r 0) (lst (reverse lst)) (e 1))
   (cond
    ((null? lst) r)
    ((= (car lst) 0) (loop r (cdr lst) (* 2 e)))
    ((= (car lst) 1) (loop (+ r e) (cdr lst) (* 2 e))))))
-(code:comment "")
+(code:comment " ")
 (code:comment "Check that list-of-bits->exact-nonnegative-integer is")
 (code:comment "the inverse of exact-nonnegative-integer->list-of-bits.")
-(code:comment "")
+(code:comment " ")
 (random-seed 0)
 (for*/and ((m (in-range 0 100)))
  (define n (if (< m 50) m (random 30000000)))
  (= n
   (list-of-bits->exact-nonnegative-integer
    (exact-nonnegative-integer->list-of-bits n))))
-(code:comment "")
+(code:comment " ")
 (code:comment "Test the Turing-machine.")
-(code:comment "")
+(code:comment " ")
 (for*/and ((n (in-range 0 100))
            (m (in-range 0 100)))
  (define input
@@ -604,7 +613,7 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
-(code:comment "")
+(code:comment " ")
 (define rules
  (append
   (list
@@ -619,7 +628,7 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
      (if (> sum 9) (list 1 (- sum 10) 'R)
                    (list 0 sum 'R)))))))
 (pretty-print rules)
-(code:comment "")
+(code:comment " ")
 (define TM (make-Turing-machine
             0 (code:comment "   initial state")
             '(T) (code:comment "final state")
@@ -630,10 +639,10 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
 (call-with-values
  (λ () (TM (reverse (map list '(0 0 9) '(0 0 9)))))
  (λ (nr-of-moves final-state content) (reverse content)))
-(code:comment "")
+(code:comment " ")
 (code:comment "nr->lst takes an exact nonnegative integer and")
 (code:comment "returns its list of digits from least to most significant one.")
-(code:comment "")
+(code:comment " ")
 (define (nr->lst n)
  (define (nr->lst n)
   (cond
@@ -642,10 +651,10 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
     (define-values (q r) (quotient/remainder n 10))
     (cons r (nr->lst q)))))
  (if (zero? n) '(0) (nr->lst n)))
-(code:comment "")
+(code:comment " ")
 (code:comment "prepare-input takes two exact nonnegative integers")
 (code:comment "and returns the corresponding input for TM.")
-(code:comment "")
+(code:comment " ")
 (define (prepare-input n m)
  (let ((n (nr->lst n)) (m (nr->lst m)))
   (define ln (length n))
@@ -653,24 +662,24 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
   (define len (max ln lm))
   (map list (append n (make-list (- len ln) 0))
             (append m (make-list (- len lm) 0)))))
-(code:comment "")
+(code:comment " ")
 (code:comment "output->nr converts the output of the TM")
 (code:comment "to an exact nonnegative integer.")
-(code:comment "")
+(code:comment " ")
 (define (output->nr lst)
  (if (null? lst) 0
   (+ (car lst) (* 10 (output->nr (cdr lst))))))
-(code:comment "")
+(code:comment " ")
 (code:comment "Example with report.")
-(code:comment "")
+(code:comment " ")
 (let ((n 9876) (m 987654))
  (parameterize ((Turing-report #t))
   (let-values (((nr-of-moves final-state output) (TM (prepare-input n m))))
    (define sum (output->nr output))
    (values sum (= sum (+ n m))))))
-(code:comment "")
+(code:comment " ")
 (code:comment "Test the TM.")
-(code:comment "")
+(code:comment " ")
 (for/and ((k (in-range 0 1000)))
  (define n (random 1000000000))
  (define m (random 1000000000))
@@ -762,7 +771,7 @@ If a required @rack[0] or @rack[1] is not found, the machine halts with state @r
    ((3 e) (4 e L))
    ((3 _) (3 _ R))
    (code:comment "state 4: look for a 0 or a 1 at the left")
-   ((4 s) (T s N)) (code:comment "Ok, no more 0s or 1s.")
+   ((4 s) (T B N)) (code:comment "Ok, no more 0s or 1s.")
    ((4 0) (5 e L)) (code:comment "a 1 at the left is required.")
    ((4 1) (6 e L)) (code:comment "a 0 at the left is required.")
    ((4 B) (4 e L))
