@@ -1,6 +1,11 @@
 #lang racket
 
-(provide make-Turing-machine Turing-report Turing-limit)
+(provide make-Turing-machine
+         Turing-report
+         Turing-count-pad
+         Turing-state-pad
+         Turing-symbol-pad
+         Turing-limit)
 
 #|==================================================================================================
 
@@ -8,13 +13,23 @@ Module make-Turing-machine.scrbl produces documentation.
 
 ==================================================================================================|#
 
-(define Turing-report (make-parameter #f (λ (x) (and x #t))))
+(define (Turing-report-guard x) (and x #t))
+(define Turing-report (make-parameter #f Turing-report-guard))
+
+(define (Turing-pad-guard x)
+ (unless (exact-nonnegative-integer? x)
+  (raise-argument-error 'Turing-pad "exact-nonnegative-integer?" x))
+ x)
+
+(define Turing-count-pad (make-parameter 0 Turing-pad-guard))
+(define Turing-state-pad (make-parameter 0 Turing-pad-guard))
+(define Turing-symbol-pad (make-parameter 0 Turing-pad-guard))
 
 (define (Turing-limit-guard x)
  (cond
   ((exact-positive-integer? x) x)
   ((not x) #f)
-  (else (raise-argument-error 'Turing-limit "(or/c #f exact-poistive-integer?)" x))))
+  (else (raise-argument-error 'Turing-limit "(or/c #f exact-positive-integer?)" x))))
  
 (define Turing-limit (make-parameter #f Turing-limit-guard))
 
@@ -66,11 +81,13 @@ Module make-Turing-machine.scrbl produces documentation.
 
  (check-arguments)
 
- (define (print-width x) (string-length (format "~s" x)))
-
- (define (pad x n)
+ (define (right-justify x n)
   (define str (format "~s" x))
   (string-append (make-string (max 0 (- n (string-length str))) #\space) str))
+
+ (define (left-justify x n)
+  (define str (format "~s" x))
+  (string-append str (make-string (max 0 (- n (string-length str))) #\space)))
 
  ; Define print-tape before defining the struct-type for tapes.
 
@@ -124,32 +141,6 @@ Module make-Turing-machine.scrbl produces documentation.
 
  (define (remove-trailing-blanks lst) (reverse (remove-heading-blanks (reverse lst))))
 
- (define report #f)
-
- (define (exn-handler exn)
-  (when (Turing-report)
-   (with-handlers (((λ (x) #t) (λ (exn:br) (set! report '()) (raise exn))))
-    (parameterize-break #t (print-report))))
-  (set! report '())
-  (raise exn))
-
- (define (print-report)
-  (define widths (make-vector 5 0))
-  (for* ((line (in-list report)) (i (in-range 0 5)))
-   (vector-set! widths i (max (vector-ref widths i) (print-width (vector-ref line i)))))
-  (define-values (w0 w1 w2 w3 w4) (apply values (vector->list widths)))
-  (for ((line (in-list (reverse report))))
-   (printf
-    "~a (state ~a -> ~a) (symbol ~a -> ~a) move ~s tape ~s~n"
-    (pad (vector-ref line 0) w0)
-    (pad (vector-ref line 1) w1)
-    (pad (vector-ref line 2) w2)
-    (pad (vector-ref line 3) w3)
-    (pad (vector-ref line 4) w4)
-    (vector-ref line 5)
-    (vector-ref line 6)))
-  (set! report '()))
-
  (define (Turing-machine-proper state tape)
   (cond
    ((set-member? set-of-final-states state)
@@ -164,16 +155,15 @@ Module make-Turing-machine.scrbl produces documentation.
       ((L) (move-L (tape-put tape new-tape-symbol)))
       ((N) (tape-put tape new-tape-symbol))))
     (when (Turing-report)
-     (set! report
-      (cons
-       (vector
-        nr-of-moves
-        state new-state
-        old-tape-symbol
-        new-tape-symbol
-        move
-        new-tape)
-      report)))
+     (printf
+      "move ~a, state ~a -> ~a, symbol ~a -> ~a, move ~s, new tape ~s~n"
+      (right-justify nr-of-moves (Turing-count-pad))
+      (right-justify state (Turing-state-pad))
+      (left-justify new-state (Turing-state-pad))
+      (right-justify old-tape-symbol (Turing-symbol-pad))
+      (left-justify new-tape-symbol (Turing-symbol-pad))
+      move
+      new-tape))
     (when
      (and
       (Turing-limit)
@@ -189,7 +179,7 @@ Module make-Turing-machine.scrbl produces documentation.
       new-tape))
     (Turing-machine-proper new-state new-tape))))
 
- (define nr-of-moves #f)
+ (define nr-of-moves 0)
 
  (define-values (normal-hash dummy-hash)
   (let ()
@@ -244,12 +234,7 @@ Module make-Turing-machine.scrbl produces documentation.
   (when (Turing-report)
    (printf "initial state: ~s, initial tape: ~s~n" initial-state tape))
   (set! nr-of-moves 0)
-  (set! report '())
-  (define-values (n-moves state output)
-   (with-handlers ((exn:fail? exn-handler))
-    (Turing-machine-proper initial-state tape)))
-  (when (Turing-report) (print-report))
-  (values n-moves state output))
+  (Turing-machine-proper initial-state tape))
 
  Turing-machine)
 
