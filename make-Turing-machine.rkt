@@ -209,7 +209,7 @@ Module make-Turing-machine.scrbl produces documentation.
    (error 'Turing-machine "empty-cell ~s not allowed in input" empty-cell))
   (when (member dummy input)
    (error 'Turing-machine "dummy ~s not allowed in input" dummy))
-  (set! report (list (list initial-state input)))
+  (set! report (list (list initial-state (list->tape input))))
   (set! nr-of-moves 0)
   (define-values (state tape) (Turing-machine-proper initial-state (list->tape input)))
   (values nr-of-moves state (tape->list tape)))
@@ -250,8 +250,8 @@ Module make-Turing-machine.scrbl produces documentation.
        (max old-symbol-pad (string-length (format "~s" (fourth line))))
        (max new-symbol-pad (string-length (format "~s" (fifth  line)))))))
     (define periods
-     (make-string (+ 27 move-pad old-state-pad new-state-pad old-symbol-pad new-symbol-pad) #\.))
-    (printf "Turing report ~a input: ~s~n" periods (cadar report))
+     (make-string (+ 20 move-pad old-state-pad new-state-pad old-symbol-pad new-symbol-pad) #\.))
+    (printf "Turing-report ~a initial tape: ~s~n" periods (cadar report))
     (for ((line (in-list (cdr report))))
      (printf "move ~a, state: ~a -> ~a, symbol: ~a -> ~a, move: ~s, tape: ~s~n"
       (pad (first  line) move-pad)

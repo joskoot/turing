@@ -62,6 +62,9 @@ John E. Hopcroft and Jeffrey D. Ullman give a very accurate description of
 in their book “Formal Languages and their Relation to Automata” (ISBN 0-201-0298 3-9)
 The reader of the present documentation is supposed to be familiar with Turing-machines.
 Nevertheless, a survey of the terminology as used in this document.
+
+@(image "Turing-machine.gif")
+
 The @itel["internal-state"] of a Turing-machine is that of the control unit.
 The state of a Turing-machine as a whole includes the @itel["internal-state"],
 the current content of the tape and the current position of the read/write-head.
@@ -183,7 +186,7 @@ equality or being distinct to be understood in the sense of @rack[equal?].
  @item{The @rack[rules] must have distinct combinations @rack[(old-state old-symbol)].}
  @item{A @rack[move] must be @rack['R], @rack['L] or @rack['S].}]
 
-When not all of these conditions is satisfied,
+When not all of these conditions are satisfied,
 procedure @rack[make-Turing-machine] raises an error.
 The @rack[rules] are interpreted as follows,
 where equality again is to be understood in the sense of @rack[equal?].
@@ -217,6 +220,7 @@ the procedure emulating the Turing-machine halts by raising an exception.}]
 
 @defproc[(Turing-report) void?]{
 Prints a report of the most recently run @(seclink "Turing-machine" (element 'tt "Turing-machine")).
+Uses the @rack[current-output-port].
 Each line of the report shows:
 
 @itemlist[
@@ -614,10 +618,9 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
    ((c (in-range 0 2))  (code:comment "0 = no carry, 1 = carry")
     (n (in-range 0 10)) (code:comment "digit of first operand")
     (m (in-range 0 10)) (code:comment "digit of second operand"))
-   (list (list c (list n m))
-    (let ((sum (+ n m c)))
-     (if (> sum 9) (list 1 (- sum 10) 'R)
-                   (list 0 sum 'R)))))))
+   (define-values (q r) (quotient/remainder (+ n m c) 10))
+   `((,c (,n ,m)) (,q ,r R)))))
+(code:comment " ")
 (pretty-print rules)
 (code:comment " ")
 (define TM (make-Turing-machine
@@ -627,6 +630,7 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
             'B   (code:comment "blank")
             '_   (code:comment "dummy")
             rules))
+(code:comment " ")
 (call-with-values
  (λ () (TM (reverse (map list '(0 0 9) '(0 0 9)))))
  (λ (nr-of-moves final-state content) (reverse content)))
