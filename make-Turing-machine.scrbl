@@ -219,8 +219,18 @@ of the @rack[rule].@(linebreak)
 the procedure emulating the Turing-machine halts by raising an exception.}]
 
 @defproc[(Turing-report) void?]{
-Prints a report of the most recently run @(seclink "Turing-machine" (element 'tt "Turing-machine")).
+A @(seclink "Turing-machine" (element 'tt "Turing-machine")) keeps record
+of the moves it makes. Procedure @rack[Turing-report]
+prints a report of the most recently run @(seclink "Turing-machine" (element 'tt "Turing-machine")).
 Uses the @rack[current-output-port].
+When a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
+raises an error or is halted by a
+@hyperlink[
+"file:///C:/Program%20Files/Racket/doc/reference/breakhandler.html?q=break#%28tech._break%29"
+"break"], the report remains available.
+When running a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
+the report of the previous run of a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
+is lost.
 Each line of the report shows:
 
 @itemlist[
@@ -245,8 +255,8 @@ although it can consist of the @rack[empty-cell] only.}]} Example:
             'E      (code:comment "empty cell")
             'B      (code:comment "blank")
             '_      (code:comment "dummy")
-            '(((A _) (AA x S))
-              ((AA _) (AAA xx S))
+            '(((A   _) (AA   x   S))
+              ((AA  _) (AAA  xx  S))
               ((AAA _) (Halt xxx S)))))
 (TM '())
 (Turing-report)]
