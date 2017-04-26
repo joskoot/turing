@@ -55,12 +55,13 @@
 
 @section{Introduction}
 This document describes procedure @rack[make-Turing-machine].
-It is a tool for the construction of procedures that emulate single tape
+It is a tool for the construction of procedures that emulate two-way single tape
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"].
-The reader is supposed to be familiar with Turing-machines.
-John E. Hopcroft and Jeffrey D. Ullman give a very accurate description
-in their book "Formal Languages and their Relation to Automata" (ISBN 0-201-0298 3-9)
-Nevertheless, a survey of the terminology used in this document.
+John E. Hopcroft and Jeffrey D. Ullman give a very accurate description of
+@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"]
+in their book “Formal Languages and their Relation to Automata” (ISBN 0-201-0298 3-9)
+The reader of the present documentation is supposed to be familiar with Turing-machines.
+Nevertheless, a survey of the terminology as used in this document.
 The @itel["internal-state"] of a Turing-machine is that of the control unit.
 The state of a Turing-machine as a whole includes the @itel["internal-state"],
 the current content of the tape and the current position of the read/write-head.
@@ -121,7 +122,7 @@ for a given combination of @itel["internal-state"] and current element.
 In that case the procedure that emulates the Turing-machine halts by raising an exception.
 The @itel["internal-states"] and @itel["tape-symbols"] can be arbitrary Racket values,
 but usually symbols and exact integer numbers are the most convenient ones.
-Using lists or vectors for @itel["tape-symbols"]
+Using lists or vectors for @itel["tape-symbols"] and/or @itel["internal-states"]
 allows the simulation of multi-tape Turing-machines,
 although this may require many @itel["rules"].
 Procedure @rack[make-Turing-machine] is designed primarily for single tape Turing-machines.
@@ -182,6 +183,8 @@ equality or being distinct to be understood in the sense of @rack[equal?].
  @item{The @rack[rules] must have distinct combinations @rack[(old-state old-symbol)].}
  @item{A @rack[move] must be @rack['R], @rack['L] or @rack['S].}]
 
+When not all of these conditions is satisfied,
+procedure @rack[make-Turing-machine] raises an error.
 The @rack[rules] are interpreted as follows,
 where equality again is to be understood in the sense of @rack[equal?].
 
@@ -212,11 +215,8 @@ of the @rack[rule].@(linebreak)
 @item{When no matching rule can be found,
 the procedure emulating the Turing-machine halts by raising an exception.}]
 
-@defparam*[Turing-report on/off any/c boolean? #:value #f]{
-When @rack[on/off] is not @rack[#f] the parameter is set to @rack[#t].
-When the value of the parameter is not @rack[#f],
-a @(seclink "Turing-machine" (element 'tt "Turing-machine")) reports each move
-on the current output-port.
+@defproc[(Turing-report) void?]{
+Prints a report of the most recently run @(seclink "Turing-machine" (element 'tt "Turing-machine")).
 Each line of the report shows:
 
 @itemlist[
@@ -231,17 +231,7 @@ Each line of the report shows:
 where @element['tt "(h ... t ...)"] is the content of the tape and the leftmost
 @element['tt "t"] marks the new position of the read/write-head.
 @element['tt "(h ...)"] may be empty, but @element['tt "(t ...)"] never is empty,
-although it can consist of the @rack[empty-cell] only.}]}
-
-@deftogether[(@(defparam Turing-count-pad  n exact-nonnegative-integer? #:value 0)
-              @(defparam Turing-state-pad  n exact-nonnegative-integer? #:value 0)
-              @(defparam Turing-symbol-pad n exact-nonnegative-integer? #:value 0))]{
-These parameters can be used for nice layout of a @racket[Turing-report] in well alligned columns.
-The parameters indicate how many characters are to be written for the move counter,
-the @rack[internal-state]s and the @rack[tape-symbol]s.
-When the written form of a datum takes less than
-@rack[n] characters it is padded with spaces at the left or at the right.
-A datum that requires more than @rack[n] characters is not truncated.} Example:
+although it can consist of the @rack[empty-cell] only.}]} Example:
 
 @interaction[
 (require "make-Turing-machine.rkt")
@@ -254,10 +244,8 @@ A datum that requires more than @rack[n] characters is not truncated.} Example:
             '(((A _) (AA x S))
               ((AA _) (AAA xx S))
               ((AAA _) (Halt xxx S)))))
-(Turing-report #t)
-(Turing-state-pad 4)
-(Turing-symbol-pad 3)
-(TM '())]
+(TM '())
+(Turing-report)]
                                                  
 @defparam*[Turing-limit n (or/c #f exact-positive-integer?) (or/c #f exact-positive-integer?)
            #:value #f]{
@@ -306,9 +294,9 @@ clearly will loop forever with arbitrary input:
             'B   (code:comment "blank")
             '_   (code:comment "dummy")
             '(((A _) (A _ S)))))
-(Turing-report #t)
 (code:line (Turing-limit 5) (code:comment "Prevent the machine to run forever."))
-(TM '())]
+(TM '())
+(Turing-report)]
 
 In this example @rack[rule] @rack['((A _) (A _ S))] alone already implies an infinite loop.
 While the @rack[TM] is running,
@@ -326,9 +314,9 @@ As another example consider:
             'B   (code:comment "blank")
             '_   (code:comment "dummy")
             '(((A _) (A _ R)))))
-(Turing-report #t)
 (Turing-limit 5)
-(TM '())]
+(TM '())
+(Turing-report)]
 
 By means of mathematical induction it is easily proven that the above machine never halts,
 although it never reproduces the same state.
@@ -403,8 +391,8 @@ The machine never moves left of the start of the input.
             '_     (code:comment "dummy")
             rules))
 (code:comment " ")
-(Turing-report #t)
-(parameterize ((Turing-count-pad 2)) (TM '(x + x x + x x x)))
+(TM '(x + x x + x x x))
+(Turing-report)
 (code:comment " ")
 (code:comment "The following examples yield final state F.")
 (code:comment " ")
@@ -421,7 +409,6 @@ The machine never moves left of the start of the input.
 (code:comment " ")
 (code:comment "More tests:")
 (code:comment " ")
-(Turing-report #f)
 (random-seed 0)
 (code:comment " ")
 (for/and ((nx (in-range 0 50)))
@@ -542,14 +529,14 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
                '_     (code:comment "dummy")
                rules))
 (code:comment " ")
-(parameterize ((Turing-report #t) (Turing-count-pad 2))
- (adder '(1 0 1 1 + 1 0 1 1 1)))
+(adder '(1 0 1 1 + 1 0 1 1 1))
+(Turing-report)
 (code:comment " ")
-(parameterize ((Turing-report #t) (Turing-count-pad 2))
- (adder '(0 0 0 1 1 + 0 0 1 1)))
+(adder '(0 0 0 1 1 + 0 0 1 1))
+(Turing-report)
 (code:comment " ")
-(parameterize ((Turing-report #t) (Turing-count-pad 2))
- (adder '(0 0 0 + 0 0)))
+(adder '(0 0 0 + 0 0))
+(Turing-report)
 (code:comment " ")
 (code:comment "Checking the Turing-machine.")
 (code:comment "We need two procedures for conversion between")
@@ -677,10 +664,10 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
 (code:comment "Example with report.")
 (code:comment " ")
 (let ((n 9876) (m 987654))
- (parameterize ((Turing-report #t))
-  (let-values (((nr-of-moves final-state output) (TM (prepare-input n m))))
-   (define sum (output->nr output))
-   (values sum (= sum (+ n m))))))
+ (let-values (((nr-of-moves final-state output) (TM (prepare-input n m))))
+  (Turing-report)
+  (define sum (output->nr output))
+  (values sum (= sum (+ n m)))))
 (code:comment " ")
 (code:comment "Test the TM.")
 (code:comment " ")
@@ -710,9 +697,8 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
   'blank-not-used
   'dummy-not-used
   rules))
-(Turing-report #t)
-(Turing-count-pad 2)
-(TM '())]
+(TM '())
+(Turing-report)]
 
 4 state busy beaver. In fact there are five states, but final state @tt{T} does not count.
 
@@ -735,9 +721,8 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
   'blank-not-used
   'dummy-not-used
   rules))
-(Turing-report #t)
-(Turing-count-pad 3)
-(TM '())]
+(TM '())
+(Turing-report)]
 
 @subsection{Zeros and ones}
 
@@ -801,8 +786,8 @@ If a required @rack[0] or @rack[1] is not found, the machine halts with state @r
   '_     (code:comment"dummy")
   rules))
 (code:comment " ")
-(parameterize ((Turing-report #t) (Turing-count-pad 2))
- (TM '(0 1 0 0 1 1 1 0)))
+(TM '(0 1 0 0 1 1 1 0))
+(Turing-report)
 (code:comment " ")
 (code:comment "Let's do some tests.")
 (code:comment " ")
@@ -879,26 +864,23 @@ and the machine halts in state @rack[F].
 (code:comment " ")
 (define TM (make-Turing-machine 0 '(T F) 'E 'B '_ rules))
 (code:comment " ")
-(Turing-report #t)
-(Turing-count-pad 2)
-(code:comment " ")
 (code:comment "The following examples yield final state T")
 (code:comment " ")
-(TM '())
-(TM '(L R))
-(TM '(L R L R L R))
-(TM '(L L L R R R))
-(TM '(L L R L R R))
+(TM '()) (Turing-report)
+(TM '(L R)) (Turing-report)
+(TM '(L R L R L R)) (Turing-report)
+(TM '(L L L R R R)) (Turing-report)
+(TM '(L L R L R R)) (Turing-report)
 (code:comment " ")
 (code:comment "The following examples yield final state F")
 (code:comment " ")
-(TM '(a))
-(TM '(L a R))
-(TM '(R))
-(TM '(L))
-(TM '(R L))
-(TM '(R L R L R L R))
-(TM '(L R L R L R L))]
+(TM '(a)) (Turing-report)
+(TM '(L a R)) (Turing-report)
+(TM '(R)) (Turing-report)
+(TM '(L)) (Turing-report)
+(TM '(R L)) (Turing-report)
+(TM '(R L R L R L R)) (Turing-report)
+(TM '(L R L R L R L)) (Turing-report)]
 
 @subsection{Inserting elements}
 
@@ -950,10 +932,7 @@ yields final state @rack['F].
 (code:comment " ")
 (code:comment "Example:")
 (code:comment " ")
-(Turing-report #t)
-(Turing-count-pad 2)
-(Turing-state-pad 2)
-(TM '(b a b a b a))
+(TM '(b a b a b a)) (Turing-report)
 (code:comment " ")
 (code:comment "Let's test the TM.")
 (code:comment "The following procedure does the same as the TM")
@@ -968,7 +947,6 @@ yields final state @rack['F].
   (else (cons (car input) (ab->axb (cdr input))))))
 (code:comment " ")
 (random-seed 0)
-(Turing-report #f)
 (code:comment " ")
 (for*/and ((na (in-range 10)) (nb (in-range 10)))
  (define ab (append (make-list na 'a) (make-list nb 'b)))

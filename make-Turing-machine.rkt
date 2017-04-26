@@ -1,37 +1,14 @@
 #lang racket
 
 (provide make-Turing-machine
-         Turing-report
-         Turing-count-pad
-         Turing-state-pad
-         Turing-symbol-pad
-         Turing-limit)
+         Turing-limit
+         Turing-report)
 
 #|==================================================================================================
 
 Module make-Turing-machine.scrbl produces documentation.
 
 ==================================================================================================|#
-
-(define (Turing-report-guard x) (and x #t))
-(define Turing-report (make-parameter #f Turing-report-guard))
-
-(define (Turing-pad-guard x)
- (unless (exact-nonnegative-integer? x)
-  (raise-argument-error 'Turing-pad "exact-nonnegative-integer?" x))
- x)
-
-(define Turing-count-pad (make-parameter 0 Turing-pad-guard))
-(define Turing-state-pad (make-parameter 0 Turing-pad-guard))
-(define Turing-symbol-pad (make-parameter 0 Turing-pad-guard))
-
-(define (Turing-limit-guard x)
- (cond
-  ((exact-positive-integer? x) x)
-  ((not x) #f)
-  (else (raise-argument-error 'Turing-limit "(or/c #f exact-positive-integer?)" x))))
- 
-(define Turing-limit (make-parameter #f Turing-limit-guard))
 
 (define (make-Turing-machine
          initial-state
@@ -144,7 +121,7 @@ Module make-Turing-machine.scrbl produces documentation.
  (define (Turing-machine-proper state tape)
   (cond
    ((set-member? set-of-final-states state)
-    (values nr-of-moves state (tape->list tape)))
+    (values state tape))
    (else
     (set! nr-of-moves (add1 nr-of-moves))
     (define old-tape-symbol (tape-get tape))
@@ -154,16 +131,17 @@ Module make-Turing-machine.scrbl produces documentation.
       ((R) (move-R (tape-put tape new-tape-symbol)))
       ((L) (move-L (tape-put tape new-tape-symbol)))
       ((S) (tape-put tape new-tape-symbol))))
-    (when (Turing-report)
-     (printf
-      "move ~a, state ~a -> ~a, symbol ~a -> ~a, move ~s, new tape ~s~n"
-      (right-justify nr-of-moves (Turing-count-pad))
-      (right-justify state (Turing-state-pad))
-      (left-justify new-state (Turing-state-pad))
-      (right-justify old-tape-symbol (Turing-symbol-pad))
-      (left-justify new-tape-symbol (Turing-symbol-pad))
-      move
-      new-tape))
+    (set! report
+     (cons
+      (list
+       nr-of-moves
+       state
+       new-state
+       old-tape-symbol
+       new-tape-symbol
+       move
+       new-tape)
+      report))
     (when
      (and
       (Turing-limit)
@@ -224,18 +202,64 @@ Module make-Turing-machine.scrbl produces documentation.
      (else (values new-state new-symbol move))))))
 
  (define (Turing-machine input)
+  (set! report '())
   (unless (list? input)
    (error 'Turing-machine "list expected, given: ~s" input))
   (when (member empty-cell input)
    (error 'Turing-machine "empty-cell ~s not allowed in input" empty-cell))
   (when (member dummy input)
    (error 'Turing-machine "dummy ~s not allowed in input" dummy))
-  (define tape (list->tape input))
-  (when (Turing-report)
-   (printf "initial state: ~s, initial tape: ~s~n" initial-state tape))
+  (set! report (list (list initial-state input)))
   (set! nr-of-moves 0)
-  (Turing-machine-proper initial-state tape))
+  (define-values (state tape) (Turing-machine-proper initial-state (list->tape input)))
+  (values nr-of-moves state (tape->list tape)))
 
  Turing-machine)
 
 ;===================================================================================================
+
+(define (Turing-limit-guard x)
+ (cond
+  ((exact-positive-integer? x) x)
+  ((not x) #f)
+  (else (raise-argument-error 'Turing-limit "(or/c #f exact-positive-integer?)" x))))
+ 
+(define Turing-limit (make-parameter #f Turing-limit-guard))
+
+(define report'())
+
+(define (Turing-report)
+ (define (pad x n)
+  (let ((x (format "~s" x)))
+   (string-append (make-string (max 0 (- n (string-length x))) #\space) x)))
+ (let ((report (reverse report)))
+  (cond
+   ((null? report)
+    (printf "No report available.~n"))
+   ((null? (cdr report))
+    (apply printf "Initial state: ~s, input: ~s~nNo moves made.~n" (car report)))
+   (else
+    (define-values (move-pad old-state-pad new-state-pad old-symbol-pad new-symbol-pad)
+     (for/fold
+      ((move-pad 0) (old-state-pad 0) (new-state-pad 0) (old-symbol-pad 0) (new-symbol-pad 0))
+      ((line (in-list (cdr report))))
+      (values
+       (max move-pad (string-length (format "~s" (first line))))
+       (max old-state-pad  (string-length (format "~s" (second line))))
+       (max new-state-pad  (string-length (format "~s" (third  line))))
+       (max old-symbol-pad (string-length (format "~s" (fourth line))))
+       (max new-symbol-pad (string-length (format "~s" (fifth  line)))))))
+    (define periods
+     (make-string (+ 27 move-pad old-state-pad new-state-pad old-symbol-pad new-symbol-pad) #\.))
+    (printf "Turing report ~a input: ~s~n" periods (cadar report))
+    (for ((line (in-list (cdr report))))
+     (printf "move ~a, state: ~a -> ~a, symbol: ~a -> ~a, move: ~s, tape: ~s~n"
+      (pad (first  line) move-pad)
+      (pad (second line) old-state-pad)
+      (pad (third  line) new-state-pad)
+      (pad (fourth line) old-symbol-pad)
+      (pad (fifth  line) new-symbol-pad)
+      (sixth line)
+      (seventh line)))))))
+   
+
