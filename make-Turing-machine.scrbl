@@ -241,11 +241,8 @@ Each line of the report shows:
 @item{The @rack[tape-symbol] that is written, possibly the same one as just read.}
 @item{The @rack[move] of the read/write-head (@rack['R], @rack['L] or @rack['S]).}
 @item{The new position of the read/write-head and the new content of the tape shown as
-@element['tt "((h ...) (t ...))"],
-where @element['tt "(h ... t ...)"] is the content of the tape and the leftmost
-@element['tt "t"] marks the new position of the read/write-head.
-@element['tt "(h ...)"] may be empty, but @element['tt "(t ...)"] never is empty,
-although it can consist of the @rack[empty-cell] only.}]} Example:
+@element['tt "((h ...) (c t ...))"],
+where the new position of the read/write-head is at element @tt{c}.}]} Example:
 
 @interaction[
 (require "make-Turing-machine.rkt")
@@ -255,9 +252,9 @@ although it can consist of the @rack[empty-cell] only.}]} Example:
             'E      (code:comment "empty cell")
             'B      (code:comment "blank")
             '_      (code:comment "dummy")
-            '(((A   _) (AA   x   S))
-              ((AA  _) (AAA  xx  S))
-              ((AAA _) (Halt xxx S)))))
+            '(((A   _) (AA   x   R))
+              ((AA  _) (AAA  xx  R))
+              ((AAA _) (Halt xxx L)))))
 (TM '())
 (Turing-report)]
                                                  
@@ -295,7 +292,7 @@ However, because of the
 it is not possible to avoid the problem in all cases.
 Procedure @rack[make-Turing-machine] and the
 @(seclink "Turing-machine" (element 'tt "Turing-machines"))
-it produces do no checks at all against non-halting.
+it produces do no checks against non-halting.
 For example, the following trivial @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 clearly will loop forever with arbitrary input:
 
@@ -343,9 +340,7 @@ that can detect a repeated state. These adaptations have not been made,
 for the Halting Problem implies that there always remain cases
 in which a non-halting case cannot be predicted
 by procedure @rack[make-Turing-machine] and cannot be detected while a
-@(seclink "Turing-machine" (element 'tt "Turing-machine")) with given @rack[input] is running.
-Moreover, detection of a repeated state requires a record of all visited states,
-which may involve a lot of memory.}}}]
+@(seclink "Turing-machine" (element 'tt "Turing-machine")) with given @rack[input] is running.}}}]
 
 @section{Examples}
 

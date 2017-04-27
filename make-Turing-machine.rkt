@@ -69,9 +69,7 @@ Module make-Turing-machine.scrbl produces documentation.
  ; Define print-tape before defining the struct-type for tapes.
 
  (define (print-tape tape port mode)
-  (define head (reverse (tape-reversed-head tape)))
-  (define tail (tape-tail tape))
-  (write (list head tail) port))
+  (write (list (reverse (tape-reversed-head tape)) (tape-tail tape)) port))
 
  (struct tape (reversed-head tail)
   #:property prop:custom-write print-tape
