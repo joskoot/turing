@@ -63,7 +63,7 @@ in their book “Formal Languages and their Relation to Automata” (ISBN 0-201-
 The reader of the present documentation is supposed to be familiar with Turing-machines.
 Nevertheless, a survey of the terminology as used in this document.
 
-@(image "Turing-machine.gif")
+@(image #:scale 1.2 "Turing-machine.gif")
 
 The @itel["internal-state"] of a Turing-machine is that of the control unit.
 The state of a Turing-machine as a whole includes the @itel["internal-state"],
