@@ -65,7 +65,7 @@ Nevertheless, a survey of the terminology as used in this document.
 
 @inset[@(image "Turing-machine.jpg")]
 
-The @itel["internal-state"] of a Turing-machine is that of the control unit.
+At every moment the control unit has one of a finite number of @itel["internal-states"].
 The state of a Turing-machine as a whole includes the @itel["internal-state"],
 the current content of the tape and the current position of the read/write-head.
 The first element of the content is considered to be at the left,
@@ -78,7 +78,24 @@ Initially the content consists of the @itel["input"]
 and the read/write-head is positioned at the leftmost element.
 If the @itel["input"] is empty, the
 content of the tape initially consists of one @itel["empty-cell"].
-The control unit makes moves according to its @itel["rules"].
+
+The control unit makes moves according to its @itel["rules"]
+until it assumes a @itel{final-state}.
+However, be aware of the
+@hyperlink["https://en.wikipedia.org/wiki/Halting_problem"]{Halting Problem},
+which is as follows:
+there is no algorithm that for every set of @itel{rules}
+or combination of set of @itel{rules} and given @itel{input}
+can decide whether or not the machine eventually will halt.
+An algorithm is a procedure that is guaranteed to give an answer within a finite number of steps,
+although without predefined limit on the number of steps.
+A procedure may give an answer, but as long as it doesn't,
+we cannot know whether or not it will give an answer eventually.
+The @hyperlink["https://en.wikipedia.org/wiki/Halting_problem"]{Halting Problem}
+can also be stated as follows:
+there is no algorithm that for every procedure can decide whether or not the latter
+is an algorithm.
+
 A move is determined by the @itel["internal-state"]
 of the control unit and the current element under the read/write-head.
 A move consists of three steps:
@@ -88,7 +105,9 @@ A move consists of three steps:
 @item{Optionally replacing the current element by
 another one. This step is not optional when
 the current element is an @itel["empty-cell"].
-The latter always is replaced by a @itel["tape-symbol"].}
+The latter always is replaced by a @itel["tape-symbol"],
+(except, possibly, when the Turing machine halts because
+the control unit assumes a @itel{final-state})}
 @item{Optionally moving the read/write-head one step to the right or to the left.}]
 
 @note{In real life tape equipment usually the tape is moving
@@ -173,7 +192,7 @@ a linear function of the number of @itel{rules}.}
              (   tape-symbol any/c)
              (    empty-cell any/c)
              (         dummy any/c)
-             (          move (or/c 'R 'L 'S)))]{
+             (          move (or/c 'R 'L 'N)))]{
 Procedure @rack[make-Turing-machine] returns a procedure that emulates a Turing-machine.
 Before the machine is produced the arguments are checked to satisfy the following conditions,
 equality or being distinct to be understood in the sense of @rack[equal?].
@@ -184,7 +203,7 @@ equality or being distinct to be understood in the sense of @rack[equal?].
  @item{The @rack[empty-cell] must not be used as a @rack[new-symbol].}
  @item{A @rack[final-state] must not be used as an @rack[old-state].}
  @item{The @rack[rules] must have distinct combinations @rack[(old-state old-symbol)].}
- @item{A @rack[move] must be @rack['R], @rack['L] or @rack['S].}]
+ @item{A @rack[move] must be @rack['R], @rack['L] or @rack['N].}]
 
 When not all of these conditions are satisfied,
 procedure @rack[make-Turing-machine] raises an error.
@@ -210,11 +229,11 @@ the current element remains as it is.}
 @item{If the @rack[new-symbol] is the @rack[dummy] and
 the current element is the @rack[empty-cell],
 the latter is replaced by a @rack[blank].}
-@item{The read/write-head may be moved depending on the @rack[move]
+@item{The read/write-head is moved as indicated by the @rack[move]
 of the @rack[rule].@(linebreak)
-@rack[move] @rack['L] indicates a move to the left.@(linebreak)
-@rack[move] @rack['R] indicates a move to the right.@(linebreak)
-@rack[move] @rack['S] indicates that that the read-write-head stays where it is.}
+@rack[move] @rack['L] : move one step to the left.@(linebreak)
+@rack[move] @rack['R] : move one step to the right.@(linebreak)
+@rack[move] @rack['N] : no move.}
 @item{When no matching rule can be found,
 the procedure emulating the Turing-machine halts by raising an exception.}]
 
@@ -240,7 +259,7 @@ Each line of the report shows:
 @item{The @rack[new-state] of the control unit, possibly the same as the @rack[old-state].}
 @item{The @rack[tape-symbol] (or @rack[empty-cell]) encountered before replacing it.}
 @item{The @rack[tape-symbol] that is written, possibly the same one as just read.}
-@item{The @rack[move] of the read/write-head (@rack['R], @rack['L] or @rack['S]).}
+@item{The @rack[move] of the read/write-head (@rack['R], @rack['L] or @rack['N]).}
 @item{The new position of the read/write-head and the new content of the tape shown as
 @element['tt "((h ...) (c t ...))"],
 where the new position of the read/write-head is at element @tt{c}.}]} Example:
@@ -305,12 +324,12 @@ clearly will loop forever with arbitrary input:
             'E   (code:comment "empty cell")
             'B   (code:comment "blank")
             '_   (code:comment "dummy")
-            '(((A _) (A _ S)))))
+            '(((A _) (A _ N)))))
 (code:line (Turing-limit 5) (code:comment "Prevent the machine to run forever."))
 (TM '())
 (Turing-report)]
 
-In this example @rack[rule] @rack['((A _) (A _ S))] alone already implies an infinite loop.
+In this example @rack[rule] @rack['((A _) (A _ N))] alone already implies an infinite loop.
 While the @rack[TM] is running,
 its state (the content of the tape and the position of the read/write-head included)
 never changes after the first move,
@@ -371,19 +390,19 @@ The machine never moves left of the start of the input.
   (code:comment "                 of the start of the input.")
   ((0 x) (1 y R))  (code:comment "Ok, go check the remainder of the input.")
   ((0 +) (1 p R))  (code:comment "Ok, go check the remainder of the input.")
-  ((0 E) (T B S))  (code:comment "Empty input accepted.")
-  ((0 _) (F _ S))  (code:comment "Reject incorrect input.")
+  ((0 E) (T B N))  (code:comment "Empty input accepted.")
+  ((0 _) (F _ N))  (code:comment "Reject incorrect input.")
   (code:comment "       State 1 : Check the remainder of the input.")
   ((1 x) (1 x R))  (code:comment "Ok, continue the check.")
   ((1 +) (1 + R))  (code:comment "Ok, continue the check.")
   ((1 E) (2 B L))  (code:comment "Input is ok. Start the addition.")
-  ((1 _) (F _ S))  (code:comment "Reject incorrect input.")
+  ((1 _) (F _ N))  (code:comment "Reject incorrect input.")
   (code:comment "       State 2 : Do the addition from right to left.")
   (code:comment "                 When entering state 2 for the first time the read/")
   (code:comment "                 write-head is at the right-most non-blank element.")
   (code:comment "                 The content starts with y or p and ends with B.")
   ((2 x) (2 x L))  (code:comment "Leave x as it is and continue addition.")
-  ((2 y) (T x S))  (code:comment "Start of input reached. Done.")
+  ((2 y) (T x N))  (code:comment "Start of input reached. Done.")
   ((2 +) (3 x R))  (code:comment "Replace + by x and go replacing the last x by a blank.")
   ((2 p) (3 y R))  (code:comment "Replace p by y and go replacing the last x by a blank.")
   (code:comment "       State 3 : Go to end of tape.")
@@ -391,7 +410,7 @@ The machine never moves left of the start of the input.
   ((3 B) (4 B L))  (code:comment "End of input reached.")
   (code:comment "       State 4 : Replace the last x (or the y if there is no x) by a blank.")
   ((4 x) (2 B L))  (code:comment "Replace x by a blank and continue addition.")
-  ((4 y) (T B S))  (code:comment "Replace y by a blank and accept.")))
+  ((4 y) (T B N))  (code:comment "Replace y by a blank and accept.")))
 (code:comment " ")
 (define TM (make-Turing-machine
             '0     (code:comment "initial state")
@@ -468,21 +487,21 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
   (code:comment "At least one bit required preceding +.")
   ((0 0) (1 0 R)) (code:comment "Ok, continue parsing the first operand.")
   ((0 1) (1 1 R)) (code:comment "Ok, continue parsing the first operand.")
-  ((0 _) (F _ S)) (code:comment "Reject.")
+  ((0 _) (F _ N)) (code:comment "Reject.")
   (code:comment "Check the remainder of the first operand.")
   ((1 0) (1 0 R)) (code:comment "Continue checking the first operand.")
   ((1 1) (1 1 R)) (code:comment "Continue checking the first operand.")
   ((1 +) (2 + R)) (code:comment "End of first operand, go to second operand.")
-  ((1 _) (F _ S)) (code:comment "Reject.")
+  ((1 _) (F _ N)) (code:comment "Reject.")
   (code:comment "At least one bit required for the second operand.")
   ((2 0) (3 0 R)) (code:comment "Ok, continue parsing the second operand.")
   ((2 1) (3 1 R)) (code:comment "Ok, continue parsing the second operand.")
-  ((2 _) (F _ S)) (code:comment "Reject.")
+  ((2 _) (F _ N)) (code:comment "Reject.")
   (code:comment "Check the remainder of the second operand.")
   ((3 0) (3 0 R)) (code:comment "Ok, continue parsing the second operand.")
   ((3 1) (3 1 R)) (code:comment "Ok, continue parsing the second operand.")
   ((3 E) (4 B L)) (code:comment "End of correct input. Go to the addition.")
-  ((3 _) (F _ S)) (code:comment "Reject.")
+  ((3 _) (F _ N)) (code:comment "Reject.")
   (code:comment "Addition")
   (code:comment "We are at the least significant bit of the second operand.")
   ((4 0) (5 B L)) (code:comment "Erase the bit and add it to the first operand.")
@@ -529,9 +548,9 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
   ((C E) (D B R))
   (code:comment "Remove heading zeros, but make sure at least one bit remains.")
   ((D 0) (D B R))
-  ((D 1) (T 1 S))
-  ((D B) (T 0 S))
-  ((D E) (T 0 S))))
+  ((D 1) (T 1 N))
+  ((D B) (T 0 N))
+  ((D E) (T 0 N))))
 (code:comment " ")
 (define adder (make-Turing-machine
                '0     (code:comment "initial state")
@@ -700,7 +719,7 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
    ((B 0) (A 1 R))
    ((B 1) (C 1 L))
    ((C 0) (B 1 L))
-   ((C 1) (T 1 S))))
+   ((C 1) (T 1 N))))
 (define TM
  (make-Turing-machine
   'A   (code:comment "The initial state.")
@@ -762,31 +781,31 @@ If a required @rack[0] or @rack[1] is not found, the machine halts with state @r
 (define rules
  '((code:comment "state 0: starting state.")
    (code:comment "Accept empty input, otherwise add starting mark s.")
-   ((0 E) (T B S)) (code:comment "Accept empty input.")
+   ((0 E) (T B N)) (code:comment "Accept empty input.")
    ((0 _) (1 _ L))
    ((1 E) (2 s R))
    (code:comment "state 2: Check that we have 0s and 1s only and add an ending mark e.")
    ((2 0) (2 0 R))
    ((2 1) (2 1 R))
-   ((2 E) (3 e S))
-   ((2 _) (F _ S))
+   ((2 E) (3 e N))
+   ((2 _) (F _ N))
    (code:comment "state 3: Go to the end of the tape.")
    ((3 e) (4 e L))
    ((3 _) (3 _ R))
    (code:comment "state 4: look for a 0 or a 1 at the left")
-   ((4 s) (T B S)) (code:comment "Ok, no more 0s or 1s.")
+   ((4 s) (T B N)) (code:comment "Ok, no more 0s or 1s.")
    ((4 0) (5 e L)) (code:comment "a 1 at the left is required.")
    ((4 1) (6 e L)) (code:comment "a 0 at the left is required.")
    ((4 B) (4 e L))
    (code:comment "state 5: look for a required 1 at the left.")
    ((5 0) (5 0 L)) (code:comment "skip 0.")
    ((5 1) (3 B R)) (code:comment "found.")
-   ((5 s) (F s S)) (code:comment "no 1 found.")
+   ((5 s) (F s N)) (code:comment "no 1 found.")
    ((5 B) (5 B L))
    (code:comment "state 6: look for a required 0 at the left.")
    ((6 0) (3 B R)) (code:comment "found.")
    ((6 1) (6 1 L)) (code:comment "skip 1.")
-   ((6 s) (F s S)) (code:comment "no 0 found.")
+   ((6 s) (F s N)) (code:comment "no 0 found.")
    ((6 B) (6 B L))))
 (code:comment " ")
 (define TM
@@ -840,7 +859,7 @@ and the machine halts in state @rack[F].
   (code:comment "state 0")
   (code:comment "accept empty input.")
   (code:comment "put start marker s before non-empty input.")
-'(((0 E) (T B S))
+'(((0 E) (T B N))
   ((0 _) (1 _ L))
   ((1 E) (2 s R))
   (code:comment "state 2")
@@ -849,18 +868,18 @@ and the machine halts in state @rack[F].
   ((2 L) (2 L R))
   ((2 R) (2 R R))
   ((2 E) (3 e L))
-  ((2 _) (F _ S))
+  ((2 _) (F _ N))
   (code:comment "state 3")
   (code:comment "we are at the end of the tape.")
   (code:comment "look left for R immediately preceded by L.")
   ((3 B) (3 B L))
   ((3 s) (7 B R)) (code:comment "all done, go blank the end mark e.")
   ((3 R) (4 R L)) (code:comment "found a R.")
-  ((3 _) (F _ S))
+  ((3 _) (F _ N))
   ((4 B) (4 B L))
   ((4 L) (5 B R)) (code:comment "found immediately preceeding L, blank the L.")
   ((4 R) (4 R L)) (code:comment "found another R.")
-  ((4 _) (F _ S))
+  ((4 _) (F _ N))
   (code:comment "state 5")
   (code:comment "blank the R corresponding to the L just blanked.")
   ((5 R) (6 B R)) 
@@ -871,7 +890,7 @@ and the machine halts in state @rack[F].
   ((6 _) (6 _ R))
   (code:comment "state 7")
   (code:comment "blank the e mark and halt in state T.")
-  ((7 e) (T B S))
+  ((7 e) (T B N))
   ((7 _) (7 _ R))))
 (code:comment " ")
 (define TM (make-Turing-machine 0 '(T F) 'E 'B '_ rules))
@@ -915,13 +934,13 @@ yields final state @rack['F].
   (code:comment "Look for a.")
   ((0  a) (1  a R))
   ((0  b) (0  b R))
-  ((0  E) (T  B S))
-  ((0  _) (F  _ S))
+  ((0  E) (T  B N))
+  ((0  _) (F  _ N))
   (code:comment "Next symbol b?")
   ((1  a) (1  a R)) (code:comment "no, look for next a.")
   ((1  b) (2  M L)) (code:comment "yes, mark it M and proceed.")
-  ((1  _) (F  _ S))
-  ((1  E) (T  B S))
+  ((1  _) (F  _ N))
+  ((1  E) (T  B N))
   (code:comment "Rewind the tape.")
   ((2  E) (3  B R))
   ((2  _) (2  _ L))
