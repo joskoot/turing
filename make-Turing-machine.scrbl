@@ -63,7 +63,7 @@ in their book “Formal Languages and their Relation to Automata” (ISBN 0-201-
 The reader of the present documentation is supposed to be familiar with Turing-machines.
 Nevertheless, a survey of the terminology as used in this document.
 
-@(image #:scale 1.2 "Turing-machine.gif")
+@inset[@(image "Turing-machine.jpg")]
 
 The @itel["internal-state"] of a Turing-machine is that of the control unit.
 The state of a Turing-machine as a whole includes the @itel["internal-state"],
@@ -112,7 +112,7 @@ If it has one, it is the first element or the last one and the read/write-head i
 In this situation either the @itel["empty-cell"] is immediately replaced by a
 @itel["tape-symbol"] during the next move or,
 when the last move has produced a @itel["final-state"],
-the machine immediately halts without replacing the @itel["empty-cell"].
+the machine halts without replacing the @itel["empty-cell"].
 The @itel["dummy"] is for use in @itel["rules"] only.
 The @itel["rules"] describe how the control unit makes its moves.
 The machine repeats moves until a @itel["final-state"] is obtained,
@@ -209,7 +209,7 @@ the current element is not the @rack[empty-cell],
 the current element remains as it is.}
 @item{If the @rack[new-symbol] is the @rack[dummy] and
 the current element is the @rack[empty-cell],
-the current element is replaced by a @rack[blank].}
+the latter is replaced by a @rack[blank].}
 @item{The read/write-head may be moved depending on the @rack[move]
 of the @rack[rule].@(linebreak)
 @rack[move] @rack['L] indicates a move to the left.@(linebreak)
@@ -228,6 +228,7 @@ raises an error or is halted by a
 @hyperlink[
 "file:///C:/Program%20Files/Racket/doc/reference/breakhandler.html?q=break#%28tech._break%29"
 "break"], the report remains available.
+After printing the report no longer is available.
 When running a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 the report of the previous run of a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 is lost.
@@ -260,9 +261,9 @@ where the new position of the read/write-head is at element @tt{c}.}]} Example:
                                                  
 @defparam*[Turing-limit n (or/c #f exact-positive-integer?) (or/c #f exact-positive-integer?)
            #:value #f]{
-When the parameter holds an @rack[exact-positive-integer?], say n,
+When the parameter holds an @rack[exact-positive-integer?], say @rack[n],
 a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
-halts with an exception when it does not reach a @rack[final-state] within n or less moves.
+halts with an exception when it does not reach a @rack[final-state] within @rack[n] or less moves.
 See the next section for examples.}
 
 @section[#:tag "Turing-machine"]{Running a Turing-machine}
@@ -414,7 +415,9 @@ The machine never moves left of the start of the input.
 (code:comment "even before the TM starts running.")
 (code:comment " ")
 (TM '(x x x E x x x))
+(Turing-report)
 (TM '(x x x _ x x x))
+(Turing-report)
 (code:comment " ")
 (code:comment "More tests:")
 (code:comment " ")
@@ -451,7 +454,7 @@ During the addition the content of the tape is (ignoring blanks and empty-cell)
 Bits of the second operand are processed starting from the least significant one.
 Every such bit is replaced by a @itel["blank"] before it is processed.
 The significance of the blanked bit is the same as that of
-the right-most @nonbreaking{@element['tt "bit-0-or-1"]} of the first operand.
+the right-most bit @nonbreaking{@element['tt "0-or-1"]} of the first operand.
 After all bits of the second operand have been processed,
 the @element['tt "+"] is removed,
 elements @element['tt "x"] and @element['tt "y"] are reverted to

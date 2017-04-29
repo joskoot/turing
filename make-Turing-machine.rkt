@@ -258,6 +258,7 @@ Module make-Turing-machine.scrbl produces documentation.
       (pad (fourth line) old-symbol-pad)
       (pad (fifth  line) new-symbol-pad)
       (sixth line)
-      (seventh line)))))))
+      (seventh line))))))
+ (set! report '()))
    
 
