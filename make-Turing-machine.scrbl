@@ -141,7 +141,7 @@ such as to raise an exception when the emulated machine needs more moves.
 See parameter @rack[Turing-limit].
 It may happen that there is no @itel["rule"] specifying which move to make
 for a given combination of @itel["internal-state"] and current element.
-In that case the procedure that emulates the Turing-machine halts by raising an exception.
+In such a case the procedure that emulates the Turing-machine halts by raising an exception.
 The @itel["internal-states"] and @itel["tape-symbols"] can be arbitrary Racket values,
 but usually symbols and exact integer numbers are the most convenient ones.
 Using lists or vectors for @itel["tape-symbols"] and/or @itel["internal-states"]
@@ -206,7 +206,7 @@ equality or being distinct to be understood in the sense of @rack[equal?].
  @item{A @rack[move] must be @rack['R], @rack['L] or @rack['N].}]
 
 When not all of these conditions are satisfied,
-procedure @rack[make-Turing-machine] raises an error.
+procedure @rack[make-Turing-machine] raises an error before generating a Turing-machine.
 The @rack[rules] are interpreted as follows,
 where equality again is to be understood in the sense of @rack[equal?].
 
@@ -272,9 +272,10 @@ where the new position of the read/write-head is at element @tt{c}.}]} Example:
             'E      (code:comment "empty cell")
             'B      (code:comment "blank")
             '_      (code:comment "dummy")
-            '(((A   _) (AA   x   R))
-              ((AA  _) (AAA  xx  R))
-              ((AAA _) (Halt xxx L)))))
+            '(((A E) (B    x R))
+              ((B E) (C   xx R))
+              ((C E) (D  xxx L))
+              ((D _) (Halt _ L)))))
 (TM '())
 (Turing-report)]
                                                  
@@ -913,7 +914,7 @@ and the machine halts in state @rack[F].
 (TM '(R L R L R L R)) (Turing-report)
 (TM '(L R L R L R L)) (Turing-report)]
 
-@subsection{Inserting elements}
+@subsection[#:tag "Inserting elements"]{Inserting elements}
 
 The following Turing-machine always halts.
 For an input consisting of @rack['a]'s and @rack['b]'s only
@@ -932,32 +933,32 @@ yields final state @rack['F].
 (define rules
 '(
   (code:comment "Look for a.")
-  ((0  a) (1  a R))
-  ((0  b) (0  b R))
-  ((0  E) (T  B N))
-  ((0  _) (F  _ N))
+  ((0     a) (1     a R))
+  ((0     b) (0     b R))
+  ((0     E) (T     B N))
+  ((0     _) (F     _ N))
   (code:comment "Next symbol b?")
-  ((1  a) (1  a R)) (code:comment "no, look for next a.")
-  ((1  b) (2  M L)) (code:comment "yes, mark it M and proceed.")
-  ((1  _) (F  _ N))
-  ((1  E) (T  B N))
+  ((1     a) (1     a R)) (code:comment "no, look for next a.")
+  ((1     b) (2     M L)) (code:comment "yes, mark it M and proceed.")
+  ((1     _) (F     _ N))
+  ((1     E) (T     B N))
   (code:comment "Rewind the tape.")
-  ((2  E) (3  B R))
-  ((2  _) (2  _ L))
+  ((2     E) (3     B R))
+  ((2     _) (2     _ L))
   (code:comment "Shift every symbol one cell to the left up to mark M.")
   (code:comment "Replace a or b or x by B.")
   (code:comment "Replace preceding B by a or b or x.")
   (code:comment "Replace M by b and replace preceding B by x.")
-  ((3  a) (4a B L))
-  ((3  b) (4b B L))
-  ((3  x) (4x B L))
-  ((3  M) (4M b L))
-  ((4a B) (5  a R)) (code:comment "Continue the shift.")
-  ((4b B) (5  b R)) (code:comment "Continue the shift.")
-  ((4x B) (5  x R)) (code:comment "Continue the shift.")
-  ((4M B) (0  x R)) (code:comment "Shift completed. Look for next a followed by b.")
+  ((3     a) ((4 a) B L))
+  ((3     b) ((4 b) B L))
+  ((3     x) ((4 x) B L))
+  ((3     M) ((4 M) b L))
+  (((4 a) B) (5     a R)) (code:comment "Continue the shift.")
+  (((4 b) B) (5     b R)) (code:comment "Continue the shift.")
+  (((4 x) B) (5     x R)) (code:comment "Continue the shift.")
+  (((4 M) B) (0     x R)) (code:comment "Shift completed. Look for next a followed by b.")
   (code:comment "Step to the right of the B and continue the shift.")
-  ((5  B) (3  B R))))
+  ((5     B) (3     B R))))
 (code:comment " ")
 (define TM (make-Turing-machine  0 '(T F) 'E 'B  '_ rules))
 (code:comment " ")
@@ -994,5 +995,13 @@ yields final state @rack['F].
    (equal? state1 'T)
    (equal? state2 'F)
    (equal? state3 'F))))]
+
+@section{Registers}
+The Turing-machines described in this document have no internal registers.
+A control-unit with a principal state and a finite number of registers, each of which are
+restricted to a finite number of contents produces a Turing-machine too.
+This technique has not been used in this document.
+In the example of section @secref{Inserting elements} this technique could simplify
+the notation of rules, in particular for the states @tt{(4 ?)}.
 
 @larger{@larger{@bold{The end}}}

@@ -39,7 +39,7 @@ Module make-Turing-machine.scrbl produces documentation.
     (list? (cadr x)) (= (length (cadr x)) 3)
     (and
      (not (set-member? set-of-final-states (rule-old-state x)))
-     (member (rule-move x) '(R L S))
+     (member (rule-move x) '(R L N))
      (not (equal? (rule-new-symbol x) empty-cell)))))
   (when (equal? empty-cell blank)
    (error 'make-Turing-machine "empty-cell must differ from blank: ~s" blank))
@@ -128,7 +128,7 @@ Module make-Turing-machine.scrbl produces documentation.
      (case move
       ((R) (move-R (tape-put tape new-tape-symbol)))
       ((L) (move-L (tape-put tape new-tape-symbol)))
-      ((S) (tape-put tape new-tape-symbol))))
+      ((N) (tape-put tape new-tape-symbol))))
     (set! report
      (cons
       (list
