@@ -57,20 +57,25 @@
 This document describes procedure @rack[make-Turing-machine].
 It is a tool for the construction of procedures that emulate two-way single tape
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"].
-John E. Hopcroft and Jeffrey D. Ullman give a very accurate description of
+The reader of the present documentation is supposed to be familiar with Turing-machines.
+
+@note{John E. Hopcroft and Jeffrey D. Ullman give a very accurate description of
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"]
 in their book “Formal Languages and their Relation to Automata” (ISBN 0-201-0298 3-9)
-The reader of the present documentation is supposed to be familiar with Turing-machines.
 Nevertheless, a survey of the terminology as used in this document.
+For example, the word `tape-symbol' will be used for the symbols of a Turing-machine
+in order to avoid confusion with
+@hyperlink[ "https://docs.racket-lang.org/reference/symbols.html?q=symbols" "symbols"]
+of @hyperlink["http://racket-lang.org/" "Racket"].}
 
 @inset[@(image "Turing-machine.jpg")]
 
-At every moment the control unit has one of a finite number of @itel["internal-states"].
+At every moment the control unit has one out of a finite set of @itel["internal-states"].
 The state of a Turing-machine as a whole includes the @itel["internal-state"],
 the current content of the tape and the current position of the read/write-head.
 The first element of the content is considered to be at the left,
-the last element to be at the right.
-The current element is the one currently below the read/write-head.
+the last element to be at the right, both shown in blue.
+The current element is the one currently below the read/write-head, shown in red.
 The elements of the content are @itel["tape-symbols"],
 but the first or last element can be an @itel["empty-cell"],
 which is not a @itel["tape-symbol"].
@@ -78,24 +83,9 @@ Initially the content consists of the @itel["input"]
 and the read/write-head is positioned at the leftmost element.
 If the @itel["input"] is empty, the
 content of the tape initially consists of one @itel["empty-cell"].
-
 The control unit makes moves according to its @itel["rules"]
 until it assumes a @itel{final-state}.
-However, be aware of the
-@hyperlink["https://en.wikipedia.org/wiki/Halting_problem"]{Halting Problem},
-which is as follows:
-there is no algorithm that for every set of @itel{rules}
-or combination of set of @itel{rules} and given @itel{input}
-can decide whether or not the machine eventually will halt.
-An algorithm is a procedure that is guaranteed to give an answer within a finite number of steps,
-although without predefined limit on the number of steps.
-A procedure may give an answer, but as long as it doesn't,
-we cannot know whether or not it will give an answer eventually.
-The @hyperlink["https://en.wikipedia.org/wiki/Halting_problem"]{Halting Problem}
-can also be stated as follows:
-there is no algorithm that for every procedure can decide whether or not the latter
-is an algorithm.
-
+It may make moves forever when it never reaches a @itel{final-state}.
 A move is determined by the @itel["internal-state"]
 of the control unit and the current element under the read/write-head.
 A move consists of three steps:
@@ -135,36 +125,40 @@ the machine halts without replacing the @itel["empty-cell"].
 The @itel["dummy"] is for use in @itel["rules"] only.
 The @itel["rules"] describe how the control unit makes its moves.
 The machine repeats moves until a @itel["final-state"] is obtained,
-or may remain making moves forever if it never reaches a @itel["final-state"].
-It is possible to put a maximum on the number of moves
+or runs forever if it never reaches a @itel["final-state"].
+It is possible to put a maximum on the @tt{nr-of-moves}
 such as to raise an exception when the emulated machine needs more moves.
 See parameter @rack[Turing-limit].
 It may happen that there is no @itel["rule"] specifying which move to make
 for a given combination of @itel["internal-state"] and current element.
 In such a case the procedure that emulates the Turing-machine halts by raising an exception.
-The @itel["internal-states"] and @itel["tape-symbols"] can be arbitrary Racket values,
+The @itel["internal-states"] and @itel["tape-symbols"] can be arbitrary
+@hyperlink["http://racket-lang.org/" "Racket"] values,
 but usually symbols and exact integer numbers are the most convenient ones.
 Using lists or vectors for @itel["tape-symbols"] and/or @itel["internal-states"]
 allows the simulation of multi-tape Turing-machines,
 although this may require many @itel["rules"].
-Procedure @rack[make-Turing-machine] is designed primarily for single tape Turing-machines.
+Procedure @rack[make-Turing-machine] is designed for single tape Turing-machines.
 Equivalence relation @rack[equal?] is used for comparison of two @itel["internal-states"]
 or two @itel["tape-symbols"].
 The @itel["internal-states"] and @itel["tape-symbols"] live in separate worlds.
 An @itel["internal-state"] never is compared to a @itel["tape-symbol"] or an @itel["empty-cell"].
 Hence the Turing-machine will not be confused when the intersection of the set of
-@itel["internal-states"] and the set of @itel["tape-symbols"] is not empty
+@hyperlink["http://racket-lang.org/" "Racket"]-objects representing the
+@itel["internal-states"] and the set of
+@hyperlink["http://racket-lang.org/" "Racket"]-objects representing
+the @itel["tape-symbols"] is not empty
 or when an @itel["internal-state"] equals the @itel["dummy"] or an @itel["empty-cell"].
 However, this may confuse a human reader.
-After reaching a @itel["final-state"] the Turing-machine returns its @tt{output},
-which consists of the content of the tape,
+After reaching a @itel["final-state"] the procedure that emulates the Turing-machine
+returns the @tt{nr-of-moves} it has made, the @itel{final-state} and its @tt{output}.
+The latter consists of the final content of the tape,
 but without heading or trailing @itel["empty-cell"] or @itel["blanks"].
 The @tt{output} can contain @itel["blanks"] but not at the start or the end.
-The @tt{output} never contains an @itel["empty-cell"] or a @itel["dummy"].
+The @tt{output} never contains a @itel["dummy"] or an @itel["empty-cell"].
 
-@note{Procedure @rack[make-Turing-machine] produces a procedure
-@(seclink "Turing-machine" (element 'tt "Turing-machine")) in which the internal
-representation of the tape and the rules is such that
+@note{Procedure @rack[make-Turing-machine] returns a procedure that emulates a Turing-machine.
+The internal representation of the tape and the @itel{rules} is such that
 each move is made in constant time, independent of the number of @itel{rules},
 the size of the content of the tape and the position of the read/write-head.
 The maximal time needed to prepare the @tt["output"] after reaching
@@ -219,7 +213,11 @@ Every other @rack[old-symbol] matches only when equal to the current element.}
 @item{A @rack[rule] whose @rack[old-state] equals the current @rack[internal-state] and
 whose @rack[old-symbol] equals the current element
 prevails over a @rack[rule] with the same @rack[old-state] and
-whose @rack[old-symbol] is the @rack[dummy].}
+whose @rack[old-symbol] is the @rack[dummy].
+For each set of @rack[rules] with the same @rack[old-state] the @rack[dummy]
+is like @rack[else] in a @rack[cond]-form,
+but is not required to be at the end.
+The order of the @rack[rules] is irrelevant.}
 @item{When a rule is applied, the current @rack[internal-state] is changed to the @rack[new-state].}
 @item{If the @rack[new-symbol] is not the @rack[dummy],
 the current element is replaced by the @rack[new-symbol].}
@@ -238,16 +236,17 @@ of the @rack[rule].@(linebreak)
 the procedure emulating the Turing-machine halts by raising an exception.}]
 
 @defproc[(Turing-report) void?]{
-A @(seclink "Turing-machine" (element 'tt "Turing-machine")) keeps record
-of the moves it makes. Procedure @rack[Turing-report]
-prints a report of the most recently run @(seclink "Turing-machine" (element 'tt "Turing-machine")).
-Uses the @rack[current-output-port].
+A @(seclink "Turing-machine" (element 'tt "Turing-machine")) procedure
+made by procedure @rack[make-Turing-machine]
+keeps record of the moves it makes.
+Procedure @rack[Turing-report] prints the report on the @rack[current-output-port].
 When a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 raises an error or is halted by a
 @hyperlink[
 "file:///C:/Program%20Files/Racket/doc/reference/breakhandler.html?q=break#%28tech._break%29"
 "break"], the report remains available.
-After printing the report no longer is available.
+After printing the report no longer is available (unless saved in a
+@racketlink[open-output-string "string-output-port"]).
 When running a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 the report of the previous run of a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 is lost.
@@ -273,9 +272,8 @@ where the new position of the read/write-head is at element @tt{c}.}]} Example:
             'B      (code:comment "blank")
             '_      (code:comment "dummy")
             '(((A E) (B    x R))
-              ((B E) (C   xx R))
-              ((C E) (D  xxx L))
-              ((D _) (Halt _ L)))))
+              ((B E) (C    xx R))
+              ((C E) (Halt xxx N)))))
 (TM '())
 (Turing-report)]
                                                  
@@ -288,17 +286,16 @@ See the next section for examples.}
 
 @section[#:tag "Turing-machine"]{Running a Turing-machine}
 A procedure returned by procedure @rack[make-Turing-machine],
-say @element['tt @larger{@bold{Turing-machine}}], is called as follows:
+is called as follows:
 
 @defproc[#:kind "procedure" #:link-target? #f
 (Turing-machine (input (listof tape-symbol)))
-(values nr-of-moves final-state output)]{
-@rack[nr-of-moves] : @rack[exact-positive-integer?]@(linebreak)
-@rack[output] : @rack[(listof tape-symbol)]
-
+(values (nr-of-moves exact-positive-integer?)
+        (final-state any/c)
+        (output (listof tape-symbol)))]{
 The @rack[output] shows the content of the tape after the machine has reached a
-@rack[final-state], but without
-heading or trailing @rack[blank]s or @rack[empty-cell].
+@rack[final-state],
+but without heading or trailing @rack[blank]s or @rack[empty-cell].
 If during the execution of the @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 no rule can be found matching its current @rack[internal-state] and the current element,
 the @(seclink "Turing-machine" (element 'tt "Turing-machine")) halts by raising an exception.
@@ -309,11 +306,11 @@ sometimes depending on both the @rack[rules] and the @rack[input].
 In some cases the problem can be predicted by looking at the @rack[rules]
 or can be detected while a @(seclink "Turing-machine" (element 'tt "Turing-machine")) is running.
 However, because of the
-@hyperlink["https://en.wikipedia.org/wiki/Halting_problem"]{@bold{Halting Problem}}
-it is not possible to avoid the problem in all cases.
+@hyperlink["https://en.wikipedia.org/wiki/Halting_problem"]{Halting Problem}
+there always remain cases for which it is impossible to detect an infinite loop.
 Procedure @rack[make-Turing-machine] and the
 @(seclink "Turing-machine" (element 'tt "Turing-machines"))
-it produces do no checks against non-halting.
+it produces do no checks at all against infinite loops.
 For example, the following trivial @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 clearly will loop forever with arbitrary input:
 
@@ -461,8 +458,8 @@ A correct input is defined as follows:
 operand = bit bit ...
 bit     = 0 | 1"]}
 
-An incorrect input yields final state @element['tt "F"].
-A correct input yields final state @element['tt "T"] and @tt{output}
+An incorrect input yields @itel{final-state} @element['tt "F"].
+A correct input yields @itel{final-state} @element['tt "T"] and @tt{output}
 @nonbreaking{@rack[(bit bit ...)]}
 showing the sum of the two operands.
 More precisely the @tt{output} is @nonbreaking{@rack[(1 bit ...)]} or @rack[(0)],
@@ -629,7 +626,7 @@ the last digit as the most significant one.
 The machine passes exactly once through the input.
 During each step it moves to the right.
 Redundant heading zeros are not removed.
-It replaces each input symbol @nonbreaking{@element['tt "(n m)"]} by one decimal digit.
+It replaces each @itel{tape-symbol} @nonbreaking{@element['tt "(n m)"]} by one decimal digit.
 State @element['tt "0"] indicates that there is no carry.
 State @element['tt "1"] indicates that a carry must be added.
 State @element['tt "0"] is the initial internal-state and @element['tt "T"] the final state.
@@ -710,7 +707,7 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
  (and (= (output->nr output) (+ n m)) (eq? final-state 'T)))]
 
 @subsection{Busy beaver}
-3 state busy beaver. In fact there are four states, but final state @tt{T} does not count.
+3 state busy beaver. In fact there are four states, but @itel{final-state} @tt{T} does not count.
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
@@ -732,7 +729,7 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
 (TM '())
 (Turing-report)]
 
-4 state busy beaver. In fact there are five states, but final state @tt{T} does not count.
+4 state busy beaver. In fact there are five states, but @itel{final-state} @tt{T} does not count.
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
@@ -760,8 +757,8 @@ State @element['tt "0"] is the initial internal-state and @element['tt "T"] the 
 
 The following Turing-machine halts on every arbitrary input.
 If the input is a list of zeros and ones with as many zeros as ones,
-the final state is @rack['T].
-In all other cases the final state is @rack['F].
+the @itel{final-state} is @rack['T].
+In all other cases the @itel{final-state} is @rack['F].
 The machine accepts an empty input immediately.
 If the input is not empty, a starting mark @rack['s] is added at the left,
 the input is checked to consist of zeros and ones only
@@ -917,15 +914,15 @@ and the machine halts in state @rack[F].
 @subsection[#:tag "Inserting elements"]{Inserting elements}
 
 The following Turing-machine always halts.
-For an input consisting of @rack['a]'s and @rack['b]'s only
-the final state is @rack['T] and symbol @rack['x] is inserted
+For an input consisting of @rack['a]s and @rack['b]s only
+the @itel{final-state} is @rack['T] and symbol @rack['x] is inserted
 between each @rack['a] and an immediately following @rack['b].
 The insertion of @rack['x] requires that the elements
 preceding the @rack['b] are shifted one cell to the left.
 An input containing anything other than @rack['a] or @rack['b]
-yields final state @rack['F].
-`@rack[0]' is the initial state. `@rack[B]' is the blank.
-`@rack[E]' is the empty cell. `@rack[_]' is the dummy symbol.
+yields @itel{final-state} @rack['F].
+@rack[0] is the initial state. @rack['B] is the blank.
+@rack['E] is the empty cell. @rack['_] is the dummy symbol.
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
@@ -998,7 +995,7 @@ yields final state @rack['F].
 
 @section{Registers}
 The Turing-machines described in this document have no internal registers.
-A control-unit with a principal state and a finite number of registers, each of which are
+A control-unit with a principal state and a finite number of registers, each of which is
 restricted to a finite number of contents produces a Turing-machine too.
 This technique has not been used in this document.
 In the example of section @secref{Inserting elements} this technique could simplify
