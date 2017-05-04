@@ -47,14 +47,15 @@ Module make-Turing-machine.scrbl produces documentation.
    (error 'make-Turing-machine "empty-cell must differ from dummy: ~s" dummy))
   (when (equal? blank dummy)
    (error 'make-Turing-machine "blank must differ from dummy: ~s" blank))
-  (unless (list? rules)
+  (unless (or (list? rules) (procedure? rules))
    (error 'make-Turing-machine "incorrect argument for rules: ~s" rules))
-  (for ((rule (in-list rules)))
-   (unless (rule? rule)
-    (error 'make-Turing-machine "incorrect rule: ~s" rule)))
-  (define duplicate (check-duplicates (map car rules)))
-  (when (check-duplicates (map car rules))
-   (error 'make-Turing-machine "duplicate move-selector: ~s" duplicate)))
+  (unless (procedure? rules)
+   (for ((rule (in-list rules)))
+    (unless (rule? rule)
+     (error 'make-Turing-machine "incorrect rule: ~s" rule)))
+   (define duplicate (check-duplicates (map car rules)))
+   (when duplicate
+    (error 'make-Turing-machine "duplicate move-selector: ~s" duplicate))))
 
  (check-arguments)
 
@@ -123,7 +124,8 @@ Module make-Turing-machine.scrbl produces documentation.
    (else
     (set! nr-of-moves (add1 nr-of-moves))
     (define old-tape-symbol (tape-get tape))
-    (define-values (new-state new-tape-symbol move) (find-rule state (tape-get tape) tape))
+    (define-values (new-state new-tape-symbol move)
+     (find-rule state (tape-get tape) tape))
     (define new-tape
      (case move
       ((R) (move-R (tape-put tape new-tape-symbol)))
@@ -149,7 +151,7 @@ Module make-Turing-machine.scrbl produces documentation.
       "no final state within max nr of moves~n~
        move-counter: ~s~n~
        current state: ~s~n~
-       current content: ~s"
+       tape: ~s"
       nr-of-moves
       new-state
       new-tape))
@@ -158,46 +160,56 @@ Module make-Turing-machine.scrbl produces documentation.
  (define nr-of-moves 0)
 
  (define-values (normal-hash dummy-hash)
-  (let ()
-   (define-values (dummy-rules normal-rules)
-    (for/fold ((dr '()) (nr '())) ((rule (in-list rules)))
-     (if (equal? (cadar rule) dummy)
-      (values (cons rule dr) nr)
-      (values dr (cons rule nr)))))
-   (define normal-hash (make-hash (map (λ (x) (cons (car x) (cadr x))) normal-rules)))
-   (define dummy-hash (make-hash (map (λ (x) (cons (caar x) (cadr x))) dummy-rules)))
-   (values normal-hash dummy-hash)))
-
- (define (find-rule state tape-symbol tape)
-  (define (avoid-empty-cell tape-symbol)
-   (if (eq? tape-symbol empty-cell) blank tape-symbol))
-  (define normal-rule (hash-ref normal-hash (list state tape-symbol) #f))
   (cond
-   ((not normal-rule)
-    (define dummy-rule (hash-ref dummy-hash state #f))
-    (cond
-     ((not dummy-rule)
-      (error 'Turing-machine
-       "no rule for state: ~s, with symbol: ~s~n~
-        current content: ~s"
-       state tape-symbol
-       tape))
-     (else
-      (define new-state (car dummy-rule))
-      (define new-symbol (cadr dummy-rule))
-      (define move (caddr dummy-rule))
-      (cond
-       ((equal? new-symbol dummy)
-        (values new-state (avoid-empty-cell tape-symbol) move))
-       (else (values new-state new-symbol move))))))
+   ((procedure? rules) (values #f #f))
    (else
-    (define new-state (car normal-rule))
-    (define new-symbol (cadr normal-rule))
-    (define move (caddr normal-rule))
-    (cond
-     ((equal? new-symbol dummy)
-      (values new-state (avoid-empty-cell tape-symbol) move))
-     (else (values new-state new-symbol move))))))
+    (define-values (dummy-rules normal-rules)
+     (for/fold ((dr '()) (nr '())) ((rule (in-list rules)))
+      (if (equal? (cadar rule) dummy)
+       (values (cons rule dr) nr)
+       (values dr (cons rule nr)))))
+    (define normal-hash (make-hash (map (λ (x) (cons (car x) (cadr x))) normal-rules)))
+    (define dummy-hash (make-hash (map (λ (x) (cons (caar x) (cadr x))) dummy-rules)))
+    (values normal-hash dummy-hash))))
+
+ (define find-rule
+  (cond
+   ((procedure? rules)
+    (define (find-rule state tape-symbol tape) (rules state tape-symbol))
+    find-rule)
+   (else
+    (define (find-rule state tape-symbol tape)
+     (define (avoid-empty-cell tape-symbol)
+      (if (eq? tape-symbol empty-cell) blank tape-symbol))
+     (define normal-rule (hash-ref normal-hash (list state tape-symbol) #f))
+     (cond
+      ((not normal-rule)
+       (define dummy-rule (hash-ref dummy-hash state #f))
+       (cond
+        ((not dummy-rule)
+         (error 'Turing-machine
+          "no rule for state: ~s, with symbol: ~s~n~
+           current content: ~s"
+          state tape-symbol
+          tape
+          '()))
+        (else
+         (define new-state (car dummy-rule))
+         (define new-symbol (cadr dummy-rule))
+         (define move (caddr dummy-rule))
+         (cond
+          ((equal? new-symbol dummy)
+           (values new-state (avoid-empty-cell tape-symbol) move))
+          (else (values new-state new-symbol move))))))
+      (else
+       (define new-state (car normal-rule))
+       (define new-symbol (cadr normal-rule))
+       (define move (caddr normal-rule))
+       (cond
+        ((equal? new-symbol dummy)
+         (values new-state (avoid-empty-cell tape-symbol) move))
+        (else (values new-state new-symbol move))))))
+    find-rule)))
 
  (define (Turing-machine input)
   (set! report '())

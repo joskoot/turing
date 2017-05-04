@@ -63,18 +63,21 @@ The reader of the present documentation is supposed to be familiar with Turing-m
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"]
 in their book “Formal Languages and their Relation to Automata” (ISBN 0-201-0298 3-9)
 Nevertheless, a survey of the terminology as used in this document.
+Confusion between words referring to @hyperlink["http://racket-lang.org/" "Racket"] objects
+and those referring to mathematics is avoided.
 For example, the word `tape-symbol' will be used for the symbols of a Turing-machine
 in order to avoid confusion with
-@hyperlink[ "https://docs.racket-lang.org/reference/symbols.html?q=symbols" "symbols"]
+@racketlink[symbols "symbols"]
 of @hyperlink["http://racket-lang.org/" "Racket"].}
 
-@inset[@(image "Turing-machine.jpg")]
+@elemtag["figure" " "] @inset[@image["Turing-machine.jpg"]]
 
 At every moment the control unit has one out of a finite set of @itel["internal-states"].
 The state of a Turing-machine as a whole includes the @itel["internal-state"],
 the current content of the tape and the current position of the read/write-head.
 The first element of the content is considered to be at the left,
-the last element to be at the right, both shown in blue.
+the last element to be at the right.
+In the @elemref["figure" "above figure"] these elements are shown in blue.
 The current element is the one currently below the read/write-head, shown in red.
 The elements of the content are @itel["tape-symbols"],
 but the first or last element can be an @itel["empty-cell"],
@@ -94,10 +97,7 @@ A move consists of three steps:
 @item{Optionally putting the control unit in another @itel["internal-state"].}
 @item{Optionally replacing the current element by
 another one. This step is not optional when
-the current element is an @itel["empty-cell"].
-The latter always is replaced by a @itel["tape-symbol"],
-(except, possibly, when the Turing machine halts because
-the control unit assumes a @itel{final-state})}
+the current element is an @itel["empty-cell"].}
 @item{Optionally moving the read/write-head one step to the right or to the left.}]
 
 @note{In real life tape equipment usually the tape is moving
@@ -175,7 +175,7 @@ a linear function of the number of @itel{rules}.}
 (initial-state internal-state)
 (final-states  (final-state ...))
 (blank         tape-symbol)
-(rules         (rule ...))
+(rules         (rule ...) rule-procedure)
 (rule          ((old-state old-symbol) (new-state new-symbol move)))
 (final-state   internal-state)
 (old-state     internal-state)
@@ -186,7 +186,8 @@ a linear function of the number of @itel{rules}.}
              (   tape-symbol any/c)
              (    empty-cell any/c)
              (         dummy any/c)
-             (          move (or/c 'R 'L 'N)))]{
+             (          move (or/c 'R 'L 'N))
+             (rule-procedure (-> old-state old-symbol (values new-state new-symbol move))))]{
 Procedure @rack[make-Turing-machine] returns a procedure that emulates a Turing-machine.
 Before the machine is produced the arguments are checked to satisfy the following conditions,
 equality or being distinct to be understood in the sense of @rack[equal?].
@@ -196,11 +197,13 @@ equality or being distinct to be understood in the sense of @rack[equal?].
        must be distinct.}
  @item{The @rack[empty-cell] must not be used as a @rack[new-symbol].}
  @item{A @rack[final-state] must not be used as an @rack[old-state].}
- @item{The @rack[rules] must have distinct combinations @rack[(old-state old-symbol)].}
+ @item{@rack[rules] must be a procedure or must have the form @rack[(rule ...)].}
+ @item{When @rack[rules] is not a procedure the @rack[rules]
+       must have distinct combinations @rack[(old-state old-symbol)].}
  @item{A @rack[move] must be @rack['R], @rack['L] or @rack['N].}]
 
 When not all of these conditions are satisfied,
-procedure @rack[make-Turing-machine] raises an error before generating a Turing-machine.
+procedure @rack[make-Turing-machine] raises an @rack[error].
 The @rack[rules] are interpreted as follows,
 where equality again is to be understood in the sense of @rack[equal?].
 
@@ -241,15 +244,17 @@ made by procedure @rack[make-Turing-machine]
 keeps record of the moves it makes.
 Procedure @rack[Turing-report] prints the report on the @rack[current-output-port].
 When a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
-raises an error or is halted by a
-@hyperlink[
-"file:///C:/Program%20Files/Racket/doc/reference/breakhandler.html?q=break#%28tech._break%29"
-"break"], the report remains available.
-After printing the report no longer is available (unless saved in a
-@racketlink[open-output-string "string-output-port"]).
+raises an error or is halted by a @racketlink[exn:break "break"], the report remains available.
+After printing the report is cleared.
 When running a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
 the report of the previous run of a @(seclink "Turing-machine" (element 'tt "Turing-machine"))
-is lost.
+is lost. A report can be saved by putting it in an output-string,
+for example as follows:
+
+@inset[
+@racket[(define my-report (open-output-string))]@(linebreak)
+@racket[(parameterize ((current-output-port my-report)) (Turing-report))]]
+
 Each line of the report shows:
 
 @itemlist[
@@ -311,8 +316,10 @@ there always remain cases for which it is impossible to detect an infinite loop.
 Procedure @rack[make-Turing-machine] and the
 @(seclink "Turing-machine" (element 'tt "Turing-machines"))
 it produces do no checks at all against infinite loops.
-For example, the following trivial @(seclink "Turing-machine" (element 'tt "Turing-machine"))
-clearly will loop forever with arbitrary input:
+Parameter @rack[Turing-limit] provides protection, though.
+The following trivial @(seclink "Turing-machine" (element 'tt "Turing-machine"))
+clearly would loop forever with arbitrary input when it would not be halted by
+parameter @rack[Turing-limit]:
 
 @interaction[
 (require racket "make-Turing-machine.rkt")
@@ -324,14 +331,15 @@ clearly will loop forever with arbitrary input:
             '_   (code:comment "dummy")
             '(((A _) (A _ N)))))
 (code:line (Turing-limit 5) (code:comment "Prevent the machine to run forever."))
-(TM '())
+(TM '(B))
 (Turing-report)]
 
 In this example @rack[rule] @rack['((A _) (A _ N))] alone already implies an infinite loop.
 While the @rack[TM] is running,
 its state (the content of the tape and the position of the read/write-head included)
-never changes after the first move,
+never changes,
 which could be detected while the @rack[TM] is running.
+However, the @rack[TM] does no such check.
 As another example consider:
 
 @interaction[
@@ -396,9 +404,8 @@ The machine never moves left of the start of the input.
   ((1 E) (2 B L))  (code:comment "Input is ok. Start the addition.")
   ((1 _) (F _ N))  (code:comment "Reject incorrect input.")
   (code:comment "       State 2 : Do the addition from right to left.")
-  (code:comment "                 When entering state 2 for the first time the read/")
-  (code:comment "                 write-head is at the right-most non-blank element.")
-  (code:comment "                 The content starts with y or p and ends with B.")
+  (code:comment "                 When entering state 2 the read/write-head")
+  (code:comment "                 is at the right-most non-blank element.")
   ((2 x) (2 x L))  (code:comment "Leave x as it is and continue addition.")
   ((2 y) (T x N))  (code:comment "Start of input reached. Done.")
   ((2 +) (3 x R))  (code:comment "Replace + by x and go replacing the last x by a blank.")
@@ -935,7 +942,7 @@ yields @itel{final-state} @rack['F].
   ((0     E) (T     B N))
   ((0     _) (F     _ N))
   (code:comment "Next symbol b?")
-  ((1     a) (1     a R)) (code:comment "no, look for next a.")
+  ((1     a) (1     a R)) (code:comment "Keep looking for b.")
   ((1     b) (2     M L)) (code:comment "yes, mark it M and proceed.")
   ((1     _) (F     _ N))
   ((1     E) (T     B N))
@@ -993,12 +1000,127 @@ yields @itel{final-state} @rack['F].
    (equal? state2 'F)
    (equal? state3 'F))))]
 
+@subsection{Counter}
+
+Represent natural number n as @tt{x ...} or @tt{y ...} with n @tt{x}s or @tt{y}s.
+The following Turing-machine forms an infinite tape containing the numbers 0, 1, 2 etc.
+separated by slashes.
+Every next number is formed by putting an @tt{x} at the end of the content
+and copying the previous number, which has the form @tt{x ...}.
+While copying, the @tt{x}s of the previous number are replaced by @tt{y}s
+such as to indicate they already have been copied.
+
+@interaction[
+(require "make-Turing-machine.rkt") 
+
+(define rules
+'((code:comment "Form zero.")
+  ((0 E) (1 / R))
+  ((1 E) (2 / R))
+  (code:comment "Put an x and go add the previous nr.")
+  ((2 E) (3 x L))
+  (code:comment "First go to end of previous nr.")
+  ((3 /) (4 / L))
+  ((3 _) (3 _ L))
+  (code:comment "Copy x to end of tape.")
+  (code:comment "Copied xs are replaced by ys.")
+  ((4 x) (5 y R)) (code:comment "Mark x as copied and go put x at end of tape.")
+  ((4 y) (4 y L)) (code:comment "y has already been copied. Keep looking for x.")
+  ((4 /) (6 / R)) (code:comment "Copy is complete.")
+  ((5 _) (5 _ R)) (code:comment "Go to end of tape, write x and")
+  ((5 E) (3 x L)) (code:comment "continue copying.")
+  (code:comment "Next number complete.")
+  ((6 _) (6 _ R)) (code:comment "Go to end of tape.")
+  ((6 E) (2 / R)) (code:comment "Go form the next nr.")
+  ))
+
+(define TM
+ (make-Turing-machine
+ '0   (code:comment "initial state")
+ '()  (code:comment "no final state")
+ 'E   (code:comment "empty cell")
+ 'blank-not-used
+ '_   (code:comment "dummy")
+ rules))
+
+(code:comment "Limit the number of moves.")
+(code:comment "The error message shows the resulting content of the tape.")
+(Turing-limit 232)
+(error-print-width 70)
+(TM '())]
+
 @section{Registers}
-The Turing-machines described in this document have no internal registers.
+The Turing-machines shown sofar in this document have no internal registers.
 A control-unit with a principal state and a finite number of registers, each of which is
-restricted to a finite number of contents produces a Turing-machine too.
-This technique has not been used in this document.
-In the example of section @secref{Inserting elements} this technique could simplify
-the notation of rules, in particular for the states @tt{(4 ?)}.
+restricted to a finite number of contents, produces a Turing-machine too.
+This can be done by providing the @itel{rules} as a procedure with the registers
+as extension of the internal state.
+The procedure must have a finite number of extended internal states,
+but this cannot be checked.
+Let us use an extended internal state to simplify
+the example of section @secref{Inserting elements}.
+One register is used to memoize the previous tape-symbol when shifting to the right.
+The machine with register is twice as fast as the one in section @secref{Inserting elements}.
+
+@interaction[
+(require racket "make-Turing-machine.rkt")
+(code:comment " ")
+(define register 0)
+(define (rules old-state old-symbol)
+ (case old-state
+  ((0) (code:comment "Look for a.")
+   (case old-symbol
+    ((a) (values 1 'a 'R))
+    ((b x) (values 0 old-symbol 'R))
+    ((E B) (values 'T 'B 'N))
+    (else (values 'F old-symbol 'N))))
+  ((1) (code:comment "a found. Is next element a b?")
+   (case old-symbol
+    ((a) (values 1 'a 'R))
+    ((b) (set! register 'b) (values 2 'x 'R)) (code:comment "Memoize the b.")
+    ((x) (values 0 'x 'R))
+    (else (values 'T old-symbol 'N))))
+  ((2) (code:comment "a followed by b found.")
+   (case old-symbol (code:comment "Shift remainder of tape one step to the right.")
+    ((E B) (values 3 register 'L))
+    (else
+     (define old-register register) (code:comment "Memoize the old-symbol.")
+     (set! register old-symbol)
+     (values 2 old-register 'R) (code:comment "Write the previously memoized tape-symbol.")
+     )))
+  ((3) (code:comment "Shifting completed. Rewind the tape and start all over.")
+   (case old-symbol (code:comment "We don't need to rewind further when x is found.")
+    ((B E x) (values 0 old-symbol 'R))
+    (else (values 3 old-symbol 'L))))))
+(code:comment " ")
+(define TM (make-Turing-machine  0 '(T F) 'E 'B  '_ rules))
+(code:comment " ")
+(code:comment "Example:")
+(code:comment " ")
+(TM '(b a b a b a)) (Turing-report)
+(code:comment " ")
+(code:comment "Let's test the TM.")
+(code:comment "The following procedure does the same as the TM")
+(code:comment "It is used to check the results of the TM.")
+(code:comment " ")
+(define (ab->axb input)
+ (cond
+  ((null? input) '())
+  ((null? (cdr input)) input)
+  ((equal? (take input 2) '(a b))
+   (append '(a x b) (ab->axb (cddr input))))
+  (else (cons (car input) (ab->axb (cdr input))))))
+(code:comment " ")
+(random-seed 0)
+(code:comment " ")
+(for*/and ((na (in-range 10)) (nb (in-range 10)))
+ (define ab (append (make-list na 'a) (make-list nb 'b)))
+ (for/and ((k (in-range 100)))
+  (define input (shuffle ab))
+  (define-values (nr-of-moves state output) (TM input))
+  (define expect (ab->axb input))
+  (and
+   (equal? (ab->axb input) output)
+   (equal? state 'T))))]
 
 @larger{@larger{@bold{The end}}}
