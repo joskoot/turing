@@ -172,15 +172,18 @@ Module make-Turing-machine.scrbl produces documentation.
     (define dummy-hash (make-hash (map (λ (x) (cons (caar x) (cadr x))) dummy-rules)))
     (values normal-hash dummy-hash))))
 
+ (define (avoid-empty-cell tape-symbol)
+  (if (eq? tape-symbol empty-cell) blank tape-symbol))
+ 
  (define find-rule
   (cond
    ((procedure? rules)
-    (define (find-rule state tape-symbol tape) (rules state tape-symbol))
+    (define (find-rule state tape-symbol tape)
+     (define-values (new-state new-symbol move) (rules state tape-symbol))
+     (values new-state (avoid-empty-cell new-symbol) move))
     find-rule)
    (else
     (define (find-rule state tape-symbol tape)
-     (define (avoid-empty-cell tape-symbol)
-      (if (eq? tape-symbol empty-cell) blank tape-symbol))
      (define normal-rule (hash-ref normal-hash (list state tape-symbol) #f))
      (cond
       ((not normal-rule)
