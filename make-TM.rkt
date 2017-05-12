@@ -140,7 +140,7 @@
     (when report
      (printf
       (string-append
-       "move            : ~s~n"
+       "move number     : ~s~n"
        "rule            : ~s~n"
        "state registers : ~s -> ~s~n"
        "data registers  : ~s -> ~s~n"
