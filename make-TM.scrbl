@@ -54,23 +54,20 @@
 @(defmodule "make-TM.rkt" #:packages ())
 
 @section{Introduction}
-This document describes procedure @rack[make-TM].
-It returns procedures that emulate two-way single tape
-@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing machines"].
+This document describes procedure @rack[make-TM], which
+returns procedures that emulate two-way single tape
+@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing Machines"].
 The reader is supposed to be familiar with Turing machines.
 
 @note{John E. Hopcroft and Jeffrey D. Ullman give a very accurate description of
-@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing machines"]
-in their book “Formal Languages and their Relation to Automata” (ISBN 0-201-0298 3-9)}
+Turing machines
+in their book @nonbreaking{Formal Languages and their Relation to Automata (ISBN 0-201-0298 3-9)}}
 
-Nevertheless, a survey of the terminology as used in this document.
-Confusion between words referring to @hyperlink["http://racket-lang.org/" "Racket"] objects
+Nevertheless a short introduction in which
+confusion between words referring to @hyperlink["http://racket-lang.org/" "Racket"] objects
 and those referring to abstract Turing machines is avoided.
-For example,
-in order to avoid confusion with
-@racketlink[symbols "symbols"]
-of @hyperlink["http://racket-lang.org/" "Racket"]
-the word `tape-symbol' will be used for the symbols of the tape of a Turing machine.
+For example, the word `tape-symbol' will be used for the symbols of the tape of a Turing machine
+in order to avoid confusion with symbols of Racket.
 
 @elemtag["figure" " "] @inset[@image["make-TM.jpg"]]
 
@@ -78,9 +75,6 @@ At every moment the control unit has one out of a finite set of internal states.
 The whole state of a Turing machine includes the state of all components of the machine,
 id est, the internal state of the control unit,
 the current content of the tape and the current position of the read/write-head.
-The tape-content can grow to arbitrary size, but always is finite.
-This means that the numer of distinct whole states can be infinite,
-but always is denumerable.
 The first element of the tape-content is considered to be at the left,
 the last element to be at the right.
 In the @elemref["figure" "above figure"] these elements are shown in blue.
@@ -88,14 +82,15 @@ The current element (red) is the one currently below the read/write-head.
 The elements of the content are tape-symbols,
 but the first or last element can be an empty element,
 which is not a tape-symbol.
-Initially the content consists of a finite input
+Initially the content consists of a finite input of tape-symbols
 and the read/write-head is positioned at the leftmost element.
-The input consists of tape-symbols.
-If the input is empty,
-the content of the tape initially consists of one empty element.
+If the input is empty, the content of the tape initially consists of one empty element.
+The tape-content can grow to arbitrary size, but always is finite.
+The number of distinct whole states can be infinite,
+but always is denumerable. 
 The control unit makes moves according to a finite set of rules
 until it assumes a final state.
-The rule to be applied is determined by the internal state
+The rule to be applied is determined by the internal state 
 of the control unit and the current element.
 A move consists of three steps:
 
@@ -103,7 +98,7 @@ A move consists of three steps:
 @item{Optionally putting the control unit in another internal state.}
 @item{Optionally replacing the current tape-symbol by another tape-symbol.
 This step is not optional when the current element is empty.
-During a move an empty element always is filled with a tape-symbol.}
+During a move an empty element always is filled with a tape-symbol, possibly with a blank.}
 @item{Optionally moving the read/write-head one step to the right or to the left.}]
 
 @note{In real life tape equipment usually the tape is moving
@@ -155,7 +150,7 @@ Hence the Turing machine will not be confused when the intersection of the set o
 @hyperlink["http://racket-lang.org/" "Racket"]-objects representing the
 internal states and the set of those representing the tape-elements is not empty
 or when an internal state equals the empty element.
-However, this may confuse a human reader.
+However, this may confuse a human reader of the rules that describes the control unit.
 After reaching a final state the procedure that emulates the Turing machine
 returns the number of moves it has made, the final state and its output.
 The latter consists of the final content of the tape,
@@ -174,7 +169,7 @@ but the example does not make moves to the left.
 A rule whose @rack[current-element] is the dummy applies to every arbitrary current element
 of the tape.
 A rule whose @rack[tape-symbol-to-be-written] is the dummy indicates that the current element
-must not be altered (except that if it is an empty element, it is replaced by a blank)
+must not be altered (except that if it is an empty element, it is filled with a blank)
 The machine accepts every input and replaces the fourth element by @rack['new].
 
 @interaction[
@@ -230,7 +225,7 @@ Every Turing machine emulated by a procedure made by @rack[make-TM]
 has at least one state-register and at least one data-register,
 but the control unit may have more state- and data-registers.
 The first data-register is the input/output-register and is used for exchange of data with the
-read/write-head.
+read/write-head via the data-bus.
 A data-register always contains a tape-element.
 A state-register always contains a state.
 At the start of a move, the current element of the tape is put into the input/output-register.
@@ -250,6 +245,8 @@ is equivalent to a Turing machine with only one state-register and one data-regi
 as long as the the combined contents of the registers is limited to a finite set.
 Allowing more state- and data-registers is a way to simplify the description of the rules.
 It allows us to describe a finite multitude of rules in one single line.
+For example, multiple registers make it easier to describe rules that move part of the content
+of the tape to another position on the tape.
 
 @section{Procedure make-TM}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
@@ -286,13 +283,12 @@ It allows us to describe a finite multitude of rules in one single line.
 Procedure @rack[make-TM] returns a procedure that emulates a Turing machine.
 Providing an @racketlink[exact-positive-integer? "exact positive integer"] @tt{n}
 for @rack[state-registers] or @rack[data-registers] is the same as
-@rack[(build-list n (string->keyword (format "~s" n)))], id est,
-@rack[(#:0 #:1 ... #:n-1)].
+@nonbreaking{@rack['(#:0 #:1 ... #:n-1)]}.
 Before the machine is produced the arguments are checked to satisfy all contracts
 and the following conditions,
 equality or being distinct to be understood in the sense of @rack[equal?].
 
-@itemlist[
+@itemlist[#:style 'ordered
  @item{The @rack[blank], the @rack[empty-element] and the @rack[dummy] must be distinct.}
  @item{The @rack[final-states] must not include an @rack[old-state].}
  @item{The @rack[final-states] must not contain duplicates.                       }
@@ -300,7 +296,9 @@ equality or being distinct to be understood in the sense of @rack[equal?].
  @item{Every @rack[rule] must have as many @rack[new-state]s as @rack[state-register-name]s.}
  @item{Every @rack[rule] must have as many @rack[new-element]s as @rack[data-register-name]s.}
  @item{The list of @rack[state-register-name]s must not contain duplicates.}
- @item{The list of @rack[data-register-name]s must not contain duplicates.}]
+ @item{The list of @rack[data-register-name]s must not contain duplicates.}
+ @item{Every @rack[new-state] given as a keyword must be one of the @rack[state-register-name]s.}
+ @item{Every @rack[new-element] given as a keyword must be one of the @rack[data-register-name]s.}]
 
 When not all of these conditions are satisfied,
 procedure @rack[make-TM] raises an @rack[error].
@@ -312,7 +310,7 @@ The first one of the @rack[data-registers] is the input/output-register.
 It contains the @rack[tape-element] read from or to be written onto
 the current element under the read/write-head.
 
-@itemlist[
+@itemlist[#:style 'ordered
 @item{A Turing machine halts when the rule-selector-state equals one of the @rack[final-states].}
 @item{A @rack[rule] applies if its @rack[old-state] equals the current rule-selector-state
 and the @rack[old-element] matches the current element.}
@@ -330,10 +328,14 @@ The order of the @rack[rules] is irrelevant.}
 @item{The second step puts the @rack[new-state]s in the corresponding @rack[state-registers].
 When a @rack[new-state] is a keyword, id est the name of a state-register,
 the old content of that register is put in the state-register
-corresponding to the @rack[new-state].
+corresponding to the position of the @rack[new-state] in the list of @rack[new-state]s.
 When a @rack[new-state] is a dummy, the @rack[state] in the corresponding state-register
 remains as it is.
-In all other cases the @rack[new-state] is stored in the corresponding state-register.}
+In all other cases the @rack[new-state] is stored in the corresponding state-register.
+For example, @rack[(#:1 #:0)] indicates that the two registers exchange their contents.
+As another example:
+@rack[(#:1 whatever)] means that the old contents of register @rack[#:1] must be put into
+register @rack[#:0] and that @rack['whatever] must be put in register @rack[#:1].}
 @item{In the same way new @rack[tape-element]s are put in the @rack[data-registers].}
 @item{Now the @rack[tape-element] of the input/output-register is written on the tape,
 replacing the current element.
@@ -357,11 +359,11 @@ can be called as follows:
  (input (listof tape-symbol))
  (#:state-registers states (listof state) #f)
  (#:data-registers datums (listof tape-element) #f)
- (#:report report? boolean? #f)
+ (#:report report (or/c boolean? 'long 'short) #f)
  (#:limit limit (or/c exact-positive-integer? #f) #f))
-(values (nr-of-moves exact-nonnegative-integer?)
-        (final-state state)
-        (output (listof tape-symbol)))]{
+(values nr-of-moves final-state output)]{
+@rack[nr-of-moves] : @rack[exact-nonnegative-integer?]@(linebreak)
+@rack[output] : @rack[(listof tape-symbol)]@(linebreak)@(linebreak)
 The @rack[output] is the final content of the tape but without heading or trailing
 @rack[empty-element] or @rack[blank]s.
 It can contain @rack[blank]s, but not at the begin nor at the end.
@@ -377,25 +379,31 @@ Otherwise it must be a list of as many @rack[tape-element]s
 as the Turing machine has @rack[data-registers] and
 the latter are initialized with the @rack[datums].
 
-If @rack[report?] is @rack[#t] the Turing machine
-prints a record of the moves it makes (on the @racket[current-output-port])
+If @rack[report] is @rack[#t] or @rack['long] the Turing machine
+prints a long record of the moves it makes (on the @racket[current-output-port])
 For each move the report shows:
 
-@itemlist[
+@itemlist[#:style 'ordered
 @item{The move counter, starting from 1.}
 @item{The @rack[rule] being applied.}
 @item{The original and new contents of the @rack[state-registers].}
 @item{The original and new contents of the @rack[data-registers],
-      the input/output-register already containing the current element of the tape.}
+      the original contents of the input/output-register already showing the tape-symbol
+      just read from the tape.}
 @item{The @rack[move] of the read/write-head (@rack['R], @rack['L] or @rack['N]).}
 @item{The new position of the read/write-head and the new content of the tape shown as
 @tt{((h ...) (c t ...))},
 where the new position of the read/write-head is at element @tt{c}.}]
 
+If @rack[report] is @rack['short] the Turing machine
+prints a short record of the moves it makes (on the @racket[current-output-port])
+For each move the report shows the move-counter and the new content of the tape only.
+
 When @rack[limit] is an @racketlink[exact-positive-integer? "exact positive integer"]
-the @tt{Turing machine} halts by raising an error
+the @tt{Turing-machine} halts by raising an error
 when no @rack[final-state] is entered within @rack[limit] moves.
                                                  
+@section{Halting problem}
 Many Turing machines never halt.
 Sometimes this can be predicted by looking at the @rack[rules] only,
 sometimes by inspection of both the @rack[rules] and the @rack[input].
@@ -405,6 +413,7 @@ there always remain cases for which it is impossible to detect an infinite loop.
 Procedure @rack[make-TM] and the
 Turing machines
 it produces do no checks at all against infinite loops.
+Whether or not a Turing machine halts may depend on its input.
 Argument @rack[limit] provides protection.
 The following trivial Turing machine
 clearly would loop forever with arbitrary input when it would not be halted by
@@ -433,16 +442,24 @@ As another example consider:
 @interaction[
 (require racket "make-TM.rkt")
 (define TM (make-TM
-            'A   (code:comment "initial state")
-            '(T) (code:comment "final states")
-            'E   (code:comment "empty cell")
-            'B   (code:comment "blank")
-            '_   (code:comment "dummy")
-            '(((A _) ((A) (_) R)))
+            'A     (code:comment "initial state")
+            '(T)   (code:comment "final state")
+            'empty (code:comment "empty cell")
+            'blank (code:comment "blank")
+            '_     (code:comment "dummy")
+            '(((A empty) ((T) (blank) N))
+              ((A     _) ((B) (blank) R))
+              ((B     _) ((B) (blank) R)))
             #:name 'Another-non-halting-TM))
-(TM '() #:report #t #:limit 5)]
+(code:line)
+(code:comment "Halts immediately with empty input:")
+(TM '() #:report #t)
+(code:line)
+(code:comment "Never halts with non empty input:")
+(TM '(whatever) #:report #t #:limit 5)]
 
-By means of mathematical induction it is easily proven that the above machine never halts,
+By means of mathematical induction it is easily proven that the above machine never halts
+when given non-empty input,
 although it never reproduces the same state.
 
 @note{Procedure @rack[make-TM] could be adapted such as to
@@ -512,7 +529,7 @@ The machine never moves left of the start of the input.
             '_     (code:comment "dummy")
             rules))
 (code:line)
-(TM '(x + x x + x x x) #:report #t)]
+(TM '(x + x x + x x x) #:report 'short)]
 
 @subsection{Binary addition}
 The following Turing machine adds two natural numbers written in binary notation.
@@ -625,7 +642,7 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
                '_     (code:comment "dummy")
                rules))
 (code:line)
-(adder '(1 0 1 1 + 1 0 1 1 1) #:report #t)
+(adder '(1 0 1 1 + 1 0 1 1 1) #:report 'short)
 (code:line)
 (adder '(0 0 0 1 1 + 0 0 1 1))
 (code:line)
@@ -811,7 +828,7 @@ State @element['tt "0"] is the initial internal state and @element['tt "T"] the 
   'blank-not-used
   'dummy-not-used
   rules))
-(TM '())]
+(TM '() #:report 'short)]
 
 @subsection{Zeros and ones}
 
@@ -900,8 +917,8 @@ an @rack[R] as a right parenthesis.
 The machine halts in state @rack[T] if the parentheses are well balanced
 and no other elements occur in the @itel{input}.
 In all other cases the machine halts in state @rack[F].
-When counting a @rack[L] as @element['tt "+1"] and a @rack[R] as @element['tt "-1"],
-going from left to right the addition may never go below zero and must end in zero.
+When counting a @rack[L] as @element['tt "+1"] and an @rack[R] as @element['tt "-1"],
+going from left to right the addition never must go below zero and must end in zero.
 The method is as follows.
 First check that the input consists of @rack[L]s and @rack[R]s only.
 Put @itel{tape-symbol} @rack[s] at the left of the input
@@ -1033,7 +1050,7 @@ yields @itel{final-state} @rack['F].
 (code:line)
 (code:comment "Example:")
 (code:line)
-(TM '(b a b a b a))
+(TM '(b a b a b a) #:report 'short)
 (code:line)
 (code:comment "Let's test the TM.")
 (code:comment "The following procedure does the same as the TM")
@@ -1116,7 +1133,7 @@ such as to indicate they already have been copied.
 (code:line)
 (code:comment "Limit the number of moves.")
 (code:comment "The error message shows the resulting content of the tape.")
-(TM '() #:limit 161)]
+(TM '() #:limit 161 #:report 'short)]
 
 @subsection{More registers}
 The Turing machines shown sofar in this document have one data-register and
@@ -1151,7 +1168,7 @@ in order to make space for an x.
 (code:line)
 (define TM (make-TM  0 '(T F) 'E 'B  '_ rules #:data-registers 2))
 (code:line)
-(TM '(b a b a b a) #:report #t)
+(TM '(b a b a b a) #:report 'short)
 (code:line)
 (code:comment "Let's test the TM.")
 (code:comment "The following procedure does the same as the TM.")
