@@ -195,7 +195,7 @@ The returned values are the number of moves made, the final state and
 the modified content of the tape.
 Let's see more details in a report of the moves.
 In such a report the new content of the tape is shown as
-@tt{((h ...) (c t ...))} where @tt{c} is the current element.
+@tt{((head ...) (current tail ...))} where @tt{current} is the current element.
 The following machine replaces the second and the fourth tape-element.
 
 @interaction[
@@ -213,11 +213,7 @@ The following machine replaces the second and the fourth tape-element.
     ((C _) ((D) (_  ) R))
     ((D _) ((E) (new) N)))))
 (code:line)
-(TM '(What was your previous hobby?) #:report #t)
-(code:line)
-(code:comment "The machine works too when given an empty input,")
-(code:comment "because empty elements are added when moving out of the content.")
-(TM '() #:report #t)]
+(TM '(What was your previous hobby?) #:report #t)]
 
 @section{Additional registers}
 
@@ -246,7 +242,7 @@ as long as the the combined contents of the registers is limited to a finite set
 Allowing more state- and data-registers is a way to simplify the description of the rules.
 It allows us to describe a finite multitude of rules in one single line.
 For example, multiple registers make it easier to describe rules that move part of the content
-of the tape to another position on the tape.
+of the tape to another position on the tape. Section @secref["More registers"] shows an example.
 
 @section{Procedure make-TM}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
@@ -397,7 +393,8 @@ where the new position of the read/write-head is at element @tt{c}.}]
 
 If @rack[report] is @rack['short] the Turing machine
 prints a short record of the moves it makes (on the @racket[current-output-port])
-For each move the report shows the move-counter and the new content of the tape only.
+For each move the report shows the move-counter
+the old and new state of the first state-register and the new content of the tape.
 
 When @rack[limit] is an @racketlink[exact-positive-integer? "exact positive integer"]
 the @tt{Turing-machine} halts by raising an error
@@ -447,19 +444,12 @@ As another example consider:
             'empty (code:comment "empty cell")
             'blank (code:comment "blank")
             '_     (code:comment "dummy")
-            '(((A empty) ((T) (blank) N))
-              ((A     _) ((B) (blank) R))
-              ((B     _) ((B) (blank) R)))
+            '(((A _) ((A) (blank) R)))
             #:name 'Another-non-halting-TM))
 (code:line)
-(code:comment "Halts immediately with empty input:")
-(TM '() #:report #t)
-(code:line)
-(code:comment "Never halts with non empty input:")
 (TM '(whatever) #:report #t #:limit 5)]
 
-By means of mathematical induction it is easily proven that the above machine never halts
-when given non-empty input,
+By means of mathematical induction it is easily proven that the above machine never halts,
 although it never reproduces the same state.
 
 @note{Procedure @rack[make-TM] could be adapted such as to
@@ -1135,7 +1125,7 @@ such as to indicate they already have been copied.
 (code:comment "The error message shows the resulting content of the tape.")
 (TM '() #:limit 161 #:report 'short)]
 
-@subsection{More registers}
+@subsection[#:tag "More registers"]{More registers}
 The Turing machines shown sofar in this document have one data-register and
 one state-register only.
 Let us use a Turing machine with two data-registers to simplify and to speed up
@@ -1149,26 +1139,26 @@ in order to make space for an x.
 (code:line)
 (define rules
  '((code:comment "look for a.")
-   ((0 a) ((1) (a   _  ) R)) (code:comment "a found.")
-   ((0 b) ((0) (b   _  ) R)) (code:comment "keep looking.")
-   ((0 x) ((0) (x   _  ) R)) (code:comment "keep looking")
-   ((0 E) ((T) (B   B  ) N)) (code:comment "all done, halt.")
-   ((0 B) ((T) (B   B  ) N)) (code:comment "all done, halt.")
-   ((0 _) ((F) (_   _  ) N)) (code:comment "disallowed input, halt.")
+   ((0 a) ((1) (a   empty) R)) (code:comment "a found.")
+   ((0 b) ((0) (b   empty) R)) (code:comment "keep looking.")
+   ((0 x) ((0) (x   empty) R)) (code:comment "keep looking")
+   ((0 E) ((T) (B   empty) N)) (code:comment "all done, halt.")
+   ((0 B) ((T) (B   empty) N)) (code:comment "all done, halt.")
+   ((0 _) ((F) (B   empty) N)) (code:comment "disallowed input, halt.")
    (code:comment "Is a followed by b?")
-   ((1 a) ((1) (a   _  ) R)) (code:comment "no, but we have an a, hence continue.")
-   ((1 b) ((2) (b   x  ) L)) (code:comment "yes, go insert x and shift elements at the left.")
-   ((1 x) ((0) (x   _  ) R)) (code:comment "no, go looking for an a.")
-   ((1 _) ((T) (_   _  ) N)) (code:comment "end of tape, accept.")
+   ((1 a) ((1) (a   empty) R)) (code:comment "no, but we have an a, hence continue.")
+   ((1 b) ((2) (b   x    ) L)) (code:comment "yes, go insert x and shift elements at the left.")
+   ((1 x) ((0) (x   empty) R)) (code:comment "no, go looking for an a.")
+   ((1 _) ((T) (B   empty) N)) (code:comment "end of tape, accept.")
    (code:comment "Shift all elements at the left one step to the left.")
-   ((2 E) ((0) (#:1 _  ) R)) (code:comment "Done, repeat the whole process.")
-   ((2 B) ((0) (#:1 _  ) R)) (code:comment "Done, repeat the whole process.")
-   ((2 _) ((2) (#:1 #:0) L)) (code:comment "Keep shifting.")
+   ((2 E) ((0) (#:1 empty) R)) (code:comment "Done, repeat the whole process.")
+   ((2 B) ((0) (#:1 empty) R)) (code:comment "Done, repeat the whole process.")
+   ((2 _) ((2) (#:1 #:0  ) L)) (code:comment "Keep shifting.")
  ))
 (code:line)
 (define TM (make-TM  0 '(T F) 'E 'B  '_ rules #:data-registers 2))
 (code:line)
-(TM '(b a b a b a) #:report 'short)
+(TM '(b a b a b a) #:report #t)
 (code:line)
 (code:comment "Let's test the TM.")
 (code:comment "The following procedure does the same as the TM.")
@@ -1178,8 +1168,7 @@ in order to make space for an x.
  (cond
   ((null? input) '())
   ((null? (cdr input)) input)
-  ((equal? (take input 2) '(a b))
-   (append '(a x b) (ab->axb (cddr input))))
+  ((equal? (take input 2) '(a b)) (append '(a x b) (ab->axb (cddr input))))
   (else (cons (car input) (ab->axb (cdr input))))))
 (code:line)
 (random-seed 0)
