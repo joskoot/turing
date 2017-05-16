@@ -55,14 +55,24 @@
 
 @section{Introduction}
 This document describes procedure @rack[make-TM], which
-returns procedures that emulate two-way single tape
-@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing Machines"].
-The reader is supposed to be familiar with Turing machines.
-Nevertheless a short introduction.
+returns a procedure that emulates a two-way single tape
+@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing Machine"].
+Surely this documentation is easier to read for readers already familiar with Turing machines,
+but this introduction may help too. Nevertheless, a strong advice to interested readers
+to look into a more comprehensive introduction, such as:
 
 @note{@elemtag["book"]{
-John E. Hopcroft and Jeffrey D. Ullman give a very accurate description of Turing machines
-in their book @nonbreaking{Formal Languages and their Relation to Automata (ISBN 0-201-0298 3-9)}}}
+John E. Hopcroft and Jeffrey D. Ullman:
+@nonbreaking{Formal Languages and their Relation to Automata (ISBN 0-201-0298 3-9)}}}
+
+A Turing machine is an abstract computer with a finite control unit, id est,
+with finite internal memory,
+but an infinite memory in the form of an infinite rewritable tape.
+The machine needs a program, which must consist of a finite number of instructions.
+According to the @hyperlink["https://en.wikipedia.org/wiki/Church%E2%80%93Turing_thesis"
+"thesis of Alonzo Church"] everything that can be computed by a computer or whatever else
+than an autonomous mechanical or electronic device,
+can be programmed for a Turing machine:
 
 @elemtag["figure" " "] @inset[@image["make-TM.jpg"]]
 
@@ -774,7 +784,8 @@ State @element['tt "0"] is the initial internal state and @element['tt "T"] the 
  (and (= (output->nr output) (+ n m)) (eq? final-state 'T)))]
 
 @subsection{Busy beaver}
-3 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]. In fact there are four states, but @itel{final-state} @tt{T} does not count.
+3 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"].
+In fact there are four states, but @itel{final-state} @tt{T} does not count.
 
 @interaction[
 (require racket "make-TM.rkt")
