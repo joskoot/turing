@@ -58,35 +58,30 @@ This document describes procedure @rack[make-TM], which
 returns procedures that emulate two-way single tape
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing Machines"].
 The reader is supposed to be familiar with Turing machines.
+Nevertheless a short introduction.
 
-@note{John E. Hopcroft and Jeffrey D. Ullman give a very accurate description of
-Turing machines
-in their book @nonbreaking{Formal Languages and their Relation to Automata (ISBN 0-201-0298 3-9)}}
-
-Nevertheless a short introduction in which
-confusion between words referring to @hyperlink["http://racket-lang.org/" "Racket"] objects
-and those referring to abstract Turing machines is avoided.
-For example, the word `tape-symbol' will be used for the symbols of the tape of a Turing machine
-in order to avoid confusion with symbols of Racket.
+@note{@elemtag["book"]{
+John E. Hopcroft and Jeffrey D. Ullman give a very accurate description of Turing machines
+in their book @nonbreaking{Formal Languages and their Relation to Automata (ISBN 0-201-0298 3-9)}}}
 
 @elemtag["figure" " "] @inset[@image["make-TM.jpg"]]
 
 At every moment the control unit has one out of a finite set of internal states.
-The whole state of a Turing machine includes the state of all components of the machine,
+The state of a Turing machine as a whole includes the state of all components of the machine,
 id est, the internal state of the control unit,
-the current content of the tape and the current position of the read/write-head.
+the current content of the tape and the current position of the tape-head.
 The first element of the tape-content is considered to be at the left,
 the last element to be at the right.
-In the @elemref["figure" "above figure"] these elements are shown in blue.
-The current element (red) is the one currently below the read/write-head.
+In the @elemref["figure" "above figure"] they are blue.
+The current element (red) is the one below the tape-head.
 The elements of the content are tape-symbols,
-but the first or last element can be an empty element,
+but the first or last one can be an empty element,
 which is not a tape-symbol.
 Initially the content consists of a finite input of tape-symbols
-and the read/write-head is positioned at the leftmost element.
+and the tape-head is positioned at the leftmost element.
 If the input is empty, the content of the tape initially consists of one empty element.
 The tape-content can grow to arbitrary size, but always is finite.
-The number of distinct whole states can be infinite,
+The number of distinct states of a Turing machine as a whole can be infinite,
 but always is denumerable. 
 The control unit makes moves according to a finite set of rules
 until it assumes a final state.
@@ -98,26 +93,28 @@ A move consists of three steps:
 @item{Optionally putting the control unit in another internal state.}
 @item{Optionally replacing the current tape-symbol by another tape-symbol.
 This step is not optional when the current element is empty.
-During a move an empty element always is filled with a tape-symbol, possibly with a blank.}
-@item{Optionally moving the read/write-head one step to the right or to the left.}]
+An empty element always is filled with a tape-symbol, possibly with a blank.}
+@item{Optionally moving the tape-head one step to the right or to the left.}]
 
 @note{In real life tape equipment usually the tape is moving
-while the read/write-head remains in fixed position.
-Moving the read/write-head has the same effect as keeping it in fixed position and moving
+while the tape-head remains in fixed position.
+Moving the tape-head has the same effect as keeping it in fixed position and moving
 the tape in opposit direction.}
 
 The machine never writes a dummy or empty element.
 It cannot remove elements from the content of the tape,
 but it can replace the current element by a blank,
 which is a tape-symbol.
+(Warning: in the @elemref["book" "book mentioned above"] an empty element is called
+a `blank' and no special word is used for blanks as described in the present document)
 A Turing machine can be programmed such as to shift all elements at the left/right of
 the current element to the left/right by one or more elements and to put blanks or other
 tape-symbols in the resulting free space.
 Empty elements are used only to extend the tape
 at the left or at the right of the current content.
-When moving the read/write-head at the left of the begin of the content of the tape
+When moving the tape-head at the left of the begin of the content of the tape
 or at the right of the end, an empty element is added and
-the read/write-head is positioned at this element.
+the tape-head is positioned at this element.
 In this way an infinite tape is simulated with an infinite number of
 empty elements both at the left and at the right of the actual content.
 In fact the content never has more than one empty element.
@@ -140,7 +137,7 @@ and one input/output-register containing the tape-element read from the tape
 or to be written onto the tape.
 The internal states and tape-elements can be arbitrary
 @hyperlink["http://racket-lang.org/" "Racket"] values other than the dummy and keywords.
-Usually symbols and exact integer numbers are the most convenient ones.
+Usually symbols and exact non-negative integer numbers are the most convenient ones.
 Lists or vectors can be used to simulate a multi-tape Turing machine.
 Equivalence relation @rack[equal?] is used for comparison of two internal states
 or two tape-elements.
@@ -150,7 +147,7 @@ Hence the Turing machine will not be confused when the intersection of the set o
 @hyperlink["http://racket-lang.org/" "Racket"]-objects representing the
 internal states and the set of those representing the tape-elements is not empty
 or when an internal state equals the empty element.
-However, this may confuse a human reader of the rules that describes the control unit.
+However, this may confuse a human reader of the rules of the control unit.
 After reaching a final state the procedure that emulates the Turing machine
 returns the number of moves it has made, the final state and its output.
 The latter consists of the final content of the tape,
@@ -221,7 +218,7 @@ Every Turing machine emulated by a procedure made by @rack[make-TM]
 has at least one state-register and at least one data-register,
 but the control unit may have more state- and data-registers.
 The first data-register is the input/output-register and is used for exchange of data with the
-read/write-head via the data-bus.
+tape-head via the data-bus.
 A data-register always contains a tape-element.
 A state-register always contains a state.
 At the start of a move, the current element of the tape is put into the input/output-register.
@@ -233,7 +230,7 @@ After all registers have been updated,
 the element in the input/output-register is written onto the tape
 such as to replace the current element.
 However, if the element to be written is an empty element, a blank is written.
-Finally the read/write-head may be moved one step to the right or to the left.
+Finally the tape-head may be moved one step to the right or to the left.
 A Turing machine repeats moves until the first state-register contains a final state.
 
 A Turing machine with more than one state-register and/or more than one data-register
@@ -258,10 +255,10 @@ of the tape to another position on the tape. Section @secref["More registers"] s
 (old-element     tape-element dummy)
 (new-state       state state-register-name dummy)
 (new-element     tape-element data-register-name dummy)
-(state-registers (code:line @#,(element "roman" "optional =") 1)
+(state-registers (code:line @#,(element "roman" "optional =") #:state-registers 1)
                  (code:line #:state-registers (state-register-name ...))
                  (code:line #:state-registers @#,(rack exact-positive-integer?)))
-(data-registers  (code:line @#,(element "roman" "optional =") 1)
+(data-registers  (code:line @#,(element "roman" "optional =") #:data-registers 1)
                  (code:line #:data-registers (data-register-name ...))
                  (code:line #:data-registers @#,(rack exact-positive-integer?)))
 (name            (code:line @#,(element "roman" "optional =") @#,(rack 'TM-without-name))
@@ -298,13 +295,15 @@ equality or being distinct to be understood in the sense of @rack[equal?].
 
 When not all of these conditions are satisfied,
 procedure @rack[make-TM] raises an @rack[error].
-A @rack[rule] is interpreted as follows,
+
+@section{Running a Turing machine}
+The control unit interprets the @rack[rules] as follows,
 equality again to be understood in the sense of @rack[equal?].
 The first one of the @rack[state-registers] will be referred to as the rule-selector-state-register.
 Its contents will be referred to as the current rule-selector-state.
 The first one of the @rack[data-registers] is the input/output-register.
 It contains the @rack[tape-element] read from or to be written onto
-the current element under the read/write-head.
+the current element under the tape-head.
 
 @itemlist[#:style 'ordered
 @item{A Turing machine halts when the rule-selector-state equals one of the @rack[final-states].}
@@ -337,15 +336,14 @@ register @rack[#:0] and that @rack['whatever] must be put in register @rack[#:1]
 replacing the current element.
 If the @rack[tape-element] offered to be written is the @rack[empty-element]
 a @rack[blank] is written.}
-@item{The read/write-head may be moved:@(linebreak)
+@item{The tape-head may be moved:@(linebreak)
 @rack[move] @rack['L] : move one step to the left.@(linebreak)
 @rack[move] @rack['R] : move one step to the right.@(linebreak)
 @rack[move] @rack['N] : no move.@(linebreak)
-When the read/write-head leaves the current content of the tape,
-an @rack[empty-element] is added and the read/write-head is positioned at this element.}
+When the tape-head leaves the current content of the tape,
+an @rack[empty-element] is added and the tape-head is positioned at this element.}
 @item{The above process is repeated until the rule-selector-state equals a @rack[final-state].}]
 
-@section{Running a Turing machine}
 A procedure returned by procedure @rack[make-TM],
 say @(bold (element 'tt "Turing-machine")),
 can be called as follows:
@@ -358,8 +356,8 @@ can be called as follows:
  (#:report report (or/c boolean? 'long 'short) #f)
  (#:limit limit (or/c exact-positive-integer? #f) #f))
 (values nr-of-moves final-state output)]{
-@rack[nr-of-moves] : @rack[exact-nonnegative-integer?]@(linebreak)
-@rack[output] : @rack[(listof tape-symbol)]@(linebreak)@(linebreak)
+@inset{@rack[nr-of-moves] : @rack[exact-nonnegative-integer?]@(linebreak)
+@rack[output] : @rack[(listof tape-symbol)]}
 The @rack[output] is the final content of the tape but without heading or trailing
 @rack[empty-element] or @rack[blank]s.
 It can contain @rack[blank]s, but not at the begin nor at the end.
@@ -386,15 +384,15 @@ For each move the report shows:
 @item{The original and new contents of the @rack[data-registers],
       the original contents of the input/output-register already showing the tape-symbol
       just read from the tape.}
-@item{The @rack[move] of the read/write-head (@rack['R], @rack['L] or @rack['N]).}
-@item{The new position of the read/write-head and the new content of the tape shown as
-@tt{((h ...) (c t ...))},
-where the new position of the read/write-head is at element @tt{c}.}]
+@item{The @rack[move] of the tape-head (@rack['R], @rack['L] or @rack['N]).}
+@item{The new position of the tape-head and the new content of the tape shown as
+@nonbreaking{@tt{((h ...) (c t ...))}},
+where the new position of the tape-head is at element @tt{c}.}]
 
 If @rack[report] is @rack['short] the Turing machine
 prints a short record of the moves it makes (on the @racket[current-output-port])
 For each move the report shows the move-counter
-the old and new state of the first state-register and the new content of the tape.
+the old and new rule-selector-state and the new content of the tape.
 
 When @rack[limit] is an @racketlink[exact-positive-integer? "exact positive integer"]
 the @tt{Turing-machine} halts by raising an error
@@ -430,7 +428,7 @@ the @rack[limit]:
 
 In this example @rack[rule] @rack['(((A _) ((A) (_) N)))] alone already implies an infinite loop.
 While the @rack[TM] is running,
-its state (the content of the tape and the position of the read/write-head included)
+its state (the content of the tape and the position of the tape-head included)
 never changes,
 which could be detected while the @rack[TM] is running.
 However, @rack[TM] does no such check.
@@ -455,8 +453,8 @@ although it never reproduces the same state.
 @note{Procedure @rack[make-TM] could be adapted such as to
 predict the infinite loops of the last two examples just by checking the rules.
 It also could be adapted such as to produce
-Turing machines
-that can detect a repeated state. These adaptations have not been made,
+Turing machines that can detect a repeated state of the Turing machine as a whole.
+These adaptations have not been made,
 for the Halting Problem implies that there always remain cases
 in which a non-halting case cannot be predicted
 by procedure @rack[make-TM] and cannot be detected while a
@@ -483,31 +481,31 @@ The machine never moves left of the start of the input.
 (require racket "make-TM.rkt")
 (code:line)
 (define rules
-'((code:comment "       State 0 : Inspect the very first element.")
-  (code:comment "                 Mark start x with y or start + with p.")
-  (code:comment "                 This way we can detect the start of the input")
-  (code:comment "                 when moving left and avoid moving left")
-  (code:comment "                 of the start of the input.")
+'((code:comment "State 0 : Inspect the very first element.")
+  (code:comment "          Mark start x with y or start + with p.")
+  (code:comment "          This way we can detect the start of the input")
+  (code:comment "          when moving left and avoid moving left")
+  (code:comment "          of the start of the input.")
   ((0 x) ((1) (y) R))  (code:comment "Ok, go check the remainder of the input.")
   ((0 +) ((1) (p) R))  (code:comment "Ok, go check the remainder of the input.")
   ((0 E) ((T) (B) N))  (code:comment "Empty input accepted.")
   ((0 _) ((F) (_) N))  (code:comment "Reject incorrect input.")
-  (code:comment "       State 1 : Check the remainder of the input.")
+  (code:comment "State 1 : Check the remainder of the input.")
   ((1 x) ((1) (x) R))  (code:comment "Ok, continue the check.")
   ((1 +) ((1) (+) R))  (code:comment "Ok, continue the check.")
   ((1 E) ((2) (B) L))  (code:comment "Input is ok. Start the addition.")
   ((1 _) ((F) (_) N))  (code:comment "Reject incorrect input.")
-  (code:comment "       State 2 : Do the addition from right to left.")
-  (code:comment "                 When entering state 2 the read/write-head")
-  (code:comment "                 is at the right-most non-blank element.")
+  (code:comment "State 2 : Do the addition from right to left.")
+  (code:comment "          When entering state 2 the tape-head")
+  (code:comment "          is at the right-most non-blank element.")
   ((2 x) ((2) (x) L))  (code:comment "Leave x as it is and continue addition.")
   ((2 y) ((T) (x) N))  (code:comment "Start of input reached. Done.")
   ((2 +) ((3) (x) R))  (code:comment "Replace + by x and go replacing the last x by a blank.")
   ((2 p) ((3) (y) R))  (code:comment "Replace p by y and go replacing the last x by a blank.")
-  (code:comment "       State 3 : Go to end of tape.")
+  (code:comment "State 3 : Go to end of tape.")
   ((3 x) ((3) (x) R))  (code:comment "Keep looking for end of input.")
   ((3 B) ((4) (B) L))  (code:comment "End of input reached.")
-  (code:comment "       State 4 : Replace the last x (or the y if there is no x) by a blank.")
+  (code:comment "State 4 : Replace the last x (or the y if there is no x) by a blank.")
   ((4 x) ((2) (B) L))  (code:comment "Replace x by a blank and continue addition.")
   ((4 y) ((T) (B) N))  (code:comment "Replace y by a blank and accept.")))
 (code:line)
@@ -728,7 +726,7 @@ State @element['tt "0"] is the initial internal state and @element['tt "T"] the 
             rules))
 (code:line)
 (call-with-values
- (λ () (TM (reverse (map list '(0 0 9) '(0 0 9)))))
+ (λ () (TM (reverse (map list '(9 9) '(9 9)))))
  (λ (nr-of-moves final-state output)
   (values nr-of-moves final-state (reverse output))))
 (code:line)
@@ -776,7 +774,7 @@ State @element['tt "0"] is the initial internal state and @element['tt "T"] the 
  (and (= (output->nr output) (+ n m)) (eq? final-state 'T)))]
 
 @subsection{Busy beaver}
-3 state busy beaver. In fact there are four states, but @itel{final-state} @tt{T} does not count.
+3 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]. In fact there are four states, but @itel{final-state} @tt{T} does not count.
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -788,7 +786,7 @@ State @element['tt "0"] is the initial internal state and @element['tt "T"] the 
    ((C 0) ((B) (1) L))
    ((C 1) ((T) (1) N))))
 (define TM
- (make-TM
+ (make-TM #:name '3-state-busy-beaver
   'A   (code:comment "The initial state.")
   '(T) (code:comment "The final state.")
   0    (code:comment "The empty-element.")
@@ -797,7 +795,8 @@ State @element['tt "0"] is the initial internal state and @element['tt "T"] the 
   rules))
 (TM '() #:report #t)]
 
-4 state busy beaver. In fact there are five states, but @itel{final-state} @tt{T} does not count.
+4 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"].
+In fact there are five states, but @itel{final-state} @tt{T} does not count.
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -811,7 +810,7 @@ State @element['tt "0"] is the initial internal state and @element['tt "T"] the 
    ((C 1) ((D) (1) L))
    ((D 1) ((A) (0) R))))
 (define TM
- (make-TM
+ (make-TM #:name '4-state-busy-beaver
   'A   (code:comment "The initial state.")
   '(T) (code:comment "The final state.")
   'e   (code:comment "The empty-element.")
@@ -830,13 +829,13 @@ The machine accepts an empty input immediately.
 If the input is not empty, a starting mark @rack['s] is added at the left,
 the input is checked to consist of zeros and ones only
 and an ending mark @rack['e] is added at the end of the input.
-Now the read/write-head is at the element immediately left of the end mark @rack['e].
+Now the tape-head is at the element immediately left of the end mark @rack['e].
 The following process is repeated until halted.
 Starting from the right, the machine looks at the left for a @rack[0] or a @rack[1].
 If a @rack[0] is encountered, it is replaced by @rack['e] and a required @rack[1] is looked for.
 If a @rack[1] is encountered, it is replaced by @rack['e] and a required @rack[0] is looked for.
 After finding a required @rack[0] or @rack[1], it is replaced by a blank,
-the read/write-head is positioned at the right of the tape
+the tape-head is positioned at the right of the tape
 and the process is repeated until no more ones or zeros are present.
 If a required @rack[0] or @rack[1] is not found, the machine halts with state @rack['F].
 
@@ -886,7 +885,7 @@ If a required @rack[0] or @rack[1] is not found, the machine halts with state @r
   '_     (code:comment"dummy")
   rules))
 (code:line)
-(TM '(0 1 0 0 1 1 1 0))
+(TM '(0 1 0 0 1 1 1 0) #:report 'short)
 (code:line)
 (code:comment "Let's do some tests.")
 (code:line)
@@ -1139,22 +1138,22 @@ in order to make space for an x.
 (code:line)
 (define rules
  '((code:comment "look for a.")
-   ((0 a) ((1) (a   empty) R)) (code:comment "a found.")
-   ((0 b) ((0) (b   empty) R)) (code:comment "keep looking.")
-   ((0 x) ((0) (x   empty) R)) (code:comment "keep looking")
-   ((0 E) ((T) (B   empty) N)) (code:comment "all done, halt.")
-   ((0 B) ((T) (B   empty) N)) (code:comment "all done, halt.")
-   ((0 _) ((F) (B   empty) N)) (code:comment "disallowed input, halt.")
+   ((0 a) ((1) (a   ignore) R)) (code:comment "a found.")
+   ((0 b) ((0) (b   ignore) R)) (code:comment "keep looking.")
+   ((0 x) ((0) (x   ignore) R)) (code:comment "keep looking")
+   ((0 E) ((T) (B   ignore) N)) (code:comment "all done, halt.")
+   ((0 B) ((T) (B   ignore) N)) (code:comment "all done, halt.")
+   ((0 _) ((F) (B   ignore) N)) (code:comment "disallowed input, halt.")
    (code:comment "Is a followed by b?")
-   ((1 a) ((1) (a   empty) R)) (code:comment "no, but we have an a, hence continue.")
-   ((1 b) ((2) (b   x    ) L)) (code:comment "yes, go insert x and shift elements at the left.")
-   ((1 x) ((0) (x   empty) R)) (code:comment "no, go looking for an a.")
-   ((1 _) ((T) (B   empty) N)) (code:comment "end of tape, accept.")
+   ((1 a) ((1) (a   ignore) R)) (code:comment "no, but we have an a, hence continue.")
+   ((1 b) ((2) (b   x     ) L)) (code:comment "yes, go insert x and shift elements at the left.")
+   ((1 x) ((0) (x   ignore) R)) (code:comment "no, go looking for an a.")
+   ((1 _) ((T) (B   ignore) N)) (code:comment "end of tape, accept.")
    (code:comment "Shift all elements at the left one step to the left.")
-   ((2 E) ((0) (#:1 empty) R)) (code:comment "Done, repeat the whole process.")
-   ((2 B) ((0) (#:1 empty) R)) (code:comment "Done, repeat the whole process.")
-   ((2 _) ((2) (#:1 #:0  ) L)) (code:comment "Keep shifting.")
- ))
+   ((2 E) ((0) (#:1 ignore) R)) (code:comment "Done, repeat the whole process.")
+   ((2 B) ((0) (#:1 ignore) R)) (code:comment "Done, repeat the whole process.")
+   ((2 _) ((2) (#:1 #:0   ) L))))
+(code:comment "The last rule writes the previous element and memorizes the current one.")
 (code:line)
 (define TM (make-TM  0 '(T F) 'E 'B  '_ rules #:data-registers 2))
 (code:line)

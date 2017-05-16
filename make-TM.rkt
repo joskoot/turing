@@ -9,8 +9,8 @@
          final-states
          empty blank dummy
          rules
-         #:state-registers (state-regs 1)
-         #:data-registers (data-regs 1)
+         #:state-registers (state-registers 1)
+         #:data-registers (data-registers 1)
          #:name (name 'TM-without-name))
 
  (define
@@ -28,7 +28,7 @@
   (define move-counter 0)
   (define tape (list->tape input))
   
-  (define (TM)
+  (define (inner-TM)
    (when report
     (printf
      (string-append
@@ -170,39 +170,39 @@
     old-data))
  
   (define (move-left)
-   (define reversed-head (tape-rev-head tape))
+   (define reversed-head (tape-reversed-head tape))
    (define tail (tape-tail tape))
    (cond
     ((null? reversed-head)
-     (set-tape-rev-head! tape '())
+     (set-tape-reversed-head! tape '())
      (set-tape-tail! tape (cons empty tail)))
     (else
-     (set-tape-rev-head! tape (cdr reversed-head))
+     (set-tape-reversed-head! tape (cdr reversed-head))
      (set-tape-tail! tape (cons (car reversed-head) tail)))))
        
   (define (move-right)
-   (let ((reverse-head (tape-rev-head tape)) (tail (tape-tail tape)))
+   (let ((reverse-head (tape-reversed-head tape)) (tail (tape-tail tape)))
     (cond
      ((null? (cdr tail))
-      (set-tape-rev-head! tape (cons (car tail) reverse-head))
+      (set-tape-reversed-head! tape (cons (car tail) reverse-head))
       (set-tape-tail! tape (list empty)))
      (else
-      (set-tape-rev-head! tape (cons (car tail) reverse-head))
+      (set-tape-reversed-head! tape (cons (car tail) reverse-head))
       (set-tape-tail! tape (cdr tail))))))
 
-  (TM))
+  (inner-TM))
 
  (define final-states-set (apply set final-states))
  
  (define state-reg-names
-  (if (exact-positive-integer? state-regs)
-   (build-list state-regs make-reg-name)
-   state-regs))
+  (if (exact-positive-integer? state-registers)
+   (build-list state-registers make-reg-name)
+   state-registers))
  
  (define data-reg-names
-  (if (exact-positive-integer? data-regs)
-   (build-list data-regs make-reg-name)
-   data-regs))
+  (if (exact-positive-integer? data-registers)
+   (build-list data-registers make-reg-name)
+   data-registers))
 
  (define (check-arguments)
   (unless (symbol? name) (raise-argument-error 'make-TM "symbol?" name))
@@ -231,6 +231,9 @@
          (andmap new-state? new-states)
          (andmap new-datum? new-data)
          (member move '(L R N)))))))))
+
+  ; Body of make-TM
+  
   (unless (state? init-state) (error 'make-TM "incorrect initial state: ~s" init-state))
   (unless (and (list? final-states) (andmap state? final-states))
    (error 'make-TM "incorrect list of final states: ~s" final-states))
@@ -243,16 +246,18 @@
   (for ((rule (in-list rules)) #:unless (rule? rule)) (error 'make-TM "incorrect rule: ~s" rule))
   (unless
    (or
-    (exact-positive-integer? state-regs)
-    (and (andmap keyword? state-regs) (not (check-duplicates state-regs))))
-   (error 'make-TM "incorrect state-registers: ~s" state-regs))
+    (exact-positive-integer? state-registers)
+    (and (andmap keyword? state-registers) (not (check-duplicates state-registers))))
+   (error 'make-TM "incorrect state-registers: ~s" state-registers))
   (unless
    (or
-    (exact-positive-integer? data-regs)
-    (and (andmap keyword? data-regs) (not (check-duplicates data-regs))))
-   (error 'make-TM "incorrect data-registers: ~s" data-regs)))
+    (exact-positive-integer? data-registers)
+    (and (andmap keyword? data-registers) (not (check-duplicates data-registers))))
+   (error 'make-TM "incorrect data-registers: ~s" data-registers)))
  
  (check-arguments)
+
+ ; Procedures for use in TM, inner-TM and TM-proper
 
  (define (normal-rule? rule) (not (equal? (rule-old-data rule) dummy)))
  (define (empty->blank datum) (if (equal? datum empty) blank datum))
@@ -265,7 +270,7 @@
  (define (tape->list tape)
   (remove-trailing-blanks
    (remove-heading-blanks
-    (append (reverse (tape-rev-head tape)) (tape-tail tape)))))
+    (append (reverse (tape-reversed-head tape)) (tape-tail tape)))))
 
  (define (remove-heading-blanks lst)
   (cond
@@ -310,9 +315,11 @@
 ;==================================================================================================
 
 (define (print-tape tape port mode)
- (write (list (reverse (tape-rev-head tape)) (tape-tail tape)) port))
+ (write (list (reverse (tape-reversed-head tape)) (tape-tail tape)) port))
 
-(struct tape (rev-head tail)
+; print-tape must be defined before struct tape.
+
+(struct tape (reversed-head tail)
  #:mutable
  #:property prop:custom-write print-tape
  #:constructor-name make-tape
