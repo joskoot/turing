@@ -7,7 +7,7 @@
 (define (make-TM
          init-state
          final-states
-         empty blank dummy
+         empty space dummy
          rules
          #:state-registers (state-registers 1)
          #:data-registers (data-registers 1)
@@ -142,7 +142,7 @@
   (define (tape-read) (car (tape-tail tape)))
   
   (define (tape-write datum)
-   (set-tape-tail! tape (cons (empty->blank datum) (cdr (tape-tail tape)))))
+   (set-tape-tail! tape (cons (empty->space datum) (cdr (tape-tail tape)))))
   
   (define-values (normal-rules-hash dummy-rules-hash)
    (for/fold
@@ -239,9 +239,9 @@
    (error 'make-TM "incorrect list of final states: ~s" final-states))
   (when (keyword? dummy) (raise-argument-error 'make-TM "(not/c keyword?)" dummy))
   (when (keyword? empty) (raise-argument-error 'make-TM "(not/c keyword?)" empty))
-  (when (keyword? blank) (raise-argument-error 'make-TM "(not/c keyword?)" blank))
-  (when (or (equal? dummy blank) (equal? dummy empty) (equal? blank empty))
-   (error 'make-TM "dummy blank and empty must be distinct, given: ~s ~s ~s" dummy blank empty))
+  (when (keyword? space) (raise-argument-error 'make-TM "(not/c keyword?)" space))
+  (when (or (equal? dummy space) (equal? dummy empty) (equal? space empty))
+   (error 'make-TM "dummy space and empty must be distinct, given: ~s ~s ~s" dummy space empty))
   (unless (list? rules) (raise-argument-error 'make-TM "list of rules" rules))
   (for ((rule (in-list rules)) #:unless (rule? rule)) (error 'make-TM "incorrect rule: ~s" rule))
   (unless
@@ -260,7 +260,7 @@
  ; Procedures for use in TM, inner-TM and TM-proper
 
  (define (normal-rule? rule) (not (equal? (rule-old-data rule) dummy)))
- (define (empty->blank datum) (if (equal? datum empty) blank datum))
+ (define (empty->space datum) (if (equal? datum empty) space datum))
  
  (define (list->tape lst)
   (if (null? lst)
@@ -268,18 +268,18 @@
    (make-tape '() lst)))
   
  (define (tape->list tape)
-  (remove-trailing-blanks
-   (remove-heading-blanks
+  (remove-trailing-spaces
+   (remove-heading-spaces
     (append (reverse (tape-reversed-head tape)) (tape-tail tape)))))
 
- (define (remove-heading-blanks lst)
+ (define (remove-heading-spaces lst)
   (cond
    ((null? lst) '())
-   ((equal? (car lst) empty) (remove-heading-blanks (cdr lst)))
-   ((equal? (car lst) blank) (remove-heading-blanks (cdr lst)))
+   ((equal? (car lst) empty) (remove-heading-spaces (cdr lst)))
+   ((equal? (car lst) space) (remove-heading-spaces (cdr lst)))
    (else lst)))
  
- (define (remove-trailing-blanks lst) (reverse (remove-heading-blanks (reverse lst))))
+ (define (remove-trailing-spaces lst) (reverse (remove-heading-spaces (reverse lst))))
  
  (define (check-input input)
   (unless

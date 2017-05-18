@@ -54,25 +54,26 @@
 @(defmodule "make-TM.rkt" #:packages ())
 
 @section{Introduction}
-This document describes procedure @rack[make-TM], which
-returns a procedure that emulates a two-way single tape
-@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing Machine"].
-Surely this documentation is easier to read for readers already familiar with Turing machines,
-but this introduction may help too. Nevertheless, a strong advice to interested readers
-to look into a more comprehensive introduction, such as:
+This document describes procedure @rack[make-TM].
+It returns procedures that emulate two-way single tape
+@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing Machines"].
+It should be possible to read this document without foreknowledge of the theory of these machines,
+but surely some foreknowledge can be helpful.
 
 @note{@elemtag["book"]{
-John E. Hopcroft and Jeffrey D. Ullman:
-@nonbreaking{Formal Languages and their Relation to Automata (ISBN 0-201-0298 3-9)}}}
+John E. Hopcroft and Jeffrey D. Ullman provide a very good description
+of Turing Machines in their book:
+@nonbreaking{"Formal Languages and their Relation to Automata (ISBN 0-201-0298 3-9)".}}}
 
-A Turing machine is an abstract computer with a finite control unit, id est,
-with finite internal memory,
-but an infinite memory in the form of an infinite rewritable tape.
-The machine needs a program, which must consist of a finite number of instructions.
+A Turing machine has a finite control unit, id est,
+with finite internal memory.
+It has an infinite external memory in the form of a tape of which every element can be rewritten
+without disturbing preceding or succeeding elements and whose size can be extended without limits.
+The control unit operates according to a finite number of instructions, called `rules'.
 According to the @hyperlink["https://en.wikipedia.org/wiki/Church%E2%80%93Turing_thesis"
-"thesis of Alonzo Church"] everything that can be computed by a computer or whatever else
-than an autonomous mechanical or electronic device,
-can be programmed for a Turing machine:
+"thesis of Alonzo Church"] everything that can be computed by a computer or whatever other
+autonomous mechanical or electronic device,
+can be programmed as a finite set of rules for a Turing machine:
 
 @elemtag["figure" " "] @inset[@image["make-TM.jpg"]]
 
@@ -89,7 +90,8 @@ but the first or last one can be an empty element,
 which is not a tape-symbol.
 Initially the content consists of a finite input of tape-symbols
 and the tape-head is positioned at the leftmost element.
-If the input is empty, the content of the tape initially consists of one empty element.
+If the input is empty, the content of the tape initially consists of one empty element
+(which in the @elemref["book" "book mentioned above"] is called a `blank')
 The tape-content can grow to arbitrary size, but always is finite.
 The number of distinct states of a Turing machine as a whole can be infinite,
 but always is denumerable. 
@@ -103,7 +105,7 @@ A move consists of three steps:
 @item{Optionally putting the control unit in another internal state.}
 @item{Optionally replacing the current tape-symbol by another tape-symbol.
 This step is not optional when the current element is empty.
-An empty element always is filled with a tape-symbol, possibly with a blank.}
+An empty element always is filled with a tape-symbol, possibly with a space.}
 @item{Optionally moving the tape-head one step to the right or to the left.}]
 
 @note{In real life tape equipment usually the tape is moving
@@ -113,12 +115,10 @@ the tape in opposit direction.}
 
 The machine never writes a dummy or empty element.
 It cannot remove elements from the content of the tape,
-but it can replace the current element by a blank,
+but it can replace the current element by a space,
 which is a tape-symbol.
-(Warning: in the @elemref["book" "book mentioned above"] an empty element is called
-a `blank' and no special word is used for blanks as described in the present document)
 A Turing machine can be programmed such as to shift all elements at the left/right of
-the current element to the left/right by one or more elements and to put blanks or other
+the current element to the left/right by one or more elements and to put spaces or other
 tape-symbols in the resulting free space.
 Empty elements are used only to extend the tape
 at the left or at the right of the current content.
@@ -149,21 +149,22 @@ The internal states and tape-elements can be arbitrary
 @hyperlink["http://racket-lang.org/" "Racket"] values other than the dummy and keywords.
 Usually symbols and exact non-negative integer numbers are the most convenient ones.
 Lists or vectors can be used to simulate a multi-tape Turing machine.
-Equivalence relation @rack[equal?] is used for comparison of two internal states
-or two tape-elements.
+Two internal states or two tape-elements always are compared with each other
+by means of equivalence relation @rack[equal?].
 The internal states and tape-elements live in separate worlds.
-An internal state never is compared to a tape-element.
+An internal state never is compared with a tape-element.
 Hence the Turing machine will not be confused when the intersection of the set of
 @hyperlink["http://racket-lang.org/" "Racket"]-objects representing the
 internal states and the set of those representing the tape-elements is not empty
-or when an internal state equals the empty element.
+or when the representation of an internal state equals that of the empty element.
 However, this may confuse a human reader of the rules of the control unit.
 After reaching a final state the procedure that emulates the Turing machine
 returns the number of moves it has made, the final state and its output.
 The latter consists of the final content of the tape,
-but without heading or trailing empty element or blanks.
-The output can contain blanks but not at the start or the end.
+but without heading or trailing empty element or spaces.
+The output can contain spaces but not at the start or the end.
 The output never contains a dummy or an empty element.
+
 Let's start with a simple example of a Turing machine.
 It's states are @rack['A], @rack['B], @rack['C], @rack['D] and @rack['E].
 In the rules @rack['R] indicates a move to the right.
@@ -176,7 +177,7 @@ but the example does not make moves to the left.
 A rule whose @rack[current-element] is the dummy applies to every arbitrary current element
 of the tape.
 A rule whose @rack[tape-symbol-to-be-written] is the dummy indicates that the current element
-must not be altered (except that if it is an empty element, it is filled with a blank)
+must not be altered (except that if it is an empty element, it is filled with a space)
 The machine accepts every input and replaces the fourth element by @rack['new].
 
 @interaction[
@@ -187,7 +188,7 @@ The machine accepts every input and replaces the fourth element by @rack['new].
   'A      (code:comment "The initial state.")
   '(E)    (code:comment "The final state.")
   'empty
-  'blank
+  'space
   '_      (code:comment "The dummy.")
   (code:comment "The rules:")
   '(((A _) ((B) (_  ) R)) (code:comment "Do not modify first  tape-element.    Move right.")
@@ -213,7 +214,7 @@ The following machine replaces the second and the fourth tape-element.
   'A      (code:comment "The initial state.")
   '(E)    (code:comment "The final state.")
   'empty
-  'blank
+  'space
   '_      (code:comment "The dummy.")
   '(((A _) ((B) (_  ) R))
     ((B _) ((C) (is ) R))
@@ -237,9 +238,9 @@ of the first state-register and that of the input/output-register.
 During a move new states can be put into the state-registers, possibly obtained from other
 state-registers. Likewise new data can be put into the data-registers or be exchanged between them.
 After all registers have been updated,
-the element in the input/output-register is written onto the tape
+the content of the input/output-register is written onto the tape
 such as to replace the current element.
-However, if the element to be written is an empty element, a blank is written.
+However, if the element to be written is an empty element, a space is written.
 Finally the tape-head may be moved one step to the right or to the left.
 A Turing machine repeats moves until the first state-register contains a final state.
 
@@ -253,7 +254,7 @@ of the tape to another position on the tape. Section @secref["More registers"] s
 
 @section{Procedure make-TM}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
-(make-TM initial-state final-states empty-element blank dummy
+(make-TM initial-state final-states empty-element space dummy
           rules state-registers data-registers name)
 #:grammar(
 (initial-state   state)
@@ -275,7 +276,7 @@ of the tape to another position on the tape. Section @secref["More registers"] s
                  (code:line #:name @#,(rack symbol?)))
 (tape-element    tape-symbol empty-element))
 #:contracts ((empty-element (not/c keyword?))
-             (blank (not/c keyword?))
+             (space (not/c keyword?))
              (dummy (not/c keyword?))
              (state (and/c (not/c dummy) (not/c keyword?)))
              (tape-element (and/c (not/c dummy) (not/c keyword?)))
@@ -292,7 +293,7 @@ and the following conditions,
 equality or being distinct to be understood in the sense of @rack[equal?].
 
 @itemlist[#:style 'ordered
- @item{The @rack[blank], the @rack[empty-element] and the @rack[dummy] must be distinct.}
+ @item{The @rack[space], the @rack[empty-element] and the @rack[dummy] must be distinct.}
  @item{The @rack[final-states] must not include an @rack[old-state].}
  @item{The @rack[final-states] must not contain duplicates.                       }
  @item{The @rack[rules] must have distinct combinations @rack[(old-state old-element)].}
@@ -309,8 +310,8 @@ procedure @rack[make-TM] raises an @rack[error].
 @section{Running a Turing machine}
 The control unit interprets the @rack[rules] as follows,
 equality again to be understood in the sense of @rack[equal?].
-The first one of the @rack[state-registers] will be referred to as the rule-selector-state-register.
-Its contents will be referred to as the current rule-selector-state.
+The first one of the @rack[state-registers] will be referred to as the rule-selector-state-register
+and its contents as the current rule-selector-state.
 The first one of the @rack[data-registers] is the input/output-register.
 It contains the @rack[tape-element] read from or to be written onto
 the current element under the tape-head.
@@ -345,7 +346,7 @@ register @rack[#:0] and that @rack['whatever] must be put in register @rack[#:1]
 @item{Now the @rack[tape-element] of the input/output-register is written on the tape,
 replacing the current element.
 If the @rack[tape-element] offered to be written is the @rack[empty-element]
-a @rack[blank] is written.}
+a @rack[space] is written.}
 @item{The tape-head may be moved:@(linebreak)
 @rack[move] @rack['L] : move one step to the left.@(linebreak)
 @rack[move] @rack['R] : move one step to the right.@(linebreak)
@@ -369,8 +370,8 @@ can be called as follows:
 @inset{@rack[nr-of-moves] : @rack[exact-nonnegative-integer?]@(linebreak)
 @rack[output] : @rack[(listof tape-symbol)]}
 The @rack[output] is the final content of the tape but without heading or trailing
-@rack[empty-element] or @rack[blank]s.
-It can contain @rack[blank]s, but not at the begin nor at the end.
+@rack[empty-element] or @rack[space]s.
+It can contain @rack[space]s, but not at the begin nor at the end.
 
 If @rack[states] is @rack[#f] all @rack[state-registers] are initialized with the
 @rack[initial-state]. Otherwise it must be a list of as many @rack[state]s
@@ -430,11 +431,11 @@ the @rack[limit]:
             'A   (code:comment "initial state")
             '(T) (code:comment "final states")
             'E   (code:comment "empty cell")
-            'B   (code:comment "blank")
+            'S   (code:comment "space")
             '_   (code:comment "dummy")
             '(((A _) ((A) (_) N)))
             #:name 'Non-halting-TM))
-(TM '(B) #:report #t #:limit 5)]
+(TM '(S) #:report #t #:limit 5)]
 
 In this example @rack[rule] @rack['(((A _) ((A) (_) N)))] alone already implies an infinite loop.
 While the @rack[TM] is running,
@@ -450,9 +451,9 @@ As another example consider:
             'A     (code:comment "initial state")
             '(T)   (code:comment "final state")
             'empty (code:comment "empty cell")
-            'blank (code:comment "blank")
+            'space (code:comment "space")
             '_     (code:comment "dummy")
-            '(((A _) ((A) (blank) R)))
+            '(((A _) ((A) (space) R)))
             #:name 'Another-non-halting-TM))
 (code:line)
 (TM '(whatever) #:report #t #:limit 5)]
@@ -463,7 +464,7 @@ although it never reproduces the same state.
 @note{Procedure @rack[make-TM] could be adapted such as to
 predict the infinite loops of the last two examples just by checking the rules.
 It also could be adapted such as to produce
-Turing machines that can detect a repeated state of the Turing machine as a whole.
+Turing machines that can detect a repeated state of the machine as a whole.
 These adaptations have not been made,
 for the Halting Problem implies that there always remain cases
 in which a non-halting case cannot be predicted
@@ -498,36 +499,50 @@ The machine never moves left of the start of the input.
   (code:comment "          of the start of the input.")
   ((0 x) ((1) (y) R))  (code:comment "Ok, go check the remainder of the input.")
   ((0 +) ((1) (p) R))  (code:comment "Ok, go check the remainder of the input.")
-  ((0 E) ((T) (B) N))  (code:comment "Empty input accepted.")
+  ((0 E) ((T) (S) N))  (code:comment "Empty input accepted.")
   ((0 _) ((F) (_) N))  (code:comment "Reject incorrect input.")
   (code:comment "State 1 : Check the remainder of the input.")
   ((1 x) ((1) (x) R))  (code:comment "Ok, continue the check.")
   ((1 +) ((1) (+) R))  (code:comment "Ok, continue the check.")
-  ((1 E) ((2) (B) L))  (code:comment "Input is ok. Start the addition.")
+  ((1 E) ((2) (S) L))  (code:comment "Input is ok. Start the addition.")
   ((1 _) ((F) (_) N))  (code:comment "Reject incorrect input.")
   (code:comment "State 2 : Do the addition from right to left.")
-  (code:comment "          When entering state 2 the tape-head")
-  (code:comment "          is at the right-most non-blank element.")
+  (code:comment "          When entering state 2 the tape-head is at")
+  (code:comment "          the right-most element that is not a space.")
   ((2 x) ((2) (x) L))  (code:comment "Leave x as it is and continue addition.")
   ((2 y) ((T) (x) N))  (code:comment "Start of input reached. Done.")
-  ((2 +) ((3) (x) R))  (code:comment "Replace + by x and go replacing the last x by a blank.")
-  ((2 p) ((3) (y) R))  (code:comment "Replace p by y and go replacing the last x by a blank.")
+  ((2 +) ((3) (x) R))  (code:comment "Replace + by x and go replacing the last x by a space.")
+  ((2 p) ((3) (y) R))  (code:comment "Replace p by y and go replacing the last x by a space.")
   (code:comment "State 3 : Go to end of tape.")
   ((3 x) ((3) (x) R))  (code:comment "Keep looking for end of input.")
-  ((3 B) ((4) (B) L))  (code:comment "End of input reached.")
-  (code:comment "State 4 : Replace the last x (or the y if there is no x) by a blank.")
-  ((4 x) ((2) (B) L))  (code:comment "Replace x by a blank and continue addition.")
-  ((4 y) ((T) (B) N))  (code:comment "Replace y by a blank and accept.")))
+  ((3 S) ((4) (S) L))  (code:comment "End of input reached.")
+  (code:comment "State 4 : Replace the last x (or the y if there is no x) by a space.")
+  ((4 x) ((2) (S) L))  (code:comment "Replace x by a space and continue addition.")
+  ((4 y) ((T) (S) N))  (code:comment "Replace y by a space and accept.")))
 (code:line)
 (define TM (make-TM
             '0     (code:comment "initial state")
             '(T F) (code:comment "final states")
             'E     (code:comment "empty cell")
-            'B     (code:comment "blank")
+            'S     (code:comment "space")
             '_     (code:comment "dummy")
             rules))
 (code:line)
-(TM '(x + x x + x x x) #:report 'short)]
+(TM '(x + x x + x x x) #:report 'short)
+(code:line)
+(code:comment "Let's test this machine:")
+(code:line)
+(random-seed 0)
+(for/and ((nx (in-range 0 10)))
+ (define output (make-list nx 'x))
+ (for/and ((n+ (in-range 0 10)))
+  (define input-T (append output (make-list n+ '+)))
+  (define input-F (cons '- input-T)) 
+  (for/and ((k (in-range 0 20)))
+   (define-values (nr-of-moves-T final-state-T tape-T) (TM (shuffle input-T)))
+   (define-values (nr-of-moves-F final-state-F tape-F) (TM (shuffle input-F)))
+   (and (eq? final-state-T 'T) (equal? tape-T output)
+        (eq? final-state-F 'F)))))]
 
 @subsection{Binary addition}
 The following Turing machine adds two natural numbers written in binary notation.
@@ -548,11 +563,11 @@ id est, without leading zeros.
 The initial content of the tape is modified such as to result in the sum.
 In the sum a 0 bit is written as @element['tt "x"] and a 1 bit as @element['tt "y"]
 such as to know which bits already have been established and which ones yet have to be computed.
-During the addition the content of the tape is (ignoring blanks and empty-element) 
+During the addition the content of the tape is (ignoring spaces and empty-element) 
 @nonbreaking{@element['tt "(0-or-1 ... x-or-y ... + 0-or-1 ...)"]}.
 Bits of the second operand are processed starting from the least significant one.
-Every such bit is replaced by a @itel["blank"] before it is processed.
-The significance of the blanked bit is the same as that of
+Every such bit is replaced by a @itel["space"] before it is processed.
+The significance of this bit is the same as that of
 the right-most bit @nonbreaking{@element['tt "0-or-1"]} of the first operand.
 After all bits of the second operand have been processed,
 the @element['tt "+"] is removed,
@@ -580,12 +595,12 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
   (code:comment "Check the remainder of the second operand.")
   ((3 0) ((3) (0) R)) (code:comment "Ok, continue parsing the second operand.")
   ((3 1) ((3) (1) R)) (code:comment "Ok, continue parsing the second operand.")
-  ((3 E) ((4) (B) L)) (code:comment "End of correct input. Go to the addition.")
+  ((3 E) ((4) (S) L)) (code:comment "End of correct input. Go to the addition.")
   ((3 _) ((F) (_) N)) (code:comment "Reject.")
   (code:comment "Addition")
   (code:comment "We are at the least significant bit of the second operand.")
-  ((4 0) ((5) (B) L)) (code:comment "Erase the bit and add it to the first operand.")
-  ((4 1) ((7) (B) L)) (code:comment "Erase the bit and add it to the first operand.")
+  ((4 0) ((5) (S) L)) (code:comment "Erase the bit and add it to the first operand.")
+  ((4 1) ((7) (S) L)) (code:comment "Erase the bit and add it to the first operand.")
   (code:comment "Adding bit 0.")
   (code:comment "Look for the least significant bit of the first operand.")
   ((5 +) ((6) (+) L)) (code:comment "Least significant bit of first operand found.")
@@ -595,7 +610,7 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
   ((6 0) ((A) (x) R)) (code:comment "Mark bit as having been computed.")
   ((6 1) ((A) (y) R)) (code:comment "Mark bit as having been computed.")
   ((6 E) ((A) (x) R)) (code:comment "Add a bit marked as having been computed.")
-  ((6 B) ((A) (x) R)) (code:comment "Add a bit marked as having been computed.")
+  ((6 S) ((A) (x) R)) (code:comment "Add a bit marked as having been computed.")
   (code:comment "Adding bit 1.")
   (code:comment "Look for the least significant bit of the first operand.")
   ((7 +) ((8) (+) L)) (code:comment "Least significant bit of first operand found.")
@@ -604,39 +619,39 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
   ((8 y) ((8) (y) L)) (code:comment "Skip bits already computed.")
   ((8 0) ((A) (y) R)) (code:comment "Put a 1 bit as having been computed.")
   ((8 1) ((9) (x) L)) (code:comment "Put a zero bit as being computed and process carry.")
-  ((8 B) ((A) (y) R)) (code:comment "Add the bit.")
+  ((8 S) ((A) (y) R)) (code:comment "Add the bit.")
   ((8 E) ((A) (y) R)) (code:comment "Add the bit.")
   (code:comment "Process a carry.")
   ((9 0) ((A) (1) R))
   ((9 1) ((9) (0) L))
-  ((9 B) ((A) (1) R))
+  ((9 S) ((A) (1) R))
   ((9 E) ((A) (1) R))
   (code:comment "Go to next least significant bit of second operand.")
-  ((A B) ((B) (B) L)) (code:comment "End of second operand.")
+  ((A S) ((S) (S) L)) (code:comment "End of second operand.")
   ((A _) ((A) (_) R)) (code:comment "Keep on looking.")
   (code:comment "Here we are at the least significant bit of the second operand.")
-  ((B 0) ((5) (B) L)) (code:comment "Remove bit from the second operand and go add it.")
-  ((B 1) ((7) (B) L)) (code:comment "Remove bit from the second operand and go add it.")
-  ((B +) ((C) (B) L)) (code:comment "Second operand totaly processed. Erase the + sign.")
+  ((S 0) ((5) (S) L)) (code:comment "Remove bit from the second operand and go add it.")
+  ((S 1) ((7) (S) L)) (code:comment "Remove bit from the second operand and go add it.")
+  ((S +) ((C) (S) L)) (code:comment "Second operand totaly processed. Erase the + sign.")
   (code:comment "Addition is complete.")
   (code:comment "Revert x to 0 and y to 1.")
   ((C x) ((C) (0) L))
   ((C y) ((C) (1) L))
   ((C 0) ((C) (0) L))
   ((C 1) ((C) (1) L))
-  ((C B) ((D) (B) R))
-  ((C E) ((D) (B) R))
+  ((C S) ((D) (S) R))
+  ((C E) ((D) (S) R))
   (code:comment "Remove heading zeros, but make sure at least one bit remains.")
-  ((D 0) ((D) (B) R))
+  ((D 0) ((D) (S) R))
   ((D 1) ((T) (1) N))
-  ((D B) ((T) (0) N))
+  ((D S) ((T) (0) N))
   ((D E) ((T) (0) N))))
 (code:line)
 (define adder (make-TM
                '0     (code:comment "initial state")
                '(T F) (code:comment "final states")
                'E     (code:comment "empty cell")
-               'B     (code:comment "blank")
+               'S     (code:comment "space")
                '_     (code:comment "dummy")
                rules))
 (code:line)
@@ -716,7 +731,7 @@ State @element['tt "0"] is the initial internal state and @element['tt "T"] the 
 (define rules
  (append
   (list
-   '((0 E) ((T) (B) R))
+   '((0 E) ((T) (S) R))
    '((1 E) ((T) (1) R)))
   (for*/list
    ((c (in-range 0 2))  (code:comment "0 = no carry, 1 = carry")
@@ -731,7 +746,7 @@ State @element['tt "0"] is the initial internal state and @element['tt "T"] the 
             0    (code:comment "initial state")
             '(T) (code:comment "final state")
             'E   (code:comment "empty cell")
-            'B   (code:comment "blank")
+            'S   (code:comment "space")
             '_   (code:comment "dummy")
             rules))
 (code:line)
@@ -801,7 +816,7 @@ In fact there are four states, but @itel{final-state} @tt{T} does not count.
   'A   (code:comment "The initial state.")
   '(T) (code:comment "The final state.")
   0    (code:comment "The empty-element.")
-  'blank-not-used
+  'space-not-used
   'dummy-not-used
   rules))
 (TM '() #:report #t)]
@@ -825,7 +840,7 @@ In fact there are five states, but @itel{final-state} @tt{T} does not count.
   'A   (code:comment "The initial state.")
   '(T) (code:comment "The final state.")
   'e   (code:comment "The empty-element.")
-  'blank-not-used
+  'space-not-used
   'dummy-not-used
   rules))
 (TM '() #:report 'short)]
@@ -845,7 +860,7 @@ The following process is repeated until halted.
 Starting from the right, the machine looks at the left for a @rack[0] or a @rack[1].
 If a @rack[0] is encountered, it is replaced by @rack['e] and a required @rack[1] is looked for.
 If a @rack[1] is encountered, it is replaced by @rack['e] and a required @rack[0] is looked for.
-After finding a required @rack[0] or @rack[1], it is replaced by a blank,
+After finding a required @rack[0] or @rack[1], it is replaced by a space,
 the tape-head is positioned at the right of the tape
 and the process is repeated until no more ones or zeros are present.
 If a required @rack[0] or @rack[1] is not found, the machine halts with state @rack['F].
@@ -853,46 +868,42 @@ If a required @rack[0] or @rack[1] is not found, the machine halts with state @r
 @interaction[
 (require racket "make-TM.rkt")
 (code:line)
-(define simplified-rules
+(define rules
  '((code:comment "state 0: starting state.")
    (code:comment "Accept empty input, otherwise add starting mark s.")
-   ((0 E) (T B N)) (code:comment "Accept empty input.")
-   ((0 _) (1 _ L))
-   ((1 E) (2 s R))
+   ((0 E) ((T) (S) N)) (code:comment "Accept empty input.")
+   ((0 _) ((1) (_) L))
+   ((1 E) ((2) (s) R))
    (code:comment "state 2: Check that we have 0s and 1s only and add an ending mark e.")
-   ((2 0) (2 0 R))
-   ((2 1) (2 1 R))
-   ((2 E) (3 e N))
-   ((2 _) (F _ N))
+   ((2 0) ((2) (0) R))
+   ((2 1) ((2) (1) R))
+   ((2 E) ((3) (e) N))
+   ((2 _) ((F) (_) N))
    (code:comment "state 3: Go to the end of the tape.")
-   ((3 e) (4 e L))
-   ((3 _) (3 _ R))
+   ((3 e) ((4) (e) L))
+   ((3 _) ((3) (_) R))
    (code:comment "state 4: look for a 0 or a 1 at the left")
-   ((4 s) (T B N)) (code:comment "Ok, no more 0s or 1s.")
-   ((4 0) (5 e L)) (code:comment "a 1 at the left is required.")
-   ((4 1) (6 e L)) (code:comment "a 0 at the left is required.")
-   ((4 B) (4 e L))
+   ((4 s) ((T) (S) N)) (code:comment "Ok, no more 0s or 1s.")
+   ((4 0) ((5) (e) L)) (code:comment "a 1 at the left is required.")
+   ((4 1) ((6) (e) L)) (code:comment "a 0 at the left is required.")
+   ((4 S) ((4) (e) L))
    (code:comment "state 5: look for a required 1 at the left.")
-   ((5 0) (5 0 L)) (code:comment "skip 0.")
-   ((5 1) (3 B R)) (code:comment "found.")
-   ((5 s) (F s N)) (code:comment "no 1 found.")
-   ((5 B) (5 B L))
+   ((5 0) ((5) (0) L)) (code:comment "skip 0.")
+   ((5 1) ((3) (S) R)) (code:comment "found.")
+   ((5 s) ((F) (s) N)) (code:comment "no 1 found.")
+   ((5 S) ((5) (S) L))
    (code:comment "state 6: look for a required 0 at the left.")
-   ((6 0) (3 B R)) (code:comment "found.")
-   ((6 1) (6 1 L)) (code:comment "skip 1.")
-   ((6 s) (F s N)) (code:comment "no 0 found.")
-   ((6 B) (6 B L))))
-(define rules
- (map
-  (λ (rule) (match rule ((list (list a b) (list c d e)) `((,a ,b) ((,c) (,d) ,e)))))
-  simplified-rules))
+   ((6 0) ((3) (S) R)) (code:comment "found.")
+   ((6 1) ((6) (1) L)) (code:comment "skip 1.")
+   ((6 s) ((F) (s) N)) (code:comment "no 0 found.")
+   ((6 S) ((6) (S) L))))
 (code:line)
 (define TM
  (make-TM
   0      (code:comment"initial state")
   '(T F) (code:comment"final states")
   'E     (code:comment"empty cell")
-  'B     (code:comment"blank")
+  'S     (code:comment"space")
   '_     (code:comment"dummy")
   rules))
 (code:line)
@@ -924,59 +935,55 @@ First check that the input consists of @rack[L]s and @rack[R]s only.
 Put @itel{tape-symbol} @rack[s] at the left of the input
 and @itel{tape-symbol} @rack[e] at the right.
 This helps detecting the start and the end of the current content of the tape.
-Starting from the right go left looking for a @rack[R] whose first preceding non-blank is @rack[L].
-When found replace the @rack[L] and the @rack[R] by blanks, go to the right of the input and repeat.
-When looking for a @rack[R] all elements appear to be blanks, the machine halts in state @rack[T].
+Starting from the right go left looking for a @rack[R]
+whose first preceding non-space element is @rack[L].
+When found replace the @rack[L] and the @rack[R] by spaces, go to the right of the input and repeat.
+When looking for a @rack[R] all elements appear to be spaces, the machine halts in state @rack[T].
 When encountering a @rack[L] before encountering a @rack[R] the parentheses are not balanced
 and the machine halts in state @rack[F].
 
 @interaction[
 (require racket "make-TM.rkt")
 (code:line)
-(define simplified-rules
+(define rules
   (code:comment "state 0")
   (code:comment "accept empty input.")
   (code:comment "put start marker s before non-empty input.")
-'(((0 E) (T B N))
-  ((0 _) (1 _ L))
-  ((1 E) (2 s R))
+'(((0 E) ((T) (S) N))
+  ((0 _) ((1) (_) L))
+  ((1 E) ((2) (s) R))
   (code:comment "state 2")
   (code:comment "check input.")
   (code:comment "put end marker e at end of input.")
-  ((2 L) (2 L R))
-  ((2 R) (2 R R))
-  ((2 E) (3 e L))
-  ((2 _) (F _ N))
+  ((2 L) ((2) (L) R))
+  ((2 R) ((2) (R) R))
+  ((2 E) ((3) (e) L))
+  ((2 _) ((F) (_) N))
   (code:comment "state 3")
   (code:comment "we are at the end of the tape.")
   (code:comment "look left for R immediately preceded by L.")
-  ((3 B) (3 B L))
-  ((3 s) (7 B R)) (code:comment "all done, go blank the end mark e.")
-  ((3 R) (4 R L)) (code:comment "found a R.")
-  ((3 _) (F _ N))
-  ((4 B) (4 B L))
-  ((4 L) (5 B R)) (code:comment "found immediately preceeding L, blank the L.")
-  ((4 R) (4 R L)) (code:comment "found another R.")
-  ((4 _) (F _ N))
+  ((3 S) ((3) (S) L))
+  ((3 s) ((7) (S) R)) (code:comment "all done, replace the start mark s by a space.")
+  ((3 R) ((4) (R) L)) (code:comment "found a R.")
+  ((3 _) ((F) (_) N))
+  ((4 S) ((4) (S) L))
+  ((4 L) ((5) (S) R)) (code:comment "found immediately preceeding L, erase it with a space.")
+  ((4 R) ((4) (R) L)) (code:comment "found another R.")
+  ((4 _) ((F) (_) N))
   (code:comment "state 5")
-  (code:comment "blank the R corresponding to the L just blanked.")
-  ((5 R) (6 B R)) 
-  ((5 B) (5 B R))
+  (code:comment "erase the R corresponding to the L just erased.")
+  ((5 R) ((6) (S) R)) 
+  ((5 S) ((5) (S) R))
   (code:comment "state 6")
   (code:comment "go to end of tape and repeat.")
-  ((6 e) (3 e L))
-  ((6 _) (6 _ R))
+  ((6 e) ((3) (e) L))
+  ((6 _) ((6) (_) R))
   (code:comment "state 7")
-  (code:comment "blank the e mark and halt in state T.")
-  ((7 e) (T B N))
-  ((7 _) (7 _ R))))
+  (code:comment "erase the e mark and halt in state T.")
+  ((7 e) ((T) (S) N))
+  ((7 _) ((7) (_) R))))
 (code:line)
-(define rules
- (map
-  (λ (rule) (match rule ((list (list a b) (list c d e)) `((,a ,b) ((,c) (,d) ,e)))))
-  simplified-rules))
-(code:line)
-(define TM (make-TM 0 '(T F) 'E 'B '_ rules))
+(define TM (make-TM 0 '(T F) 'E 'S '_ rules))
 (code:line)
 (code:comment "The following examples yield final state T")
 (code:line)
@@ -1006,47 +1013,42 @@ The insertion of @rack['x] requires that the elements
 preceding the @rack['b] are shifted one cell to the left.
 An input containing anything other than @rack['a] or @rack['b]
 yields @itel{final-state} @rack['F].
-@rack[0] is the initial state. @rack['B] is the blank.
+@rack[0] is the initial state. @rack['S] is the space.
 @rack['E] is the empty cell. @rack['_] is the dummy symbol.
 
 @interaction[
 (require racket "make-TM.rkt")
 (code:line)
-(define simplified-rules
-'((code:comment "Look for a.")
-  ((0     a) (1     a R))
-  ((0     b) (0     b R))
-  ((0     E) (T     B N))
-  ((0     _) (F     _ N))
-  (code:comment "Symbol a found, is next symbol b?")
-  ((1     a) (1     a R)) (code:comment "Keep looking for b.")
-  ((1     b) (2     M L)) (code:comment "yes, mark it M and proceed.")
-  ((1     _) (F     _ N))
-  ((1     E) (T     B N))
-  (code:comment "Rewind the tape.")
-  ((2     E) (3     B R))
-  ((2     _) (2     _ L))
-  (code:comment "Shift every symbol one cell to the left up to mark M.")
-  (code:comment "Replace a or b or x by B.")
-  (code:comment "Replace preceding B by a or b or x.")
-  (code:comment "Replace M by b and replace preceding B by x.")
-  ((3     a) ((4 a) B L))
-  ((3     b) ((4 b) B L))
-  ((3     x) ((4 x) B L))
-  ((3     M) ((4 M) b L))
-  (((4 a) B) (5     a R)) (code:comment "Continue the shift.")
-  (((4 b) B) (5     b R)) (code:comment "Continue the shift.")
-  (((4 x) B) (5     x R)) (code:comment "Continue the shift.")
-  (((4 M) B) (0     x R)) (code:comment "Shift completed. Look for next a followed by b.")
-  (code:comment "Step to the right of the B and continue the shift.")
-  ((5     B) (3     B R))))
-(code:line)
 (define rules
- (map
-  (λ (rule) (match rule ((list (list a b) (list c d e)) `((,a ,b) ((,c) (,d) ,e)))))
-  simplified-rules))
+'((code:comment "Look for a.")
+  ((0     a) ((1)     (a) R))
+  ((0     b) ((0)     (b) R))
+  ((0     E) ((T)     (S) N))
+  ((0     _) ((F)     (_) N))
+  (code:comment "Symbol a found, is next symbol b?")
+  ((1     a) ((1)     (a) R)) (code:comment "Keep looking for b.")
+  ((1     b) ((2)     (M) L)) (code:comment "yes, mark it M and proceed.")
+  ((1     _) ((F)     (_) N))
+  ((1     E) ((T)     (S) N))
+  (code:comment "Rewind the tape.")
+  ((2     E) ((3)     (S) R))
+  ((2     _) ((2)     (_) L))
+  (code:comment "Shift every symbol one cell to the left up to mark M.")
+  (code:comment "Replace a or b or x by S.")
+  (code:comment "Replace preceding S by a or b or x.")
+  (code:comment "Replace M by b and replace preceding S by x.")
+  ((3     a) (((4 a)) (S) L))
+  ((3     b) (((4 b)) (S) L))
+  ((3     x) (((4 x)) (S) L))
+  ((3     M) (((4 M)) (b) L))
+  (((4 a) S) ((5)     (a) R)) (code:comment "Continue the shift.")
+  (((4 b) S) ((5)     (b) R)) (code:comment "Continue the shift.")
+  (((4 x) S) ((5)     (x) R)) (code:comment "Continue the shift.")
+  (((4 M) S) ((0)     (x) R)) (code:comment "Shift completed. Look for next a followed by b.")
+  (code:comment "Step to the right of the S and continue the shift.")
+  ((5     S) ((3)     (S) R))))
 (code:line)
-(define TM (make-TM  0 '(T F) 'E 'B  '_ rules))
+(define TM (make-TM  0 '(T F) 'E 'S  '_ rules))
 (code:line)
 (code:comment "Example:")
 (code:line)
@@ -1096,38 +1098,33 @@ such as to indicate they already have been copied.
 @interaction[
 (require racket "make-TM.rkt") 
 (code:line)
-(define simplified-rules
+(define rules
 '((code:comment "Form zero.")
-  ((0 E) (1 / R))
-  ((1 E) (2 / R))
+  ((0 E) ((1) (/) R))
+  ((1 E) ((2) (/) R))
   (code:comment "Put an x and go add the previous nr.")
-  ((2 E) (3 x L))
+  ((2 E) ((3) (x) L))
   (code:comment "First go to end of previous nr.")
-  ((3 /) (4 / L))
-  ((3 _) (3 _ L))
+  ((3 /) ((4) (/) L))
+  ((3 _) ((3) (_) L))
   (code:comment "Copy x to end of tape.")
   (code:comment "Copied xs are replaced by ys.")
-  ((4 x) (5 y R)) (code:comment "Mark x as copied and go put x at end of tape.")
-  ((4 y) (4 y L)) (code:comment "y has already been copied. Keep looking for x.")
-  ((4 /) (6 / R)) (code:comment "Copy is complete.")
-  ((5 _) (5 _ R)) (code:comment "Go to end of tape, write x and")
-  ((5 E) (3 x L)) (code:comment "continue copying.")
+  ((4 x) ((5) (y) R)) (code:comment "Mark x as copied and go put x at end of tape.")
+  ((4 y) ((4) (y) L)) (code:comment "y has already been copied. Keep looking for x.")
+  ((4 /) ((6) (/) R)) (code:comment "Copy is complete.")
+  ((5 _) ((5) (_) R)) (code:comment "Go to end of tape, write x and")
+  ((5 E) ((3) (x) L)) (code:comment "continue copying.")
   (code:comment "Next number complete.")
-  ((6 _) (6 _ R)) (code:comment "Go to end of tape.")
-  ((6 E) (2 / R)) (code:comment "Go form the next nr.")
+  ((6 _) ((6) (_) R)) (code:comment "Go to end of tape.")
+  ((6 E) ((2) (/) R)) (code:comment "Go form the next nr.")
   ))
-(code:line)
-(define rules
- (map
-  (λ (rule) (match rule ((list (list a b) (list c d e)) `((,a ,b) ((,c) (,d) ,e)))))
-  simplified-rules))
 (code:line)
 (define TM
  (make-TM
  '0   (code:comment "initial state")
  '()  (code:comment "no final state")
  'E   (code:comment "empty cell")
- 'blank-not-used
+ 'space-not-used
  '_   (code:comment "dummy")
  rules))
 (code:line)
@@ -1152,21 +1149,21 @@ in order to make space for an x.
    ((0 a) ((1) (a   ignore) R)) (code:comment "a found.")
    ((0 b) ((0) (b   ignore) R)) (code:comment "keep looking.")
    ((0 x) ((0) (x   ignore) R)) (code:comment "keep looking")
-   ((0 E) ((T) (B   ignore) N)) (code:comment "all done, halt.")
-   ((0 B) ((T) (B   ignore) N)) (code:comment "all done, halt.")
-   ((0 _) ((F) (B   ignore) N)) (code:comment "disallowed input, halt.")
+   ((0 E) ((T) (S   ignore) N)) (code:comment "all done, halt.")
+   ((0 S) ((T) (S   ignore) N)) (code:comment "all done, halt.")
+   ((0 _) ((F) (S   ignore) N)) (code:comment "disallowed input, halt.")
    (code:comment "Is a followed by b?")
    ((1 a) ((1) (a   ignore) R)) (code:comment "no, but we have an a, hence continue.")
    ((1 b) ((2) (b   x     ) L)) (code:comment "yes, go insert x and shift elements at the left.")
    ((1 x) ((0) (x   ignore) R)) (code:comment "no, go looking for an a.")
-   ((1 _) ((T) (B   ignore) N)) (code:comment "end of tape, accept.")
+   ((1 _) ((T) (S   ignore) N)) (code:comment "end of tape, accept.")
    (code:comment "Shift all elements at the left one step to the left.")
    ((2 E) ((0) (#:1 ignore) R)) (code:comment "Done, repeat the whole process.")
-   ((2 B) ((0) (#:1 ignore) R)) (code:comment "Done, repeat the whole process.")
+   ((2 S) ((0) (#:1 ignore) R)) (code:comment "Done, repeat the whole process.")
    ((2 _) ((2) (#:1 #:0   ) L))))
 (code:comment "The last rule writes the previous element and memorizes the current one.")
 (code:line)
-(define TM (make-TM  0 '(T F) 'E 'B  '_ rules #:data-registers 2))
+(define TM (make-TM  0 '(T F) 'E 'S  '_ rules #:data-registers 2))
 (code:line)
 (TM '(b a b a b a) #:report #t)
 (code:line)
