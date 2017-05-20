@@ -119,7 +119,7 @@ The tape of a Turing machine does not have this problem.}
 @elemtag["space" ""]The machine never writes a dummy or empty element.
 It cannot remove elements from the content of the tape,
 but it can replace the current element by a space,
-which is a tape-symbol (possibly, though not necessarily @rack[#\space]).
+which is a tape-symbol (possibly, though not necessarily the character @rack[#\space]).
 Empty elements are used only to extend the tape
 at the left or at the right of the current content.
 When moving the tape-head at the left of the begin of the content of the tape
@@ -169,8 +169,7 @@ but the example does not make moves to the left.
 A rule whose @rack[current-element] is the dummy applies to every arbitrary current element
 of the tape.
 A rule whose @rack[tape-symbol-to-be-written] is the dummy indicates that the current element
-must not be altered (except that if it is an empty element, it is filled with a space,
-but in this example this does not happen)
+must not be altered (except that if it is an empty element, it is filled with a space).
 The machine accepts every input and replaces the fourth element by @rack['new].
 
 @interaction[
@@ -260,13 +259,13 @@ of the tape to another position on the tape. Section @secref["More registers"] s
 (old-element     tape-element dummy)
 (new-state       state state-register-name dummy)
 (new-element     tape-element data-register-name dummy)
-(state-registers (code:line @#,(element "roman" "optional =") #:state-registers 1)
+(state-registers (code:line @#,(element "roman" "default =") #:state-registers 1)
                  (code:line #:state-registers (state-register-name state-register-name ...))
                  (code:line #:state-registers @#,(rack exact-positive-integer?)))
-(data-registers  (code:line @#,(element "roman" "optional =") #:data-registers 1)
+(data-registers  (code:line @#,(element "roman" "default  =") #:data-registers 1)
                  (code:line #:data-registers (data-register-name data-register-name ...))
                  (code:line #:data-registers @#,(rack exact-positive-integer?)))
-(name            (code:line @#,(element "roman" "optional =") @#,(rack 'TM-without-name))
+(name            (code:line @#,(element "roman" "default =") #:name @#,(racket 'TM-without-name))
                  (code:line #:name @#,(rack symbol?)))
 (tape-element    tape-symbol empty-element))
 #:contracts ((empty-element (not/c keyword?))
