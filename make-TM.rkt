@@ -247,12 +247,19 @@
   (unless
    (or
     (exact-positive-integer? state-registers)
-    (and (andmap keyword? state-registers) (not (check-duplicates state-registers))))
+    (and (list? state-registers)
+         (pair? state-registers)
+         (andmap keyword? state-registers)
+         (not (check-duplicates state-registers))))
    (error 'make-TM "incorrect state-registers: ~s" state-registers))
   (unless
    (or
     (exact-positive-integer? data-registers)
-    (and (andmap keyword? data-registers) (not (check-duplicates data-registers))))
+    (and
+     (list? data-registers)
+     (pair? data-registers)
+     (andmap keyword? data-registers)
+     (not (check-duplicates data-registers))))
    (error 'make-TM "incorrect data-registers: ~s" data-registers)))
  
  (check-arguments)
