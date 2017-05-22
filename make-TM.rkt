@@ -70,8 +70,8 @@
     (else
      (define datum (tape-read))
      (hash-set! data-reg-hash databus datum)
-     (define old-states (map get-state state-reg-names))
      (define old-data (map get-datum data-reg-names))
+     (define old-states (map get-state state-reg-names))
      (set! move-counter (add1 move-counter))
      (define (rule-error) (rule-error* old-state datum old-states old-data))
      (define (get-dummy-rule) (hash-ref dummy-rules-hash old-state rule-error))
