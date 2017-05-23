@@ -65,7 +65,7 @@ returned by procedure @rack[make-TM].
 of Turing Machines in their book:
 "Formal Languages and their Relation to Automata (ISBN 0-201-0298 3-9)".}
 
-@larger{@bold{Turing machine variant as returned by procedure make-TM}}
+@larger{@bold{Turing machine variant as used in this document}}
 
 @elemtag["figure" ""]@inset[@image["make-TM.jpg"]]
 
@@ -80,9 +80,10 @@ The current element (red) is the one below the tape-head.
 The elements of the content are tape-symbols,
 but the first or last one can be an empty element,
 which is not a tape-symbol.
-(In @elemref["book" "the book mentioned above"] an empty element is called a `blank',
-not to be confused with the word `space'
-as introduced @elemref["space" "below"])
+@note{In @elemref["book" "the book mentioned above"] an empty element is called a `blank'.
+In order to avoid confusion with the word `space'
+as introduced @elemref["space" "below"],
+the word `blank' is avoided in this document.}
 Initially the content consists of a finite input of tape-symbols
 and the tape-head is positioned at the leftmost element.
 If the input is empty, the content initially consists of one empty element.
@@ -158,8 +159,8 @@ The output can contain spaces but heading and trailing ones are stripped off.
 The output never contains a dummy or an empty element.
 
 Let's start with a simple example of a Turing machine.
-It's states are @rack['A], @rack['B], @rack['C], @rack['D] and
-the final state @rack['T].
+It's states are the initial state @rack['A], the intermediate states @rack['B], @rack['C] and
+@rack['D] and the final state @rack['T].
 In the rules @rack['R] indicates a move of the tape-head one element to the right.
 @rack['N] indicates that no move must be made and @rack['L] a move to the left,
 but the example does not make moves to the left.
@@ -167,8 +168,10 @@ but the example does not make moves to the left.
 
 @rack[((old-state current-element) ((new-state) (tape-symbol-to-be-written) move))]
 
-A rule whose @rack[current-element] is the dummy applies to every arbitrary current element
-of the tape.
+A rule applies when its @rack[old-state] equals the current internal state of the control unit
+and the @rack[current-element] equals that below the tape-head.
+A rule whose @rack[current-element] is the dummy applies to every arbitrary element
+currently below the tape-head.
 A rule whose @rack[tape-symbol-to-be-written] is the dummy indicates that the current element
 must not be altered (except that if it is an empty element, it is filled with a space).
 The machine accepts every input and replaces the fourth element by @rack['new].
@@ -239,7 +242,7 @@ A Turing machine repeats moves until the first state-register contains a final s
 
 A Turing machine with more than one state-register and/or more than one data-register
 is equivalent to a Turing machine with only one state-register and one data-register
-as long as the the combined contents of the registers is limited to a finite set.
+as long as the combined contents of the registers is limited to a finite set.
 Allowing more state- and data-registers is a way to simplify the description of the rules.
 It allows us to describe a finite multitude of rules in one single line.
 For example, multiple registers make it easier to describe rules that move part of the content
