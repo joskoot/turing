@@ -9,22 +9,20 @@
          final-states
          empty space dummy
          rules
-         #:state-registers (state-registers 1)
-         #:data-registers (data-registers 1)
+         #:registers (reg-names 2)
          #:name (name 'TM-without-name))
-
+        
  (define
   (TM
    input
-   #:state-registers (states #f)
-   #:data-registers (data #f)
+   #:registers (register-values #f)
    #:report (report #f)
    #:limit (limit #f)) 
 
   (check-input input)
   (check-limit limit)
-  (when states (check-states states))
-  (when data (check-data data))
+  (check-report report)
+  (when register-values (check-register-values register-values))
   (define move-counter 0)
   (define tape (list->tape input))
   
@@ -33,27 +31,24 @@
     (printf
      (string-append
       "~a~nReport of ~s~n~a~n"
-      "initial tape content   : ~s~n"
-      "initial state registers: ~s~n"
-      "initial data registers : ~s~n"
+      "initial tape content: ~s~n"
+      "initial registers   : ~s~n"
       "~a~n")
      line
      name
      line
      tape
-     (map get-state state-reg-names)
-     (map get-datum data-reg-names)
+     (map get-register register-names)
      line))
    (define final-state (TM-proper))
    (when report (printf "~s halted in final state ~s~nEnd of report.~n~a~n" name final-state line))
    (define tape* (tape->list tape))
    (set! tape #f)
-   (set! data-reg-hash #f)
-   (set! state-reg-hash #f)
+   (set! register-hash #f)
    (values move-counter final-state tape*))
 
   (define (TM-proper)
-   (define old-state (hash-ref state-reg-hash state-reg))
+   (define old-state (hash-ref register-hash state-key))
    (cond
     ((set-member? final-states-set old-state) old-state)
     ((and limit (>= move-counter limit))
@@ -61,29 +56,22 @@
       "~nAbout to exceed the max nr of moves:~n~
        move: ~s~n~
        tape: ~s~n~
-       state-registers: ~s~n~
-       data-registers: ~s~n"
+       registers: ~s~n"
       move-counter
       tape
-      (map get-state state-reg-names)
-      (map get-datum data-reg-names)))
+      (map get-register register-names)))
     (else
      (define datum (tape-read))
-     (hash-set! data-reg-hash databus datum)
-     (define old-data (map get-datum data-reg-names))
-     (define old-states (map get-state state-reg-names))
+     (hash-set! register-hash databus datum)
+     (define old-register-values (map get-register register-names))
      (set! move-counter (add1 move-counter))
-     (define (rule-error) (rule-error* old-state datum old-states old-data))
+     (define (rule-error) (rule-error* old-state datum old-register-values))
      (define (get-dummy-rule) (hash-ref dummy-rules-hash old-state rule-error))
      (define rule (hash-ref normal-rules-hash (list old-state datum) get-dummy-rule))
-     (define instr (rule-instr rule))
-     (define new-states (map get-state* (instr-new-states instr) state-reg-names))
-     (define new-data (map get-datum* (instr-new-data instr) data-reg-names))
-     (define new-state (car new-states))
-     (define move (instr-move instr))
-     (set! state-reg-hash (make-hash (map cons state-reg-names new-states)))
-     (set! data-reg-hash (make-hash (map cons data-reg-names new-data)))
-     (define new-datum (car new-data))
+     (define new-register-values (map get-register-value* (rule-new-registers rule) register-names))
+     (define move (rule-move rule))
+     (set! register-hash (make-hash (map cons register-names new-register-values)))
+     (define new-datum (cadr new-register-values))
      (tape-write new-datum)
      (case move
       ((L) (move-left))
@@ -93,53 +81,41 @@
       ((#t long)
        (printf
         (string-append
-         "move number    : ~s~n"
-         "rule           : ~s~n"
-         "state registers: ~s -> ~s~n"
-         "data registers : ~s -> ~s~n"
-         "move           : ~s~n"
-         "new tape       : ~s~n"
+         "move number: ~s~n"
+         "rule       : ~s~n"
+         "registers  : ~s -> ~s~n"
+         "move       : ~s~n"
+         "new tape   : ~s~n"
          "~a~n")
         move-counter
         rule
-        old-states new-states
-        old-data new-data
+        old-register-values new-register-values
         move
         tape
         line))
       ((short)
        (printf "~s, state ~s -> ~s, ~s~n"
-        move-counter (car old-states) (car new-states) tape)))
+        move-counter (car old-register-values) (car new-register-values) tape)))
      (TM-proper))))
  
-  (define state-reg-hash
-   (if states
-    (make-hasheq (map cons state-reg-names states))
-    (make-hasheq (map (λ (x) (cons x init-state)) state-reg-names))))
-  
-  (define data-reg-hash
-   (if data
-    (make-hasheq (map cons data-reg-names data))
-    (make-hasheq (map (λ (x) (cons x empty)) data-reg-names))))
-
-  (define (get-state state) (if (keyword? state) (hash-ref state-reg-hash state) state))
-  (define (get-datum datum) (if (keyword? datum) (hash-ref data-reg-hash datum) datum))
-  
-  (define (get-state* state reg)
-   (cond
-    ((keyword? state) (hash-ref state-reg-hash state))
-    ((equal? state dummy) (hash-ref state-reg-hash reg))
-    (else state)))
-  
-  (define (get-datum* datum reg)
-   (cond
-    ((keyword? datum) (hash-ref data-reg-hash datum))
-    ((equal? datum dummy) (hash-ref data-reg-hash reg))
-    (else datum)))
-  
-  (define state-reg (car state-reg-names))
-  (define databus (car data-reg-names))
+  (define state-key (car register-names))
+  (define databus (cadr register-names))
   (define (tape-read) (car (tape-tail tape)))
+  
+  (define register-hash
+   (if register-values
+    (make-hasheq (map cons register-names register-values))
+    (make-hasheq
+     (cons (cons state-key init-state)
+           (map (λ (x) (cons x empty)) (cdr register-names))))))
+  
+  (define (get-register state) (if (keyword? state) (hash-ref register-hash state) state))
+  
+  (define (get-register-value* register-value register-name)
+   (cond
+    ((keyword? register-value) (hash-ref register-hash register-value))
+    ((equal? register-value dummy) (hash-ref register-hash register-name))
+    (else register-value)))
   
   (define (tape-write datum)
    (set-tape-tail! tape (cons (empty->space datum) (cdr (tape-tail tape)))))
@@ -156,18 +132,16 @@
       normal-rules-hash
       (hash-set dummy-rules-hash (rule-old-state rule) rule)))))
  
-  (define (rule-error* old-state datum old-states old-data)
+  (define (rule-error* old-state datum register-values)
    (error name
     "~nNo rule for state ~s and tape-element ~s~n~
      move: ~s~n~
      tape: ~s~n~
-     state-registers: ~s~n~
-     data-registers: ~s~n"
+     registers: ~s~n"
     old-state datum
     move-counter
     tape
-    old-states
-    old-data))
+    register-values))
  
   (define (move-left)
    (define reversed-head (tape-reversed-head tape))
@@ -194,48 +168,32 @@
 
  (define final-states-set (apply set final-states))
  
- (define state-reg-names
-  (if (exact-positive-integer? state-registers)
-   (build-list state-registers make-reg-name)
-   state-registers))
- 
- (define data-reg-names
-  (if (exact-positive-integer? data-registers)
-   (build-list data-registers make-reg-name)
-   data-registers))
-
  (define (check-arguments)
   (unless (symbol? name) (raise-argument-error 'make-TM "symbol?" name))
   (define (dummy? x) (equal? x dummy))
   (define (empty? x) (equal? x empty))
-  (define (state? x) (and (not (keyword? x)) (not (equal? x dummy))))
-  (define (tape-element? x) (and (not (keyword? x)) (not (equal? x dummy))))
-  (define (tape-symbol? x) (and (tape-element? x) (not (equal? x empty))))
-  (define (new-state? x) (or (member x state-reg-names) (not (keyword? x))))
-  (define (new-datum? x) (or (member x data-reg-names) (not (keyword? x))))
+  (define (state/datum? x) (and (not (keyword? x)) (not (equal? x dummy))))
+  (define (register? x) (or (member x register-names) (not (keyword? x))))
   (define (rule? x)
-   (and (list? x) (= (length x) 2)
-    (let ((select (car x)) (instr (cadr x)))
-     (and (= (length select) 2) (= (length instr) 3)
+   (and (list? x) (= (length x) 3)
+    (let ((select (car x)) (move (caddr x)) (new-registers (cadr x)))
+     (and (list? select) (= (length select) 2)
       (let
        ((old-state (car select))
-        (old-symbol (cadr select))
-        (new-states (car instr))
-        (new-data (cadr instr))
-        (move (caddr instr)))
+        (old-symbol (cadr select)))
        (and
-        (state? old-state)
-        (or (tape-element? old-symbol) (dummy? old-symbol))
+        (state/datum? old-state)
+        (or (state/datum? old-symbol) (dummy? old-symbol))
         (and
-         (= (length new-states) (length state-reg-names))
-         (andmap new-state? new-states)
-         (andmap new-datum? new-data)
+         (list? new-registers)
+         (= (length new-registers) nr-of-registers)
+         (andmap register? new-registers)
          (member move '(L R N)))))))))
 
   ; Body of make-TM
   
-  (unless (state? init-state) (error 'make-TM "incorrect initial state: ~s" init-state))
-  (unless (and (list? final-states) (andmap state? final-states))
+  (unless (state/datum? init-state) (error 'make-TM "incorrect initial state: ~s" init-state))
+  (unless (and (list? final-states) (andmap state/datum? final-states))
    (error 'make-TM "incorrect list of final states: ~s" final-states))
   (when (keyword? dummy) (raise-argument-error 'make-TM "(not/c keyword?)" dummy))
   (when (keyword? empty) (raise-argument-error 'make-TM "(not/c keyword?)" empty))
@@ -246,27 +204,25 @@
   (for ((rule (in-list rules)) #:unless (rule? rule)) (error 'make-TM "incorrect rule: ~s" rule))
   (unless
    (or
-    (exact-positive-integer? state-registers)
-    (and (list? state-registers)
-         (pair? state-registers)
-         (andmap keyword? state-registers)
-         (not (check-duplicates state-registers))))
-   (error 'make-TM "incorrect state-registers: ~s" state-registers))
-  (unless
-   (or
-    (exact-positive-integer? data-registers)
-    (and
-     (list? data-registers)
-     (pair? data-registers)
-     (andmap keyword? data-registers)
-     (not (check-duplicates data-registers))))
-   (error 'make-TM "incorrect data-registers: ~s" data-registers)))
+    (and (exact-positive-integer? reg-names) (>= reg-names 2))
+    (and (list? reg-names)
+         (pair? reg-names)
+         (andmap keyword? reg-names)
+         (not (check-duplicates reg-names))))
+   (error 'make-TM "incorrect registers: ~s" reg-names)))
+
+ (define register-names
+  (if (exact-positive-integer? reg-names)
+   (build-list reg-names make-reg-name)
+    reg-names))
+ 
+ (define nr-of-registers (length register-names))
  
  (check-arguments)
 
  ; Procedures for use in TM, inner-TM and TM-proper
 
- (define (normal-rule? rule) (not (equal? (rule-old-data rule) dummy)))
+ (define (normal-rule? rule) (not (equal? (rule-old-datum rule) dummy)))
  (define (empty->space datum) (if (equal? datum empty) space datum))
  
  (define (list->tape lst)
@@ -297,25 +253,21 @@
     (not (ormap keyword? input)))
    (error name "incorrect input: ~s" input)))
  
- (define (check-states states)
+ (define (check-register-values register-values)
   (unless
    (and
-    (= (length states) (length state-reg-names))
-    (not (ormap keyword? states))
-    (not (member dummy states)))
-   (error name "incorrect state-registers: ~s" states)))
- 
- (define (check-data data)
-  (unless
-   (and
-    (= (length data) (length data-reg-names))
-    (not (ormap keyword? data))
-    (not (member dummy data)))
-   (error name "incorrect data-registers : ~s" data)))
+    (= (length register-values) nr-of-registers)
+    (not (ormap keyword? register-values))
+    (not (member dummy register-values)))
+   (error name "incorrect registers: ~s" register-values)))
  
  (define (check-limit x)
   (unless (or (eq? x #f) (exact-positive-integer? x))
    (error name "incorrect limit: ~s" x)))
+
+ (define (check-report report)
+  (unless (member report '(#f #t short long))
+   (error name "incorrect report argument: ~s" report)))
  
  (procedure-rename TM name))
 
@@ -335,11 +287,9 @@
 (define (make-reg-name n) (string->keyword (format "~s" n)))
 (define rule-selector car)
 (define rule-old-state caar)
-(define rule-old-data cadar)
-(define rule-instr cadr)
-(define instr-new-states car)
-(define instr-new-data cadr)
-(define instr-move caddr)
+(define rule-old-datum cadar)
+(define rule-new-registers cadr)
+(define rule-move caddr)
 (define line "------------------------------------------------------")
 
 ;==================================================================================================
