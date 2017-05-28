@@ -81,11 +81,11 @@
       ((#t long)
        (printf
         (string-append
-         "move number: ~s~n"
-         "rule       : ~s~n"
-         "registers  : ~s -> ~s~n"
-         "move       : ~s~n"
-         "new tape   : ~s~n"
+         "move nr  : ~s~n"
+         "rule     : ~s~n"
+         "registers: ~s -> ~s~n"
+         "move     : ~s~n"
+         "new tape : ~s~n"
          "~a~n")
         move-counter
         rule
