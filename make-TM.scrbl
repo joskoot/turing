@@ -310,15 +310,20 @@ whose @rack[old-symbol] is the @rack[dummy].
 For @rack[rules] with the same @rack[old-state] the @rack[dummy]
 is like @rack[else] in a @rack[cond]-form,
 but is not required to be at the end.
-The order of the @rack[rules] is irrelevant.}
+The order of the @rack[rules] is irrelevant.
+@note{The rules are put in two hashes, one for rules whose @rack[old-symbol] is not a @rack[dummy]
+and one for rules whose @rack[old-symbol] is the @rack[dummy].
+The second hash is consulted only when the first hash has no corresponding key.}}
 
 @item{The @rack[registers] are updated.
-      Element k of the second element of the rule indicates what to put in @rack[register] k.
-      Let x be element k of the second element of the applied rule.
-      If x is the @rack[dummy] register k remains unaffected.
-      If x is a @rack[state] or a @rack[tape-symbol],
-      this state or tape-symbol is put in register k.
-      If x is a @rack[register-name] the old content of that register is put in register k.
+The element with index k of the second element of the rule indicates what to put in
+the k@superscript{th} register.
+Let x be the k@superscript{th} element of the second element of the applied rule.
+If x is the @rack[dummy] the k@superscript{th} register remains unaffected.
+If x is a @rack[state] or a @rack[tape-symbol],
+this state or tape-symbol is put into the register.
+If x is a @rack[register-name] the old content of that register is put into the
+k@superscript{th} register.
 For example, @rack[(#:1 #:0)] indicates that the two registers exchange their contents.
 As another example:
 @rack[(#:1 whatever)] means that the old contents of register @rack[#:1] goes to
@@ -332,8 +337,9 @@ However, if the input/output-register contains an @rack[empty-mark] a @rack[spac
 @rack[move] @rack['L] : move the tape-head one step to the left.@(linebreak)
 @rack[move] @rack['R] : move the tape-head one step to the right.@(linebreak)
 @rack[move] @rack['N] : don't move the tape-head.@(linebreak)
-When the tape-head leaves the current content of the tape,
-an empty cell is added and the tape-head is positioned at this cell.}
+When the tape-head moves to the left or the right of the current content of the tape,
+an empty cell is added and the tape-head is positioned at this cell.
+These are the only two situations in which an @rack[empty-mark] is written.}
 
 @item{The above process is repeated until the rule-selector-state equals a @rack[final-state].}]}
 
