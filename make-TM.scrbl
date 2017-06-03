@@ -165,8 +165,9 @@ and the @rack[old-tape-symbol-or-dummy] equals the current tape-symbol read from
 or when it is the dummy, which matches every arbitrary tape-symbol.
 A rule whose @racket[new-tape-symbol-or-dummy] is a tape-symbol indicates that the content
 of the current cell must be replaced by this tape-symbol.
-A rule whose @racket[new-tape-symbol-or-dummy] is the dummy indicates that the content
-of the current cell must not be altered (but when the current cell is empty, a space is written).
+A rule whose @racket[new-tape-symbol-or-dummy] is the dummy indicates that
+the current cell must not be altered, unless it is empty,
+in which case it is filled with a space.
 The machine replaces the fourth element by @rack['new].
 
 @interaction[
@@ -235,7 +236,7 @@ of the tape to another position on the tape. Section @secref["More registers"] s
 (make-TM initial-state final-states
           empty-mark space dummy
           rules
-          [registers name])
+          [#:registers registers #:name name])
 #:grammar(
 (initial-state state)
 (final-states  (final-state ...))
@@ -249,18 +250,19 @@ of the tape to another position on the tape. Section @secref["More registers"] s
 (old-symbol    tape-symbol dummy)
 (new-symbol    tape-symbol dummy register)
 (register      state tape-symbol dummy register-name)
-(registers     (code:line @#,(element "roman" "default =") #:registers 2)
-               (code:line #:registers (register-name register-name ...+))
-               (code:line #:registers nr-of-registers))
+(registers     (code:line @#,(element "roman" "default =") 2)
+               (code:line (register-name register-name ...+))
+               nr-of-registers)
 (space         tape-symbol)
-(name          (code:line @#,(element "roman" "default =") #:name @#,(racket 'TM-without-name))
-               (code:line #:name @#,(rack symbol?))))
+(name          (code:line @#,(element "roman" "default =") @#,(racket 'TM-without-name))
+               symbol))
 #:contracts ((          state (not/c (or/c dummy keyword?)))
              (    tape-symbol (not/c (or/c dummy keyword?)))
              (          dummy (not/c keyword?))
              (  register-name keyword?)
+             (nr-of-registers (and/c exact-integer? (>=/c 2)))
              (           move (or/c 'R 'L 'N))
-             (nr-of-registers (and/c exact-integer? (>=/c 2))))]{
+             (         symbol symbol?))]{
 Procedure @rack[make-TM] returns a procedure that emulates a Turing-machine.
 Providing an @racketlink[exact-integer? "exact integer"] @tt{n≥2}
 for @rack[registers] is the same as providing
@@ -276,8 +278,8 @@ equality or being distinct to be understood in the sense of @rack[equal?].
  @item{The @rack[final-states] must not include an @rack[old-state].}
  @item{The @rack[final-states] must not contain duplicates. }
  @item{The @rack[rules] must have distinct combinations @rack[(old-state old-symbol)].}
- @item{The second element of every rule must have as many elements as there are
-       @rack[register-name]s.}
+ @item{The second element of every rule must be a list of as many elements as there are
+       @rack[registers].}
  @item{The list of @rack[register-name]s must not contain duplicates.}
  @item{Every keyword in a @rack[rule] must be one of the @rack[register-name]s.}]}
 
@@ -310,21 +312,19 @@ whose @rack[old-symbol] is the @rack[dummy].
 For @rack[rules] with the same @rack[old-state] the @rack[dummy]
 is like @rack[else] in a @rack[cond]-form,
 but is not required to be at the end.
-The order of the @rack[rules] is irrelevant.
-@note{The rules are put in two hashes, one for rules whose @rack[old-symbol] is not a @rack[dummy]
-and one for rules whose @rack[old-symbol] is the @rack[dummy].
-The second hash is consulted only when the first hash has no corresponding key.}}
+The order of the @rack[rules] is irrelevant.}
 
 @item{The @rack[registers] are updated.
 The element with index k of the second element of the rule indicates what to put in
 the k@superscript{th} register.
 Let x be the k@superscript{th} element of the second element of the applied rule.
 If x is the @rack[dummy] the k@superscript{th} register remains unaffected.
-If x is a @rack[state] or a @rack[tape-symbol],
-this state or tape-symbol is put into the register.
 If x is a @rack[register-name] the old content of that register is put into the
 k@superscript{th} register.
-For example, @rack[(#:1 #:0)] indicates that the two registers exchange their contents.
+If x is a @rack[state] or a @rack[tape-symbol],
+this state or tape-symbol is put into the register.
+For example, assuming there are two registers with the names @rack[#:0] and @rack[#:1],
+then @rack[(#:1 #:0)] indicates that the two registers exchange their contents.
 As another example:
 @rack[(#:1 whatever)] means that the old contents of register @rack[#:1] goes to
 register @rack[#:0] and that @rack['whatever] is put into register @rack[#:1].}
@@ -362,10 +362,12 @@ K and Γ are not required to be disjunct.
 For example, a rule can have the form @rack[((A x) (x b) R)],
 indicating that tape-symbol @rack[x] becomes the new rule-selector-state
 of the control-unit.
-If disjunction between the sets is desired, the rules can be programmed such as to accomplish this,
+If disjunction between the two sets is desired,
+the rules can be programmed such as to accomplish this,
 simply by making a distinction between registers that can contain a state and those
 that can contain a tape-symbol. Rule @rack[((A x) (x b) R)] would have to be written like:
 @rack[((A x) (state-x b) R)].}
+
 A procedure returned by procedure @rack[make-TM],
 say @(bold (element 'tt (bold "Turing-machine"))),
 can be called as follows:
@@ -869,13 +871,13 @@ In this example @rack[0] is a tape-symbol, @rack['E] being the empty-mark.
 @interaction[
 (require racket "make-TM.rkt")
 (define rules
- '(((A 0) (B 1) R) ((A E) (B 1) R)
-   ((B 0) (A 1) L) ((B E) (A 1) L)
-   ((C 0) (T 1) R) ((C E) (T 1) R)
-   ((D 0) (D 1) R) ((D E) (D 1) R)
+ '(((A _) (B 1) R)
    ((A 1) (B 1) L)
+   ((B _) (A 1) L)
    ((B 1) (C 0) L)
+   ((C _) (T 1) R)
    ((C 1) (D 1) L)
+   ((D _) (D 1) R)
    ((D 1) (A 0) R)))
 (define TM
  (make-TM #:name '4-state-busy-beaver
@@ -883,7 +885,7 @@ In this example @rack[0] is a tape-symbol, @rack['E] being the empty-mark.
   '(T) (code:comment "The final state.")
   'E   (code:comment "The empty-mark.")
   'space-not-used
-  'dummy-not-used
+  '_
   rules))
 (TM '() #:report 'short)]
 
@@ -1028,7 +1030,7 @@ and the machine halts in state @rack[F].
 (code:line)
 (define TM (make-TM 0 '(T F) 'E 'S '_ rules #:name 'parentheses))
 (code:line)
-(code:comment "check-parentheses does the same as the TM. Used for testing.")
+(code:comment "check-parentheses does the same as the TM. Used for tests.")
 (code:line)
 (define (check-parentheses lst)
  (define (check-parentheses lst n)
@@ -1173,7 +1175,7 @@ such as to indicate they already have been copied.
 (code:line)
 (code:comment "Limit the number of moves.")
 (code:comment "The error message shows the resulting content of the tape.")
-(TM '() #:limit 161)]
+(TM '() #:limit 161 #:report 'short)]
 
 The following counter is like the previous one,
 but writes its numbers in binary notation and in reversed order,
@@ -1224,7 +1226,7 @@ i is added to the copy before the next number is generated.
 (code:line)
 (define TM (make-TM 0 '() 'E 'S '_ rules #:name 'binary-counter))
 
-(TM '() #:limit 137)]
+(TM '() #:limit 137 #:report 'short)]
 
 @subsection[#:tag "More registers"]{More registers}
 The Turing-machines shown sofar in this document have one data-register and
