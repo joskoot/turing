@@ -71,9 +71,10 @@ of Turing-machines in their book:
 A Turing-machine consists of a control-unit, a tape, a tape-head
 and a bidirectional data-bus between the control-unit and the tape-head.
 At every moment the control-unit has one out of a finite set of internal states.
-The tape-content consists of a finite number of cells, but can stepwise grow in both directions
-without limitation.
+The tape has a finite number of cells, but can stepwise grow in both directions
+without limitation. 
 Each cell contains one of a finite set of tape-symbols.
+Together the cells contain the current tape-content.
 The data-bus transports one tape-symbol at a time,
 either from the control-unit to the tape or reverse.
 There are two special tape-symbols, the @elemref["space" "space"] and the empty-mark.
@@ -692,7 +693,7 @@ elements @element['tt "x"] and @element['tt "y"] are reverted to
 (code:line)
 (adder '(0 0 0 + 0 0))
 (code:line)
-(code:comment "Checking the Turing-machine.")
+(code:comment "Testing the Turing-machine.")
 (code:comment "We need two procedures for conversion between")
 (code:comment "exact nonnegative integer numbers and lists of bits.")
 (code:line)
@@ -836,8 +837,8 @@ State @element['tt "A"] is the initial internal state and @element['tt "T"] the 
  (define-values (nr-of-moves final-state output) (TM (prepare-input n m)))
  (and (= (output->nr output) (+ n m)) (eq? final-state 'T)))]
 
-@subsection{Busy beaver}
-3 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"].
+@subsection{@hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "Busy beaver"]}
+@subsubsection{3 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]}
 In fact there are four states, but @itel{final-state} @tt{T} does not count.
 The Turing-machine program shown here takes 2 moves less than the one shown in
 Wikipedia article @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"].
@@ -864,9 +865,14 @@ it even would be impossible to write a @rack[0].
   rules))
 (TM '() #:report #t)]
 
-4 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"].
+@subsubsection{4 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]}
 In fact there are five states, but @itel{final-state} @tt{T} does not count.
-In this example @rack[0] is a tape-symbol, @rack['E] being the empty-mark.
+For every non-final state @rack[X] there are two rules,
+@rack[((X _) (? ? ?))] and
+@rack[((X 1) (? ? ?))].
+This implies that the empty-mark @rack['E] and tape-symbol @rack[0] always
+are treated in the same way whenever encountered as the current tape-symbol.
+This removes the distinction between these two tape-symbols.
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -965,7 +971,7 @@ If a required @rack[0] or @rack[1] is not found, the machine halts with state @r
  (for/and ((n (in-range 0 100)))
   (test (shuffle input) (if (= n0 n1) 'T 'F))))]
 
-@subsection{Checking parentheses}
+@subsection{Matching parentheses}
 
 The following machine reads @rack['<] as a left parenthesis
 an @rack['>] as a right parenthesis.
@@ -1030,30 +1036,37 @@ and the machine halts in state @rack[F].
 (code:line)
 (define TM (make-TM 0 '(T F) 'E 'S '_ rules #:name 'parentheses))
 (code:line)
-(code:comment "check-parentheses does the same as the TM. Used for tests.")
+(code:comment "match-parentheses does the same as the TM. Used for tests.")
 (code:line)
-(define (check-parentheses lst)
- (define (check-parentheses lst n)
+(define (match-parentheses lst)
+ (define (match-parentheses lst n)
   (cond
    ((null? lst) (if (zero? n) 'T 'F))
-   ((eq? (car lst) '<) (check-parentheses (cdr lst) (add1 n)))
+   ((eq? (car lst) '<) (match-parentheses (cdr lst) (add1 n)))
    ((zero? n) 'F)
-   (else (check-parentheses (cdr lst) (sub1 n)))))
- (check-parentheses lst 0))
+   (else (match-parentheses (cdr lst) (sub1 n)))))
+ (match-parentheses lst 0))
 (code:line)
-(for/and ((n (in-range 0 5)))
- (define-values (T F)
-  (for/fold
-   ((T 0) (F 0))
-   ((x (in-permutations (append (make-list n '<) (make-list n '>)))))
-   (define-values (nr-of-moves state tape) (TM x))
-   (cond
-    ((not (eq? state (check-parentheses x))) (error 'TM "test failed"))
-    ((eq? state 'T)
-     (if (null? tape) (values (add1 T) F) (error 'TM "test failed")))
-    (else (values T (add1 F))))))
- (printf "n=~s, nr of T: ~s, nr of F ~s~n" n T F)
- #t)]
+(code:comment "Test now.")
+(code:comment "Try all (expt 2 k) inputs of k elements,")
+(code:comment "k running from 0 to 9 (inclusive).")
+(code:comment "A total of 1023 tests of which only 23 yield final state T.")
+(code:line)
+(void
+ (for*/fold ((count 1))
+  ((k (in-range 0 10)) (n (in-range (arithmetic-shift 1 k))))
+  (define input
+   (for/list ((k (in-range 0 k)))
+    (if (zero? (bitwise-and (arithmetic-shift 1 k) n)) '< '>)))
+  (define-values (nr-of-moves state output) (TM input))
+  (unless (eq? state (match-parentheses input)) (error 'Test "test failed"))
+  (cond
+   ((eq? state 'T)
+    (printf "~a ~s~n"
+     (~s #:min-width 2 #:align 'right count)
+     input)
+    (add1 count))
+   (else count))))]
 
 @subsection[#:tag "Inserting symbols"]{Inserting symbols}
 
