@@ -91,7 +91,7 @@
              ((L) (move-left tape new-tape-datum))
              ((N) (no-move tape new-tape-datum))))
          (case report
-           ((#t 'long)
+           ((#t long)
             (printf "move-nr  : ~s~n" move-nr)
             (printf "rule     : ~s~n" rule)
             (printf "registers: ~s -> ~s~n" old-registers new-registers)
