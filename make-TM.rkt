@@ -6,7 +6,7 @@
 
 (define (make-TM
          init-state final-states
-         empty space dummy
+         blank space dummy
          rules
          #:registers (registers 2)
          #:name (name 'TM-without-name))
@@ -32,7 +32,7 @@
   (check-make-TM-arguments
    init-state
    final-states
-   empty
+   blank
    space
    dummy
    rules
@@ -101,7 +101,7 @@
             (printf "move: ~s, state: ~s -> ~s, tape: ~s~n" move-nr old-state new-state new-tape)))
          (TM-proper (add1 move-nr) new-register-hash new-tape))))
 
-    (define initial-tape (make-tape '() (if (null? input) (list empty) input)))
+    (define initial-tape (make-tape '() (if (null? input) (list blank) input)))
   
     (define register-hash
       (cond
@@ -110,7 +110,7 @@
         (else
          (make-hash
           (cons (cons state-register-name init-state)
-                (map fill-empty (cdr register-names)))))))
+                (map fill-blank (cdr register-names)))))))
   
     (when report
       (print-line)
@@ -120,7 +120,7 @@
     (define-values (nr-of-moves final-state tape) (TM-proper 1 register-hash initial-tape))
     (when (eq? report 'short) (print-line))
     (when report (printf "End of report of ~s~n" name) (print-line))
-    (values nr-of-moves final-state (remove-empty-spaces tape)))
+    (values nr-of-moves final-state (remove-blank-spaces tape)))
 
   (define state-register-name (car register-names))
   (define bus-register-name (cadr register-names))
@@ -145,7 +145,7 @@
   (define (check-TM-arguments input register-values report limit)
     (unless (list? input) (raise-argument-error name "list of tape-symbols" input))
     (when (ormap dummy? input) (error name "dummy not allowed in input: ~s" input))
-    (when (member empty input) (error name "empty not allowed in input: ~s" input))
+    (when (member blank input) (error name "blank not allowed in input: ~s" input))
     (cond
       ((list? register-values)
        (unless (list? register-values)
@@ -164,36 +164,36 @@
     (unless (or (not limit) (exact-positive-integer? limit))
       (raise-argument-error name "(or/c #f exact-positive-number?)" limit)))
 
-  (define (fill-empty register-name) (cons register-name empty))
+  (define (fill-blank register-name) (cons register-name blank))
 
-  (define (remove-empty-spaces tape)
+  (define (remove-blank-spaces tape)
     (define content (append (reverse (tape-reversed-head tape)) (tape-tail tape)))
     (define (remove-heading-spaces content)
       (cond
         ((null? content) '())
-        ((equal? (car content) empty) (remove-heading-spaces (cdr content)))
+        ((equal? (car content) blank) (remove-heading-spaces (cdr content)))
         ((equal? (car content) space) (remove-heading-spaces (cdr content)))
         (else content)))
     (reverse (remove-heading-spaces (reverse (remove-heading-spaces content)))))
 
   (define (move-left tape d)
-    (define datum (if (equal? d empty) space d))
+    (define datum (if (equal? d blank) space d))
     (define reversed-head (tape-reversed-head tape))
     (define tail (cons datum (cdr (tape-tail tape))))
     (cond
-      ((null? reversed-head) (make-tape '() (cons empty tail)))
+      ((null? reversed-head) (make-tape '() (cons blank tail)))
       (else (make-tape (cdr reversed-head) (cons (car reversed-head) tail)))))
       
   (define (move-right tape d)
-    (define datum (if (equal? d empty) space d))
+    (define datum (if (equal? d blank) space d))
     (define reverse-head (tape-reversed-head tape))
     (define tail (cons datum (cdr (tape-tail tape))))
     (cond
-      ((null? (cdr tail)) (make-tape (cons (car tail) reverse-head) (list empty)))
+      ((null? (cdr tail)) (make-tape (cons (car tail) reverse-head) (list blank)))
       (else (make-tape (cons (car tail) reverse-head) (cdr tail)))))
 
   (define (no-move tape d)
-    (define datum (if (equal? d empty) space d))
+    (define datum (if (equal? d blank) space d))
     (make-tape (tape-reversed-head tape) (cons datum (cdr (tape-tail tape)))))
 
   (procedure-rename TM name))
@@ -219,16 +219,16 @@
 
 (define
   (check-make-TM-arguments
-   init-state final-states empty space dummy rules nr-of-registers register-names name)
-  (when (keyword? empty)
-    (error 'make-TM "incorrect empty: ~s" empty))
+   init-state final-states blank space dummy rules nr-of-registers register-names name)
+  (when (keyword? blank)
+    (error 'make-TM "incorrect blank: ~s" blank))
   (when (keyword? space)
     (error 'make-TM "incorrect space: ~s" space))
   (when (keyword? dummy)
     (error 'make-TM "incorrect dummy: ~s" dummy))
-  (when (check-duplicates (map list (list empty space dummy)))
-    (error 'make-TM "empty, space and dummy must be distinct, given ~s, ~s and ~s"
-           empty space dummy))
+  (when (check-duplicates (map list (list blank space dummy)))
+    (error 'make-TM "blank, space and dummy must be distinct, given ~s, ~s and ~s"
+           blank space dummy))
   (when (keyword? init-state)
     (error 'make-TM "init-state must not be a keyword, given: ~s" init-state))
   (when (equal? init-state dummy)
