@@ -1195,7 +1195,7 @@ such as to indicate they already have been copied.
 (code:line)
 (code:comment "Limit the number of moves.")
 (code:comment "The error message shows the resulting content of the tape.")
-(TM '() #:limit 161 #:report 'short)]
+(TM '() #:limit 162 #:report 'short)]
 
 The following counter is like the previous one,
 but writes its numbers in binary notation and in reversed order,
@@ -1246,7 +1246,7 @@ i is added to the copy before the next number is generated.
 (code:line)
 (define TM (make-TM 0 '() 'B 'S '_ rules #:name 'binary-counter))
 
-(TM '() #:limit 137 #:report 'short)]
+(TM '() #:limit 138 #:report 'short)]
 
 @subsection[#:tag "More registers"]{More registers}
 The Turing-machines shown sofar in this document have one data-register and
