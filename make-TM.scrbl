@@ -143,8 +143,7 @@ as moving the tape in opposit direction.}
 from a cell or writing into a cell.
 Only after it has done its reading from and its writing into the current cell,
 the tape-head is moved one cell to the right
-or to the left or remains where it is as indicated by the rule being applied after
-it has done its reading from and its writing into the current cell.}
+or to the left or remains where it is as indicated by the rule being applied.}
 
 @note{Magnetic tape-equipment of the old days (nineteen-sixties and -seventies)
 usually destroyed all data following the newly written data,
@@ -278,8 +277,12 @@ of the tape to another position on the tape. Section @secref["More registers"] s
              (         symbol symbol?))]{
 Procedure @rack[make-TM] returns a procedure that emulates a Turing-machine.
 Providing an @racketlink[exact-integer? "exact integer"] @tt{n≥2}
-for @rack[registers] is the same as providing
-@nonbreaking{@rack['(#:0 #:1 ... #:n-1)]}.
+for @rack[registers] is the same as providing:
+
+@inset{@rack[(for/list ((k (in-range registers))) (string->keyword (format "~s" k)))]}
+
+For example giving @rack[3] for the @rack[registers],
+is the same as giving @rack['(#:0 #:1 #:2)].
 The first @rack[register-name] is for the primary state-register and the second one
 for the input/output-register.
 Before the machine is produced the arguments are checked to satisfy all contracts
@@ -1324,87 +1327,93 @@ as mentioned @elemref["book" "the book mentioned above"].
 (code:line)
 (define simplified-rules
 (code:comment "The tape-symbols:")
-'((     0         1         c         L      R      S         B
-        m0        m1        mc        mL     mR     mS)
-(code:comment "The rules")
-  (A   (R         R         R         R      R      stop      stop
-        stop      stop      (B R)     stop   stop   stop))
-  (B   (R         R         R         R      R      stop      stop
-        (C0 L)    (C1 L)    stop      stop   stop   (CB L)))
-  (CB  (L         L         L         L      L      stop      stop
-        stop      stop      (DB c R)  stop   stop   stop))
-  (C0  (L         L         L         L      L      stop      stop
-        stop      stop      (D0 c R)  stop   stop   stop))
-  (C1  (L         L         L         L      L      stop      stop
-        stop      stop      (D1 c R)  stop   stop   stop))
-  (DB  ((V N)     (E m1 L)  stop      stop   stop   stop      stop
-        error     error     error     error  error  error))
-  (D0  (R         R         (DB R)    R      R      stop      stop
-        error     error     error     error  error  error))
-  (D1  (R         R         (D0 R)    R      R      stop      stop
-        error     error     error     error  error  error))
-  (E   (L         L         (F L)     L      L      stop      stop
-        error     error     error     error  error  error))
-  (F   ((E L)     (E L)     (G L)     (E L)  (E L)  stop      stop
-        error     error     error     error  error  error))
-  (G   ((E L)     (E L)     (H R)     (E L)  (E L)  stop      stop
-        error     error     error     error  error  error))
-  (H   (stop      stop      (I R)     stop   stop   stop      stop
-        error     error     error     error  error  error))
-  (I   (stop      stop      (J mc R)  stop   stop   stop      stop
-        error     error     error     error  error  error))
-  (J   (R         R         R         R      R      stop      stop
-        stop      (KL 1 R)  stop      stop   stop   stop))
-  (KL  (stop      (ML m1 L) stop      (TL R) (TR R) stop      stop
-        error     error     error     error  error  error))
-  (ML  (L         L         L         L      L      stop      stop
-        stop      stop      (NL c R)  stop   stop   stop))
-  (NL  (R         R         (PL R)    R      R      stop      stop
-        stop      (NR R)    stop      stop   stop   stop))
-  (PL  ((NL R)    (NL R)    (SL mc R) (NL R) (NL R) stop      stop
-        stop      (NR R)    stop      stop   stop   stop))
-  (SL  (R         R         R         R      R      stop      stop
-        stop      (KL 1 R)  stop      stop   stop   stop))
-  (KR  (stop      (MR m1 R) stop      (TL R) (TR R) stop      stop
-        error     error     error     error  error  error))
-  (MR  (R         R         R         R      R      stop      stop
-        stop      stop      (NL c R)  stop   stop   stop))
-  (NR  (R         R         (PR R)    R      R      stop      stop
-        error     error     error     error  error  error))
-  (PR  ((NR R)    (NR R)    (SR mc L) (NR R) (NR R) stop      stop
-        error     error     error     error  error  error))
-  (SR  (L         L         L         L      L      stop      stop
-        stop      (KR 1 R)  stop      stop   stop   stop))
-  (TL  ((TL0 R)   (TL1 R)   stop      stop   stop   stop      stop
-        error     error     error     error  error  error))
-  (TR  ((TR0 R)   (TR1 R)   stop      stop   stop   stop      stop
-        error     error     error     error  error  error))
-  (TL0 (R         R         R         R      R      stop      stop
-        (U 0 L)   (U 0 L)   stop      stop   stop   (U 0 L)))
-  (TL1 (R         R         R         R      R      stop      stop
-        (U 1 L)   (U 1 L)   R         stop   stop   (U 1 L)))
-  (TR0 (R         R         R         R      R      stop      stop
-        (U 0 R)   (U 0 R)   R         stop   stop   (U 0 R)))
-  (TR1 (R         R         R         R      R      stop      stop
-        (U 1 R)   (U 1 R)   R         stop   stop   (U 1 R)))
-  (U   ((C0 m0 L) (C1 m1 L) stop      stop   stop   (CB mS L) (CB mS L)
-        error     error     error     error  error  error))
-  (V   (L         L         (W L)     L      L      stop      stop
-        error     error     error     error  error  error))
-  (W   ((V L)     (V L)     (X1 R)    (V L)  (V L)  stop      stop
-        error     error     error     error  error  error))
-  (X1  (stop      stop      (X2 R)    stop   stop   stop      stop
-        error     error     error     error  error  error))
-  (X2  ((X3 R)    stop      stop      stop   stop   stop      stop
-        error     error     error     error  error  error))
-  (X3  (stop      stop      (X4 R)    stop   stop   stop      stop
-        error     error     error     error  error  error))
-  (X4  ((X5 R)    stop      stop      stop   stop   stop      stop
-        error     error     error     error  error  error))
-  (X5  (stop      stop      (X6 R)    stop   stop   stop      stop
-        error     error     error     error  error  error))
-  (X6  ((Y R)     stop      stop      stop   stop   stop      stop
-        error     error     error     error  error  error))
+'((     0         1         c         L        R        S         B
+        m0        m1        mc        mL       mR       mS)
+(code:comment "The rules (states in the first column)")
+  (A   (R         R         R         R        R        stop      stop
+        stop      stop      (B R)     stop     stop     stop))
+  (B   (R         R         R         R        R        stop      stop
+        (C0 L)    (C1 L)    stop      stop     stop     (CB L)))
+  (CB  (L         L         L         L        L        stop      stop
+        stop      stop      (DB c R)  stop     stop     stop))
+  (C0  (L         L         L         L        L        stop      stop
+        stop      stop      (D0 c R)  stop     stop     stop))
+  (C1  (L         L         L         L        L        stop      stop
+        stop      stop      (D1 c R)  stop     stop     stop))
+  (DB  ((V N)     (E m1 L)  stop      stop     stop     stop      stop
+        error     error     error     error    error    error))
+  (D0  (R         R         (DB R)    R        R        stop      stop
+        error     error     error     error    error    error))
+  (D1  (R         R         (D0 R)    R        R        stop      stop
+        error     error     error     error    error    error))
+  (E   (L         L         (F L)     L        L        stop      stop
+        error     error     error     error    error    error))
+  (F   ((E L)     (E L)     (G L)     (E L)    (E L)    stop      stop
+        error     error     error     error    error    error))
+  (G   ((E L)     (E L)     (H R)     (E L)    (E L)    stop      stop
+        error     error     error     error    error    error))
+  (H   (stop      stop      (I R)     stop     stop     stop      stop
+        error     error     error     error    error    error))
+  (I   (stop      stop      (J mc R)  stop     stop     stop      stop
+        error     error     error     error    error    error))
+  (J   (R         R         R         R        R        stop      stop
+        stop      (KL 1 R)  stop      stop     stop     stop))
+  (KL  (stop      (ML m1 L) stop      (TL R)   (TR R)   stop      stop
+        error     error     error     error    error    error))
+  (ML  (L         L         L         L        L        stop      stop
+        stop      stop      (NL c R)  stop     stop     stop))
+  (NL  (R         R         (PL R)    R        R        stop      stop
+        stop      (NR R)    stop      stop     stop     stop))
+  (PL  ((NL R)    (NL R)    (SL mc R) (NL R)   (NL R)   stop      stop
+        stop      (NR R)    stop      stop     stop     stop))
+  (SL  (R         R         R         R        R        stop      stop
+        stop      (KL 1 R)  stop      stop     stop     stop))
+  (KR  (stop      (MR m1 R) stop      (TL R)   (TR R)   stop      stop
+        error     error     error     error    error    error))
+  (MR  (R         R         R         R        R        stop      stop
+        stop      stop      (NL c R)  stop     stop     stop))
+  (NR  (R         R         (PR R)    R        R        stop      stop
+        error     error     error     error    error    error))
+  (PR  ((NR R)    (NR R)    (SR mc L) (NR R)   (NR R)   stop      stop
+        error     error     error     error    error    error))
+  (SR  (L         L         L         L        L        stop      stop
+        stop      (KR 1 R)  stop      stop     stop     stop))
+  (TL  ((TL0 R)   (TL1 R)   stop      stop     stop     stop      stop
+        error     error     error     error    error    error))
+  (TR  ((TR0 R)   (TR1 R)   stop      stop     stop     stop      stop
+        error     error     error     error    error    error))
+  (TL0 (R         R         R         R        R        stop      stop
+        (U 0 L)   (U 0 L)   stop      stop     stop     (U 0 L)))
+  (TL1 (R         R         R         R        R        stop      stop
+        (U 1 L)   (U 1 L)   R         stop     stop     (U 1 L)))
+  (TR0 (R         R         R         R        R        stop      stop
+        (U 0 R)   (U 0 R)   R         stop     stop     (U 0 R)))
+  (TR1 (R         R         R         R        R        stop      stop
+        (U 1 R)   (U 1 R)   R         stop     stop     (U 1 R)))
+  (U   ((C0 m0 L) (C1 m1 L) stop      stop     stop     (CB mS L) (CB mS L)
+        error     error     error     error    error    error))
+  (V   (L         L         (W L)     L        L        stop      stop
+        error     error     error     error    error    error))
+  (W   ((V L)     (V L)     (X1 R)    (V L)    (V L)    stop      stop
+        error     error     error     error    error    error))
+  (X1  (stop      stop      (X2 R)    stop     stop     stop      stop
+        error     error     error     error    error    error))
+  (X2  ((X3 R)    stop      stop      stop     stop     stop      stop
+        error     error     error     error    error    error))
+  (X3  (stop      stop      (X4 R)    stop     stop     stop      stop
+        error     error     error     error    error    error))
+  (X4  ((X5 R)    stop      stop      stop     stop     stop      stop
+        error     error     error     error    error    error))
+  (X5  (stop      stop      (X6 R)    stop     stop     stop      stop
+        error     error     error     error    error    error))
+  (X6  ((ZR R)    stop      stop      stop     stop     stop      stop
+        error     error     error     error    error    error))
+  (ZR  (R         R         R         R        R        (ZL L)    (ZL L)
+        R         R         R         R        R        (ZL B L)))
+  (ZL  (L         L         (ZB B L)  error    error    error     error
+        (ZL 0 L)  (ZL 1 L)  (ZB B L)  error    error    error))
+  (ZB  ((ZB B L)  (ZB B L)  (ZB B L)  (ZB B L) (ZB B L) (Y B N)   (Y B N)
+        (ZB B L)  (ZB B L)  (ZB B L)  (ZB B L) (ZB B L) (Y B N)))
   ))
 (code:line)
 (define symbols (car simplified-rules))
@@ -1432,22 +1441,40 @@ as mentioned @elemref["book" "the book mentioned above"].
  (make-TM
   'A '(stop error Y) 'B 'S '_ rules #:name 'UTM))
 (code:line)
-(code:comment "The following puts a 0 in front of the data m1 1 1.")
+(code:comment "The following program puts a 0 in front of the data m1 1 1.")
 (define input
+(code:comment "The encoded program.")
 '(c c mc
+(code:comment "B           0             1")
+(code:comment "State 1.")
   0           c 0           c   1 1 R 0
   c c
+(code:comment "State 2.")
     1 1 1 L 1 c   1 1 1 L 1 c   1 1 R 1
   c c
+(code:comment "State 3.")
   1 1 1 1 R 0 c 1 1 1 1 R 0 c 1 1 1 L 1
   c c
+(code:comment "State 4.")
   0           c 0           c 0
   c c c
+(code:comment "The data.")
   m1 1 1))
 (code:line)
-(let-values (((nr-of-moves final-state tape) (UTM input)))
- (printf "nr-of-moves: ~s~n" nr-of-moves)
- (printf "final-state: ~s~n" final-state)
- (printf "last 7 elements of the resulting tape: ~s~n" (take-right tape 7)))]
+(code:comment "The above program is an encoding of:")
+(define TM
+ (make-TM 1 '(4) 'B 'S '_
+ '(((1 1) (2 0) R)
+   ((2 B) (3 1) L) ((2 0) (3 1) L) ((2 1) (2 1) R)
+   ((3 B) (4 0) R) ((3 0) (4 0) R) ((3 1) (3 1) L))))
+(code:line)
+(code:comment "which produces:")
+(code:line)
+(TM '(1 1 1))
+(code:line)
+(code:comment "Now let's check that the UTM produces the same")
+(code:comment "given the above encoding and data.")
+(code:line)
+(UTM input)]
 
 @larger{@larger{@bold{The end}}}
