@@ -281,7 +281,7 @@ for @rack[registers] is the same as providing:
 
 @inset{@rack[(for/list ((k (in-range registers))) (string->keyword (format "~s" k)))]}
 
-For example giving @rack[3] for the @rack[registers],
+For example, giving @rack[3] for the @rack[registers],
 is the same as giving @rack['(#:0 #:1 #:2)].
 The first @rack[register-name] is for the primary state-register and the second one
 for the input/output-register.
@@ -407,7 +407,8 @@ in accordance with the formal definition.}
       Here @rack[A] and @rack[B] are used both for a @rack[state] and for a @rack[tape-symbol].
       This is not in contradiction with the formal definition of Turing-machines.
       The set of @rack[tape-symbol]s and the set of @rack[state]s
-      are not required to be disjoint.}
+      are not required to be disjoint.
+      The rules can always be rewritten such as to make the two sets disjoint.}
 
 If @rack[register-values] is @rack[#f] all @rack[registers] are initialized with the
 @rack[blank], the state-selector-register excepted, which is initialized with the
@@ -1095,32 +1096,33 @@ yields @itel{final-state} @rack['F].
 (code:line)
 (define rules
 '((code:comment "Look for a.")
-  ((0     a) (1     a) R)
-  ((0     b) (0     b) R)
-  ((0     B) (T     S) N)
-  ((0     _) (F     _) N)
+  ((0  a) (1  a) R)
+  ((0  b) (0  b) R)
+  ((0  B) (T  S) N)
+  ((0  _) (F  _) N)
   (code:comment "Symbol a found, is next symbol b?")
-  ((1     a) (1     a) R) (code:comment "Keep looking for b.")
-  ((1     b) (2     M) L) (code:comment "yes, mark it M and proceed.")
-  ((1     _) (F     _) N)
-  ((1     B) (T     S) N)
+  ((1  a) (1  a) R) (code:comment "Keep looking for b.")
+  ((1  b) (2  M) L) (code:comment "yes, mark it M and proceed.")
+  ((1  _) (F  _) N)
+  ((1  B) (T  S) N)
   (code:comment "Rewind the tape.")
-  ((2     B) (3     S) R)
-  ((2     _) (2     _) L)
+  ((2  B) (3  S) R)
+  ((2  _) (2  _) L)
   (code:comment "Shift every symbol one step to the left up to mark M.")
   (code:comment "Replace a or b or x by S.")
   (code:comment "Replace preceding S by a or b or x.")
   (code:comment "Replace M by b and replace preceding S by x.")
-  ((3     a) ((4 a) S) L)
-  ((3     b) ((4 b) S) L)
-  ((3     x) ((4 x) S) L)
-  ((3     M) ((4 M) b) L)
-  (((4 a) S) (5     a) R) (code:comment "Continue the shift.")
-  (((4 b) S) (5     b) R) (code:comment "Continue the shift.")
-  (((4 x) S) (5     x) R) (code:comment "Continue the shift.")
-  (((4 M) S) (0     x) R) (code:comment "Shift completed. Look for next a followed by b.")
+  (code:comment "Memorize the symbol in the new state.")
+  ((3  a) (4a S) L)
+  ((3  b) (4b S) L)
+  ((3  x) (4x S) L)
+  ((3  M) (4M b) L)
+  ((4a S) (5  a) R) (code:comment "Continue the shift.")
+  ((4b S) (5  b) R) (code:comment "Continue the shift.")
+  ((4x S) (5  x) R) (code:comment "Continue the shift.")
+  ((4M S) (0  x) R) (code:comment "Shift completed. Look for next a followed by b.")
   (code:comment "Step to the right of the S and continue the shift.")
-  ((5     S) (3     S) R)))
+  ((5  S) (3  S) R)))
 (code:line)
 (define TM (make-TM  0 '(T F) 'B 'S  '_ rules))
 (code:line)
@@ -1249,7 +1251,7 @@ i is added to the copy before the next number is generated.
 (code:line)
 (define TM (make-TM 0 '() 'B 'S '_ rules #:name 'binary-counter))
 
-(TM '() #:limit 138 #:report 'short)]
+(TM '() #:limit 139 #:report 'short)]
 
 @subsection[#:tag "More registers"]{More registers}
 The Turing-machines shown sofar in this document have one data-register and
@@ -1330,22 +1332,31 @@ as mentioned @elemref["book" "the book mentioned above"].
 '((     0         1         c         L        R        S         B
         m0        m1        mc        mL       mR       mS)
 (code:comment "The rules (states in the first column)")
+(code:comment "R = (_ _ R), L = (_ _ L), N = (_ _ N)")
+(code:comment "stop and error are final states.")
+(code:comment "(new-state move) leaves the current symbol as it is.")
+(code:comment "(new-state new-symbol move) obvious.")
+(code:comment "")
+(code:comment "First find the current element of the data.")
   (A   (R         R         R         R        R        stop      stop
         stop      stop      (B R)     stop     stop     stop))
   (B   (R         R         R         R        R        stop      stop
         (C0 L)    (C1 L)    stop      stop     stop     (CB L)))
+(code:comment "Find the block of the current state.")
   (CB  (L         L         L         L        L        stop      stop
         stop      stop      (DB c R)  stop     stop     stop))
   (C0  (L         L         L         L        L        stop      stop
         stop      stop      (D0 c R)  stop     stop     stop))
   (C1  (L         L         L         L        L        stop      stop
         stop      stop      (D1 c R)  stop     stop     stop))
+(code:comment "Find the sub-block corresponding to the current datum.")
   (DB  ((V N)     (E m1 L)  stop      stop     stop     stop      stop
         error     error     error     error    error    error))
   (D0  (R         R         (DB R)    R        R        stop      stop
         error     error     error     error    error    error))
   (D1  (R         R         (D0 R)    R        R        stop      stop
         error     error     error     error    error    error))
+(code:comment "Rewind to first block.")
   (E   (L         L         (F L)     L        L        stop      stop
         error     error     error     error    error    error))
   (F   ((E L)     (E L)     (G L)     (E L)    (E L)    stop      stop
@@ -1356,6 +1367,7 @@ as mentioned @elemref["book" "the book mentioned above"].
         error     error     error     error    error    error))
   (I   (stop      stop      (J mc R)  stop     stop     stop      stop
         error     error     error     error    error    error))
+(code:comment "Locate next state.")
   (J   (R         R         R         R        R        stop      stop
         stop      (KL 1 R)  stop      stop     stop     stop))
   (KL  (stop      (ML m1 L) stop      (TL R)   (TR R)   stop      stop
@@ -1378,10 +1390,12 @@ as mentioned @elemref["book" "the book mentioned above"].
         error     error     error     error    error    error))
   (SR  (L         L         L         L        L        stop      stop
         stop      (KR 1 R)  stop      stop     stop     stop))
+(code:comment "Record symbol to be written.")
   (TL  ((TL0 R)   (TL1 R)   stop      stop     stop     stop      stop
         error     error     error     error    error    error))
   (TR  ((TR0 R)   (TR1 R)   stop      stop     stop     stop      stop
         error     error     error     error    error    error))
+(code:comment "Find the cell in which to write and write the new symbol.")
   (TL0 (R         R         R         R        R        stop      stop
         (U 0 L)   (U 0 L)   stop      stop     stop     (U 0 L)))
   (TL1 (R         R         R         R        R        stop      stop
@@ -1390,6 +1404,7 @@ as mentioned @elemref["book" "the book mentioned above"].
         (U 0 R)   (U 0 R)   R         stop     stop     (U 0 R)))
   (TR1 (R         R         R         R        R        stop      stop
         (U 1 R)   (U 1 R)   R         stop     stop     (U 1 R)))
+(code:comment "Do we have a final state?")
   (U   ((C0 m0 L) (C1 m1 L) stop      stop     stop     (CB mS L) (CB mS L)
         error     error     error     error    error    error))
   (V   (L         L         (W L)     L        L        stop      stop
@@ -1408,6 +1423,7 @@ as mentioned @elemref["book" "the book mentioned above"].
         error     error     error     error    error    error))
   (X6  ((ZR R)    stop      stop      stop     stop     stop      stop
         error     error     error     error    error    error))
+(code:comment "We have a final state. Erase all at the left of the data.")
   (ZR  (R         R         R         R        R        (ZL L)    (ZL L)
         R         R         R         R        R        (ZL B L)))
   (ZL  (L         L         (ZB B L)  error    error    error     error

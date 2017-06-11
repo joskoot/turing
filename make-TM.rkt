@@ -98,7 +98,7 @@
             (printf "new tape : ~s~n" new-tape)
             (print-line))
            ((short)
-            (printf "move: ~s, state: ~s -> ~s, tape: ~s~n" move-nr old-state new-state new-tape)))
+            (printf "~s, ~s -> ~s, ~s~n" move-nr old-state new-state new-tape)))
          (TM-proper (add1 move-nr) new-register-hash new-tape))))
 
     (define initial-tape (make-tape '() (if (null? input) (list blank) input)))
