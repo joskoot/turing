@@ -96,7 +96,8 @@ It is not possible to remove a cell from the tape,
 but it can be filled with a space or any other non-blank tape-symbol.
 It is not possible to fill a cell with a blank.
 Blanks are used only, one at a time,
-to extend the tape at the left or the right of the actual content.
+to extend the tape when the tape-head leaves the actual tape-content
+by moving left from the begin of the content or to the right of the end.
 A blank cell will be filled with a non-blank tape-symbol before another blank cell can be added.
 Hence, the tape never has more than one blank cell.
 If it has one, it is the first one at the begin of the content or the last one at the end and
@@ -424,11 +425,16 @@ For each move the report shows:
 @item{The move counter, starting from 1.}
 @item{The @rack[rule] being applied.}
 @item{The original and new contents of the @rack[registers],
-      the original contents of the input/output-register already showing the tape-symbol
-      just read from the tape.}
+      the original contents of the input/output-register already showing the current tape-symbol.}
 @item{The new position of the tape-head and the new content of the tape shown as
 @nonbreaking{@tt{((h ...) (c t ...))}},
 where the new position of the tape-head is at tape-symbol @tt{c}.}]}
+
+@note{Using two lists @rack[(reverse (list h ...))] and
+@rack[(list c t ...)] is like using a push-down/pop-up machine with two stacks.
+Indeed, every Turing-machine can be simulated by such a machine.
+Internally the Turing-machines made by procedure @rack[make-TM] do use two such stacks,
+which allows fast movement of the tape-head.}
 
 If @rack[report] is @rack['short] the Turing-machine
 prints a short record of the moves it makes (on the @racket[current-output-port])
@@ -879,6 +885,10 @@ it even would be impossible to write a @rack[0].
   rules))
 (TM '() #:report 'long)]
 
+@note{The above busy beaver takes two steps less than the one shown in
+@hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "wikipedia"].
+Also, it always writes a @rack[1], never a @rack[0].}
+
 @subsubsection{4 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]}
 In fact there are five states, but @itel{final-state} @tt{T} does not count.
 For every non-final state @rack[X] there are two rules,
@@ -1313,7 +1323,7 @@ in order to make space for an x.
    (equal? state 'T))))]
 
 @section{Universal Turing-machine}
-The following Universal Turing-machine is copied from
+The following Universal Turing-machine is an adapted copy from
 @nonbreaking{"Formal Languages and their Relation to Automata"}
 as mentioned @elemref["book" "the book mentioned above"].
 
@@ -1395,7 +1405,7 @@ as mentioned @elemref["book" "the book mentioned above"].
         error     error     error     error    error    error))
   (TR  ((TR0 R)   (TR1 R)   stop      stop     stop     stop      stop
         error     error     error     error    error    error))
-(code:comment "Find the cell in which to write and write the new symbol.")
+(code:comment "Find the cell in which to write the new symbol.")
   (TL0 (R         R         R         R        R        stop      stop
         (U 0 L)   (U 0 L)   stop      stop     stop     (U 0 L)))
   (TL1 (R         R         R         R        R        stop      stop
