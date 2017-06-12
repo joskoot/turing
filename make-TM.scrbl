@@ -88,28 +88,13 @@ In the @elemref["figure" "figure"] they are blue.
 The current cell (red) is the one below the tape-head and
 contains the current tape-symbol.
 
-There are two special tape-symbols, the space and the blank.
-A non-blank tape-symbol is a tape-symbol other than a blank.
-A blank cell is a cell containing a blank.
-A non-blank cell is a cell containing a non-blank tape-symbol.
-It is not possible to remove a cell from the tape,
-but it can be filled with a space or any other non-blank tape-symbol.
-It is not possible to fill a cell with a blank.
-Blanks are used only, one at a time,
-to extend the tape when the tape-head leaves the actual tape-content
-by moving left from the begin of the content or to the right of the end.
-A blank cell will be filled with a non-blank tape-symbol before another blank cell can be added.
-Hence, the tape never has more than one blank cell.
-If it has one, it is the first one at the begin of the content or the last one at the end and
-it is the current one
-(in the @elemref["figure" "figure above"] it would have to be blue and red at the same time.)
 The Turing-machine must be given an input for the initial tape-content.
 The input must be a finite list of non-blank tape-symbols.
 The machine starts with a given initial internal state for the control-unit
 and with the tape-head positioned at the leftmost cell of the initial tape-content.
 If the input is not empty, the initial tape-content has no blank cell.
 If the input is empty, the initial tape-content consists of one single blank cell.
-
+The blank is a special tape-symbol used as explained in @elemref["item 3" "item 3 below"].
 The control-unit makes moves according to a program consisting of a finite set of
 instructions, which we call `rules'.
 The rule to be applied is determined by the the current internal state of the control-unit
@@ -128,12 +113,12 @@ This step is not optional when the current cell is blank.
 A blank cell always is filled with a non-blank tape-symbol,
 possibly but not necessarily with a space.}
 
-@item{Optionally moving the tape-head one cell to the right or to the left.
+@item{@elemtag["item 3"]{Optionally moving the tape-head one cell to the right or to the left.
 When the tape-head moves left of the start of the tape-content or right of the end,
 a blank cell is added. This cell becomes the current one.
 In this way a tape is simulated with an infinite number of
 blank cells both at the left and at the right of the actual content.
-The new blank cell will be filled with a non-blank tape-symbol during the next move.}]}
+The new blank cell will be filled with a non-blank tape-symbol during the next move.}}]}
 
 @note{In real life tape-equipment usually the tape is moving
 with the tape-head in fixed position.
@@ -177,7 +162,6 @@ and the @rack[old-tape-symbol] equals the current tape-symbol read from the tape
 or when it is the dummy, which matches every arbitrary tape-symbol.
 A rule whose @racket[new-tape-symbol] is a tape-symbol indicates that the content
 of the current cell must be replaced by this tape-symbol.
-However, when the tape-head receives a blank for writing, it writes a space.
 A rule whose @racket[new-tape-symbol] is the dummy indicates that
 the current cell must not be altered, unless it is blank,
 in which case it is filled with a space.
@@ -230,7 +214,7 @@ The following machine replaces the second and the fourth tape-symbol.
 (code:line)
 (TM '(What was your previous hobby?) #:report 'long)]
 
-@larger{@bold{Additional registers}}@(linebreak)
+@section{Additional registers}
 The control unit of a Turing-machine emulated by a procedure made by @rack[make-TM]
 has at least two registers.
 The first one is the primary state-register and the second one the input/output-register,
@@ -241,7 +225,11 @@ is equivalent to a Turing-machine with only two registers
 as long as the combined contents of the registers is limited to a finite set.
 Allowing more registers is a way to simplify the description of the rules.
 For example, multiple registers make it easier to describe rules that move part of the content
-of the tape to another position on the tape. Section @secref["More registers"] shows an example.
+of the tape to another position on the tape.
+It always is possible, although it may be tedious, to rewrite rules with more than 2 registers
+as a set of rules with 2 registers by including the content of the additional registers in the
+primary state. For an example, compare section @secref["Inserting symbols"] with
+section @secref["More registers"].
 
 @section{Procedure make-TM}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
@@ -280,10 +268,10 @@ Procedure @rack[make-TM] returns a procedure that emulates a Turing-machine.
 Providing an @racketlink[exact-integer? "exact integer"] @tt{n≥2}
 for @rack[registers] is the same as providing:
 
-@inset{@rack[(for/list ((k (in-range registers))) (string->keyword (format "~s" k)))]}
+@inset{@rack[(for/list ((k (in-range n))) (string->keyword (format "~s" k)))]}
 
-For example, giving @rack[3] for the @rack[registers],
-is the same as giving @rack['(#:0 #:1 #:2)].
+For example, @nonbreaking{@rack[#:registers]@(hspace 1)@rack[3]}
+does the same as @nonbreaking{@rack[#:registers]@(hspace 1)@rack['(#:0 #:1 #:2)]}.
 The first @rack[register-name] is for the primary state-register and the second one
 for the input/output-register.
 Before the machine is produced the arguments are checked to satisfy all contracts
@@ -342,7 +330,7 @@ If x is a @rack[state] or a @rack[tape-symbol],
 this state or tape-symbol is put into register k.
 For example, assuming there are three registers with the names @rack[#:0], @rack[#:1]
 and @rack[#:2],
-then @rack[(new-state #:2 #:1)] indicates that
+then the @rack[updater] @rack[(new-state #:2 #:1)] indicates that
 register @rack[#:0] is filled with @rack[new-state] and the registers @rack[#:1] and @rack[#:2]
 exchange their contents.}
 
@@ -1322,10 +1310,10 @@ in order to make space for an x.
    (equal? (ab->axb input) output)
    (equal? state 'T))))]
 
-@section{Universal Turing-machine}
+@subsection{Universal Turing-machine}
 The following Universal Turing-machine is an adapted copy from
 @nonbreaking{"Formal Languages and their Relation to Automata"}
-as mentioned @elemref["book" "the book mentioned above"].
+as @elemref["book" "mentioned above"].
 
 @interaction[
 (require racket "make-TM.rkt")
