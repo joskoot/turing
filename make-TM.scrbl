@@ -333,7 +333,9 @@ For example, assuming there are three registers with the names @rack[#:0], @rack
 and @rack[#:2],
 then the @rack[updater] @rack[(new-state #:2 #:1)] indicates that
 register @rack[#:0] is filled with @rack[new-state] and the registers @rack[#:1] and @rack[#:2]
-exchange their contents.}
+exchange their contents.
+@rack[new-state] will be the new primary state and
+the old content of register @rack[#:2] is written into the current cell of the tape.}
 
 @item{Now the @rack[tape-symbol] of the input/output-register is written in the current cell
 of the tape, replacing the former current tape-symbol.
@@ -885,8 +887,8 @@ Also, it always writes a @rack[1], never a @rack[0].}
 @subsubsection{4 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]}
 In fact there are five states, but @itel{final-state} @tt{T} does not count.
 For every non-final state @rack[X] there are two rules,
-@rack[((X _) (? ? ?))] and
-@rack[((X 1) (? ? ?))].
+@rack[((X _) (? ?) ?)] and
+@rack[((X 1) (? ?) ?)].
 This implies that a blank @rack['B] and tape-symbol @rack[0] always
 are treated in the same way whenever encountered as the current tape-symbol.
 This removes the distinction between these two tape-symbols.
@@ -995,9 +997,7 @@ an @rack['>] as a right parenthesis.
 The machine halts in state @rack[T] if the parentheses are well balanced
 and no other symbols occur in the @itel{input}.
 In all other cases the machine halts in state @rack[F].
-When counting a @rack['<] as @element['tt "+1"] and an @rack['>] as @element['tt "-1"],
-going from left to right the addition never must go below zero and must end in zero.
-The method used in the following example does not need a counter. It is as follows.
+The method used in the following example is as follows.
 First check that the input consists of @rack['<] and @rack['>] only.
 Put @itel{tape-symbol} @rack[s] at the left of the input
 and @itel{tape-symbol} @rack[e] at the right.
@@ -1081,6 +1081,102 @@ See @hyperlink["https://en.wikipedia.org/wiki/Catalan_number" "Catalan numbers"]
     input)
    (values (add1 count) (add1 total)))
   (else (values count (add1 total)))))]
+
+When counting a @rack['<] as @element['tt "+1"] and an @rack['>] as @element['tt "-1"],
+going from left to right the addition never must go below zero and must end in zero.
+The following machine uses such a counter.
+It is put at the end of the input between two slashes.
+The counter consists of zeros and ones,
+and the number of ones is the count.
+When decreasing the counter the first one is replaced by a zero.
+If no one can be found, the parentheses are not matching.
+When increasing the counter the first zero is replaced by a one,
+or, if no zero can be found, a one is added at the end.
+After all parentheses have been processed,
+the counter is checked to be zero.
+
+@interaction[
+(require "make-TM.rkt")
+(code:line)
+(define rules
+'(
+  (code:comment "Check the input.")
+  ((1 B) (2 /) R) (code:comment "Input ok.")
+  ((1 >) (1 >) R) (code:comment "Ok, continue.")
+  ((1 <) (1 <) R) (code:comment "Ok, continue.")
+  ((1 _) (F _) N) (code:comment "Reject.")
+  (code:comment "Initialize counter at end of input.")
+  ((2 B) (3 /) L)
+  (code:comment "Go to the left of the input.")
+  ((3 B) (4 S) R)
+  ((3 S) (4 S) R)
+  ((3 _) (3 _) L)
+  (code:comment "Find parenthesis.")
+  ((4 <) (5 S) R) (code:comment "Go increase counter.")
+  ((4 >) (8 S) R) (code:comment "Go decrease counter.")
+  ((4 /) (A /) R) (code:comment "Go check counter to be 0.")
+  (code:comment "Go to the counter and add a 1")
+  ((5 /) (6 /) R) (code:comment "Counter found.")
+  ((5 _) (5 _) R) (code:comment "Keep looking.")
+  ((6 0) (3 1) L) (code:comment "Added a 1, repeat.")
+  ((6 1) (6 1) R)
+  ((6 /) (7 1) R) (code:comment "Add a 1.")
+  ((7 B) (3 /) L) (code:comment "and repeat.")
+  (code:comment "Go to the counter and remove a 1")
+  ((8 /) (9 /) R) (code:comment "Counter found.")
+  ((8 _) (8 _) R) (code:comment "Keep looking.")
+  ((9 1) (3 0) L) (code:comment "Removed a 1, repeat.")
+  ((9 0) (9 0) R)
+  ((9 /) (F /) N) (code:comment "Counter becomes negative. Wrong.")
+  (code:comment "Check the counter to be zero.")
+  ((A 0) (A 0) R)
+  ((A 1) (F 1) N) (code:comment "Counter is not zero. Wrong.")
+  ((A /) (B S) L) (code:comment "Counter is zero. OK.")
+  (code:comment "Erase the tape.")
+  ((B _) (B S) L)
+  ((B S) (T S) N)
+  ((B B) (T S) N)))
+(code:line)
+(define TM (make-TM 1 '(F T) 'B 'S '_ rules))
+(code:line)
+(code:line (TM '(<) #:report 'short) (code:comment "Final state F."))
+(code:line)
+(code:line (TM '(>) #:report 'short) (code:comment "Final state F."))
+(code:line)
+(code:line (TM '(> <) #:report 'short) (code:comment "Final state F."))
+(code:line)
+(code:line (TM '(< < < > < > > >) #:report 'short) (code:comment "Final state T."))
+(code:line)
+(code:comment "match-parentheses does the same as the TM. Used for tests.")
+(code:comment "The same as in the previous example.")
+(code:comment "To do: to avoid duplicate code in interactions.") 
+(code:line)
+(define (match-parentheses lst)
+ (define (match-parentheses lst n)
+  (cond
+   ((null? lst) (if (zero? n) 'T 'F))
+   ((eq? (car lst) '<) (match-parentheses (cdr lst) (add1 n)))
+   ((zero? n) 'F)
+   (else (match-parentheses (cdr lst) (sub1 n)))))
+ (match-parentheses lst 0))
+(code:line)
+(code:comment "Test now.")
+(code:comment "Try all (expt 2 k) inputs of k elements,")
+(code:comment "k running from 0 to 10 (inclusive).")
+(code:comment "A total of 2047 tests of which only 65 yield final state T.")
+(code:line)
+(for*/fold ((count 0) (total 0))
+ ((k (in-range 0 11)) (n (in-range (arithmetic-shift 1 k))))
+ (define input
+  (for/list ((k (in-range 0 k)))
+   (if (zero? (bitwise-and (arithmetic-shift 1 k) n)) '< '>)))
+ (define-values (nr-of-moves state output) (TM input #:report #f))
+ (unless (eq? state (match-parentheses input)) (error 'Test "test failed"))
+ (cond
+  ((eq? state 'T) (values (add1 count) (add1 total)))
+  (else (values count (add1 total)))))
+]
+
 
 @subsection[#:tag "Inserting symbols"]{Inserting symbols}
 
@@ -1456,6 +1552,8 @@ as @elemref["book" "mentioned above"].
       (list (list old-state old-symbol) (list new-state new-symbol) move)))))
   (append r rules)))
 (code:line)
+(pretty-print rules)
+(code:line)
 (define UTM
  (make-TM
   'A '(stop error Y) 'B 'S '_ rules #:name 'UTM))
@@ -1482,10 +1580,10 @@ as @elemref["book" "mentioned above"].
 (code:line)
 (code:comment "The above program is an encoding of:")
 (define TM
- (make-TM 1 '(4) 'B 'S '_
+ (make-TM 1 '(Y) 'B 'S '_
  '(((1 1) (2 0) R)
    ((2 B) (3 1) L) ((2 0) (3 1) L) ((2 1) (2 1) R)
-   ((3 B) (4 0) R) ((3 0) (4 0) R) ((3 1) (3 1) L))))
+   ((3 B) (Y 0) R) ((3 0) (Y 0) R) ((3 1) (3 1) L))))
 (code:line)
 (code:comment "which produces:")
 (code:line)
@@ -1495,5 +1593,10 @@ as @elemref["book" "mentioned above"].
 (code:comment "given the above encoding and data.")
 (code:line)
 (UTM input)]
+
+The Universal Turing-machine requires many more moves,
+but the final state and tape-content are correct!
+If you want a report of the moves of the @rack[UTM],
+run module @hyperlink["UTM-with-report.rkt" "UTM-with-report.rkt" ].
 
 @larger{@larger{@bold{The end}}}
