@@ -510,8 +510,8 @@ Some of the examples are inspired by material of Jay McCarthy
 that can be found in @hyperlink["http://jeapostrophe.github.io/2013-10-29-tmadd-post.html"
                                 "http://jeapostrophe.github.io/2013-10-29-tmadd-post.html"].
 
-In all examples @rack['B] is a blank, @rack['S] a space and @rack['_] the dummy.
-@rack['T] is the final state for an accepted input, @rack['F] for a rejected input.
+In the examples @rack['B] usually is a blank, @rack['S] a space and @rack['_] the dummy.
+Usually @rack['T] is the final state for an accepted input and @rack['F] for a rejected input.
 
 @subsection{Blank → space}
 
@@ -844,6 +844,12 @@ State @element['tt "A"] is the initial internal state and @element['tt "T"] the 
  (define sum (output->nr output))
  (values sum (= sum (+ n m))))
 (code:line)
+(let ((n 987654) (m 9876))
+ (define-values (nr-of-moves final-state output)
+  (TM (prepare-input n m) #:report 'short))
+ (define sum (output->nr output))
+ (values sum (= sum (+ n m))))
+(code:line)
 (code:comment "Test the TM.")
 (code:line)
 (for/and ((k (in-range 0 1000)))
@@ -879,10 +885,6 @@ it even would be impossible to write a @rack[0].
   'dummy-not-used
   rules))
 (TM '() #:report 'long)]
-
-@note{The above busy beaver takes two steps less than the one shown in
-@hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "wikipedia"].
-Also, it always writes a @rack[1], never a @rack[0].}
 
 @subsubsection{4 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]}
 In fact there are five states, but @itel{final-state} @tt{T} does not count.
@@ -1086,12 +1088,12 @@ When counting a @rack['<] as @element['tt "+1"] and an @rack['>] as @element['tt
 going from left to right the addition never must go below zero and must end in zero.
 The following machine uses such a counter.
 It is put at the end of the input between two slashes.
-The counter consists of zeros and ones,
-and the number of ones is the count.
-When decreasing the counter the first one is replaced by a zero.
-If no one can be found, the parentheses are not matching.
-When increasing the counter the first zero is replaced by a one,
-or, if no zero can be found, a one is added at the end.
+The counter consists of @rack[0]s and @rack[1]s,
+and the number of @rack[1]s is the count.
+When decreasing the counter the first @rack[1] is replaced by a @rack[0].
+If no @rack[1] can be found, the parentheses are not matching.
+When increasing the counter the first @rack[0] is replaced by a @rack[1],
+or, if no @rack[0] can be found, a @rack[1] is added at the end.
 After all parentheses have been processed,
 the counter is checked to be zero.
 
