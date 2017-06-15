@@ -339,7 +339,8 @@ the old content of register @rack[#:2] is written into the current cell of the t
 
 @item{Now the @rack[tape-symbol] of the input/output-register is written in the current cell
 of the tape, replacing the former current tape-symbol.
-However, if the input/output-register contains a @rack[blank] a @rack[space] is written.}
+However, if the input/output-register contains a @rack[blank] a @rack[space] is written.
+During this operation the tape-head does not move.}
 
 @item{Finally the tape-head may be moved:@(linebreak)
 @rack[move] @rack['L] : move the tape-head one step to the left.@(linebreak)
@@ -429,7 +430,8 @@ This is like using a push-down/pop-up machine with two stacks.
 Indeed, every Turing-machine can be simulated by such a machine.
 When the content of the tape is to be shown, the stack containing the head is reversed
 such as to show the cells in correct order.
-This may slightly slow down the printing of a report with very long tape-contents.}
+This may slightly slow down the printing of a report with very long tape-contents,
+but hardly noticable, because the printing takes much more time.}
 
 If @rack[report] is @rack['short] the Turing-machine
 prints a short record of the moves it makes (on the @racket[current-output-port])
@@ -477,7 +479,7 @@ While the @rack[TM] is running,
 its state (the content of the tape and the position of the tape-head included)
 never changes after the first move,
 which could be detected while the @rack[TM] is running.
-However, @rack[TM] does no such check.
+However, the @rack[TM] does no such check.
 As another example consider:
 
 @interaction[
@@ -934,7 +936,7 @@ If a @rack[1] is encountered, it is replaced by @rack['e] and a required @rack[0
 After finding a required @rack[0] or @rack[1], it is replaced by @rack['S],
 the tape-head is positioned at the right of the tape
 and the process is repeated until no more ones or zeros are present.
-If a required @rack[0] or @rack[1] is not found, the machine halts with state @rack['F].
+If a required @rack[0] or @rack[1] is not found, the machine halts in state @rack['F].
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -1004,7 +1006,7 @@ First check that the input consists of @rack['<] and @rack['>] only.
 Put @itel{tape-symbol} @rack[s] at the left of the input
 and @itel{tape-symbol} @rack[e] at the right.
 This helps detecting the start and the end of the current content of the tape.
-Starting from the right go left looking for a @rack['>]
+Starting from the right go left look for a @rack['>]
 whose first preceding non-space symbol is @rack['<].
 When found replace the @rack['<] and the @rack['>]
 by spaces, go to the right of the input and repeat.
@@ -1176,9 +1178,7 @@ the counter is checked to be zero.
  (unless (eq? state (match-parentheses input)) (error 'Test "test failed"))
  (cond
   ((eq? state 'T) (values (add1 count) (add1 total)))
-  (else (values count (add1 total)))))
-]
-
+  (else (values count (add1 total)))))]
 
 @subsection[#:tag "Inserting symbols"]{Inserting symbols}
 
@@ -1606,10 +1606,13 @@ as @elemref["book" "mentioned above"].
 (code:line)
 (code:comment "The rules of the UTM. None of the rules has a dummy.")
 (code:line)
-(for ((rule (in-list rules)) (n (in-cycle '(0 1 2 3))))
- (if (= n 3)
-  (printf "~a~n" (~s #:min-width 21 #:width 21 rule))
-  (printf"~a " (~s #:min-width 21 #:width 21 rule))))
+(define width
+ (for/fold ((w 0)) ((rule (in-list rules)))
+  (max w (string-length (~s rule)))))
+(for ((rule (in-list rules)) (newline? (in-cycle '(#f #f #f #t))))
+ (if newline?
+  (printf "~a~n" (~s #:min-width width #:width width rule))
+  (printf "~a "  (~s #:min-width width #:width width rule))))
 (code:line)
 (define UTM
  (make-TM
@@ -1624,6 +1627,7 @@ as @elemref["book" "mentioned above"].
 The Universal Turing-machine requires many more moves,
 but the final state and tape-content are correct!
 If you want a report of the moves of the @rack[UTM],
-run module @hyperlink["UTM-with-report.rkt" "UTM-with-report.rkt" ].
+run module @hyperlink["UTM-with-report.rkt" "UTM-with-report.rkt"],
+but be aware that the output consists of almost 2000 lines.
 
 @larger{@larger{@bold{The end}}}
