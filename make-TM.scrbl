@@ -1572,28 +1572,30 @@ as @elemref["book" "mentioned above"].
         error     error     error     error    error    error))
 (code:comment "We have a final state. Erase all at the left of the data.")
   (ZR  (R         R         R         R        R        (ZL L)    (ZL L)
-        R         R         R         R        R        (ZL B L)))
-  (ZL  (L         L         (ZB B L)  error    error    error     error
-        (ZL 0 L)  (ZL 1 L)  (ZB B L)  error    error    error))
-  (ZB  ((ZB B L)  (ZB B L)  (ZB B L)  (ZB B L) (ZB B L) (Y B N)   (Y B N)
-        (ZB B L)  (ZB B L)  (ZB B L)  (ZB B L) (ZB B L) (Y B N)))
+        R         R         R         R        R        (ZL S L)))
+  (ZL  (L         L         (ZS S L)  error    error    error     error
+        (ZL 0 L)  (ZL 1 L)  (ZS S L)  error    error    error))
+  (ZS  ((ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y N)     (Y N)
+        (ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y S N)))
   ))
 (code:line)
 (code:comment "We have to expand the simplfied rules.")
 (code:line)
 (define symbols (car simplified-rules))
 (code:line)
+(code:comment "We omit all rules with new state error or stop.")
+(code:line)
 (define rules
  (for/fold ((r '()))
   ((rule (in-list (cdr simplified-rules))))
   (define old-state (car rule))
   (define rules
-   (for/list ((rule (in-list (cadr rule))) (old-symbol (in-list symbols)))
+   (for/list
+    ((rule (in-list (cadr rule)))
+     (old-symbol (in-list symbols))
+     #:when (not (or (equal? rule 'stop) (equal? rule 'error))))
     (case rule
-     ((R)     (list (list old-state old-symbol) (list old-state old-symbol) 'R))
-     ((L)     (list (list old-state old-symbol) (list old-state old-symbol) 'L))
-     ((stop)  (list (list old-state old-symbol) (list 'stop     old-symbol) 'N))
-     ((error) (list (list old-state old-symbol) (list 'error    old-symbol) 'N))
+     ((R L) (list (list old-state old-symbol) (list old-state old-symbol) rule))
      (else
       (define-values (new-state new-symbol move) 
        (cond
@@ -1602,11 +1604,16 @@ as @elemref["book" "mentioned above"].
       (list (list old-state old-symbol) (list new-state new-symbol) move)))))
   (append r rules)))
 (code:line)
-(pretty-print rules)
+(code:comment "The rules of the UTM. None of the rules has a dummy.")
+(code:line)
+(for ((rule (in-list rules)) (n (in-cycle '(0 1 2 3))))
+ (if (= n 3)
+  (printf "~a~n" (~s #:min-width 21 #:width 21 rule))
+  (printf"~a " (~s #:min-width 21 #:width 21 rule))))
 (code:line)
 (define UTM
  (make-TM
-  'A '(stop error Y) 'B 'S '_ rules #:name 'UTM))
+  'A '(Y) 'B 'S '_ rules #:name 'UTM))
 (code:line)
 (code:comment "Now let's check that (UTM input)")
 (code:comment "produces the same as (TM '(1 1 1)).")

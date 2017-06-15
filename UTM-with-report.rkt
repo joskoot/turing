@@ -121,12 +121,13 @@
   ((rule (in-list (cdr simplified-rules))))
   (define old-state (car rule))
   (define rules
-   (for/list ((rule (in-list (cadr rule))) (old-symbol (in-list symbols)))
+   (for/list
+    ((rule (in-list (cadr rule)))
+     (old-symbol (in-list symbols))
+     #:when (not (or (equal? rule 'stop) (equal? rule 'error))))
     (case rule
      ((R)     (list (list old-state old-symbol) (list old-state old-symbol) 'R))
      ((L)     (list (list old-state old-symbol) (list old-state old-symbol) 'L))
-     ((stop)  (list (list old-state old-symbol) (list 'stop     old-symbol) 'N))
-     ((error) (list (list old-state old-symbol) (list 'error    old-symbol) 'N))
      (else
       (define-values (new-state new-symbol move) 
        (cond
