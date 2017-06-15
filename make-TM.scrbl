@@ -1378,7 +1378,9 @@ in order to make space for an x.
    ((1 a) (1 a          B        ) R) (code:comment "no, but we have an a, hence continue.")
    ((1 b) (2 b          x        ) L) (code:comment "yes, insert x and shift cells left.")
    ((1 x) (0 x          B        ) R) (code:comment "no, go looking for an a.")
-   ((1 _) (T S          B        ) N) (code:comment "end of tape, accept.")
+   ((1 S) (T S          B        ) N) (code:comment "end of tape, accept.")
+   ((1 B) (T S          B        ) N) (code:comment "end of tape, accept.")
+   ((1 _) (F S          B        ) N) (code:comment "disallowed input, halt.")
    (code:comment "Shift all cells at the left one step to the left.")
    ((2 _) (2 #:previous #:current) L) (code:comment "Does the shift.")
    ((2 B) (0 #:previous B        ) R) (code:comment "Done, repeat the whole process.")
@@ -1428,6 +1430,42 @@ as @elemref["book" "mentioned above"].
 (code:comment "and rows TL0, TL1, TR0 and TR1 by an R.")
 (code:comment "In the book these are underscores, but that does not work.")
 (code:line)
+(code:comment "Consider")
+(code:line)
+(define TM
+ (make-TM 1 '(Y) 'B 'S '_
+ '(((1 1) (2 0) R)
+   ((2 B) (3 1) L) ((2 0) (3 1) L) ((2 1) (2 1) R)
+   ((3 B) (Y 0) R) ((3 0) (Y 0) R) ((3 1) (3 1) L))))
+(code:line)
+(code:comment "Given input '(1 1 1) the TM returns '(0 1 1 1).")
+(code:comment "The following is an encoding of the above TM.")
+(code:comment "1 ... R/L 0/1 is a rule, the number of 1s specifying the new state.")
+(code:comment "0 indicates absence of a rule.")
+(code:comment "Rules are separated by c.")
+(code:comment "States are separated by c c.")
+(code:comment "m is used as marker, initially marking the block of state 1.")
+(code:comment "m is is also used as marker for the current symbol in the data.")
+(define input
+'(c c mc
+(code:comment "B           0             1")
+(code:comment "State 1.")
+  0           c 0           c   1 1 R 0
+  c c
+(code:comment "State 2.")
+    1 1 1 L 1 c   1 1 1 L 1 c   1 1 R 1
+  c c
+(code:comment "State 3.")
+  1 1 1 1 R 0 c 1 1 1 1 R 0 c 1 1 1 L 1
+  c c
+(code:comment "State 4.")
+  0           c 0           c 0
+  c c c
+(code:comment "The data.")
+  m1 1 1))
+(code:line)
+(code:comment "The universal Turing-machine.")
+(code:line)
 (define simplified-rules
 (code:comment "The tape-symbols:")
 '((     0         1         c         L        R        S         B
@@ -1457,7 +1495,10 @@ as @elemref["book" "mentioned above"].
         error     error     error     error    error    error))
   (D1  (R         R         (D0 R)    R        R        stop      stop
         error     error     error     error    error    error))
-(code:comment "Rewind to start of current block.")
+(code:comment "Rewind to start of program and mark first block.")
+(code:comment "Id est find the 3 starting c-s and mark the third one.")
+(code:comment "This is marker m2.")
+(code:comment "Let m1 be the marker of the current sub-block.")
   (E   (L         L         (F L)     L        L        stop      stop
         error     error     error     error    error    error))
   (F   ((E L)     (E L)     (G L)     (E L)    (E L)    stop      stop
@@ -1468,9 +1509,12 @@ as @elemref["book" "mentioned above"].
         error     error     error     error    error    error))
   (I   (stop      stop      (J mc R)  stop     stop     stop      stop
         error     error     error     error    error    error))
-(code:comment "Locate next state in current block.")
+(code:comment "Locate next state.")
   (J   (R         R         R         R        R        stop      stop
         stop      (KL 1 R)  stop      stop     stop     stop))
+(code:comment "For each remaining 1 of next state shift marker m2 to next block")
+(code:comment "and shift marker m1 one to the right until no 1-s remain.")
+(code:comment "When done execute the instruction (R0, R1, L0, or L1)")
   (KL  (stop      (ML m1 L) stop      (TL R)   (TR R)   stop      stop
         error     error     error     error    error    error))
   (ML  (L         L         L         L        L        stop      stop
@@ -1496,7 +1540,7 @@ as @elemref["book" "mentioned above"].
         error     error     error     error    error    error))
   (TR  ((TR0 R)   (TR1 R)   stop      stop     stop     stop      stop
         error     error     error     error    error    error))
-(code:comment "Find the cell in which to write the new symbol.")
+(code:comment "Find marker in data region and write the new symbol.")
   (TL0 (R         R         R         R        R        stop      stop
         (U 0 L)   (U 0 L)   stop      stop     stop     (U 0 L)))
   (TL1 (R         R         R         R        R        stop      stop
@@ -1505,9 +1549,11 @@ as @elemref["book" "mentioned above"].
         (U 0 R)   (U 0 R)   R         stop     stop     (U 0 R)))
   (TR1 (R         R         R         R        R        stop      stop
         (U 1 R)   (U 1 R)   R         stop     stop     (U 1 R)))
-(code:comment "Do we have a final state?")
+(code:comment "Adjust the marker,")
   (U   ((C0 m0 L) (C1 m1 L) stop      stop     stop     (CB mS L) (CB mS L)
         error     error     error     error    error    error))
+(code:comment "No new rule found (zero encountered in state DB)")
+(code:comment "Check that we have a final state.")
   (V   (L         L         (W L)     L        L        stop      stop
         error     error     error     error    error    error))
   (W   ((V L)     (V L)     (X1 R)    (V L)    (V L)    stop      stop
@@ -1532,6 +1578,8 @@ as @elemref["book" "mentioned above"].
   (ZB  ((ZB B L)  (ZB B L)  (ZB B L)  (ZB B L) (ZB B L) (Y B N)   (Y B N)
         (ZB B L)  (ZB B L)  (ZB B L)  (ZB B L) (ZB B L) (Y B N)))
   ))
+(code:line)
+(code:comment "We have to expand the simplfied rules.")
 (code:line)
 (define symbols (car simplified-rules))
 (code:line)
@@ -1560,40 +1608,10 @@ as @elemref["book" "mentioned above"].
  (make-TM
   'A '(stop error Y) 'B 'S '_ rules #:name 'UTM))
 (code:line)
-(code:comment "The following program puts a 0 in front of the data m1 1 1.")
-(define input
-(code:comment "The encoded program.")
-'(c c mc
-(code:comment "B           0             1")
-(code:comment "State 1.")
-  0           c 0           c   1 1 R 0
-  c c
-(code:comment "State 2.")
-    1 1 1 L 1 c   1 1 1 L 1 c   1 1 R 1
-  c c
-(code:comment "State 3.")
-  1 1 1 1 R 0 c 1 1 1 1 R 0 c 1 1 1 L 1
-  c c
-(code:comment "State 4.")
-  0           c 0           c 0
-  c c c
-(code:comment "The data.")
-  m1 1 1))
-(code:line)
-(code:comment "The above program is an encoding of:")
-(define TM
- (make-TM 1 '(Y) 'B 'S '_
- '(((1 1) (2 0) R)
-   ((2 B) (3 1) L) ((2 0) (3 1) L) ((2 1) (2 1) R)
-   ((3 B) (Y 0) R) ((3 0) (Y 0) R) ((3 1) (3 1) L))))
-(code:line)
-(code:comment "which produces:")
+(code:comment "Now let's check that (UTM input)")
+(code:comment "produces the same as (TM '(1 1 1)).")
 (code:line)
 (TM '(1 1 1))
-(code:line)
-(code:comment "Now let's check that the UTM produces the same")
-(code:comment "given the above encoding and data.")
-(code:line)
 (UTM input)]
 
 The Universal Turing-machine requires many more moves,
