@@ -1443,7 +1443,7 @@ as @elemref["book" "mentioned above"].
 (code:line)
 (code:comment "Given input '(1 1 1) the TM returns '(0 1 1 1).")
 (code:comment "The following is an encoding of the above TM.")
-(code:comment "(1 ... move bit) is a rule, the number of 1s specifying the new state,")
+(code:comment "(1 ... move bit) is a rule, the number 1s of specifies the new state,")
 (code:comment "the bit being the 0 or 1 to be written.")
 (code:comment "0 indicates absence of a rule.")
 (code:comment "Rules are separated by c.")
@@ -1451,7 +1451,9 @@ as @elemref["book" "mentioned above"].
 (code:comment "m is used as marker, initially marking the block of state 1.")
 (code:comment "m is is also used as marker for the current symbol in the data.")
 (define input
+(code:comment "The encoded Turing machine.")
 '(c c mc
+(code:comment "The encoded machine accepts the tape-symbols B, 0 and 1.")
 (code:comment "B           0             1")
 (code:comment "State 1.")
   0           c 0           c   1 1 R 0
@@ -1476,7 +1478,7 @@ as @elemref["book" "mentioned above"].
         m0        m1        mc        mL       mR       mS)
 (code:comment "The rules (states in the first column)")
 (code:comment "R = (_ _ R), L = (_ _ L), N = (_ _ N)")
-(code:comment "stop and error are final states.")
+(code:comment "stop and error are erroneous final states.")
 (code:comment "(new-state move) = (new-state _ move.")
 (code:comment "(new-state new-symbol move) obvious.")
 (code:comment "")
@@ -1503,6 +1505,8 @@ as @elemref["book" "mentioned above"].
 (code:comment "Id est find the 3 starting c-s and mark the third one.")
 (code:comment "This is marker m2.")
 (code:comment "Let m1 be the marker of the current sub-block.")
+(code:comment "The distinction between m1 and m2 has been copied from")
+(code:comment "Formal Languages and their Relation to Automata, Hopcroft and Ullman.")
   (E   (L         L         (F L)     L        L        stop      stop
         error     error     error     error    error    error))
   (F   ((E L)     (E L)     (G L)     (E L)    (E L)    stop      stop
@@ -1518,7 +1522,9 @@ as @elemref["book" "mentioned above"].
         stop      (KL 1 R)  stop      stop     stop     stop))
 (code:comment "For each remaining 1 of next state shift marker m2 to next block")
 (code:comment "and shift marker m1 one to the right until no 1-s remain.")
-(code:comment "When done execute the instruction (R0, R1, L0, or L1)")
+(code:comment "When done go to the block marked with m2")
+(code:comment "find the instruction corresponding to the current tape-symbol")
+(code:comment "and execute the instruction (R0, R1, L0, or L1)")
   (KL  (stop      (ML m1 L) stop      (TL R)   (TR R)   stop      stop
         error     error     error     error    error    error))
   (ML  (L         L         L         L        L        stop      stop
@@ -1583,11 +1589,12 @@ as @elemref["book" "mentioned above"].
         (ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y S N)))
   ))
 (code:line)
-(code:comment "We have to expand the simplfied rules.")
+(code:comment "We have to expand the simplified rules.")
 (code:line)
 (define symbols (car simplified-rules))
 (code:line)
 (code:comment "We omit all rules with new state error or stop.")
+(code:comment "The UTM produced by make-TM halts with an error for these two states.")
 (code:line)
 (define rules
  (for/fold ((r '()))
