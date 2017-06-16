@@ -135,7 +135,7 @@ or to the left or remains where it is as indicated by the rule being applied.}
 usually destroyed all data following the newly written data,
 although with some effort part of it could be recovered.
 This equipment was not designed for replacement of part of the data in the middle of a file.
-Turing-machines do not have this problem.}
+The tape-unit of a Turing-machine does not have this problem.}
 
 Let's start with a simple example of a Turing-machine.
 Its states are the initial state @rack['A], the intermediate states @rack['B], @rack['C] and
@@ -249,26 +249,26 @@ section @secref["More registers"].
 (new-state     state dummy register-name)
 (old-symbol    tape-symbol dummy)
 (new-symbol    tape-symbol dummy register-name)
-(register      state tape-symbol dummy register-name)
+(register      new-state new-symbol)
 (registers     (code:line @#,(element "roman" "default =") 2)
                (code:line (register-name register-name ...+))
                nr-of-registers)
 (blank         tape-symbol)
 (space         tape-symbol)
 (name          (code:line @#,(element "roman" "default =") @#,(racket 'TM-without-name))
-               symbol))
+               name-symbol))
 #:contracts ((          state (not/c (or/c dummy keyword?)))
              (    tape-symbol (not/c (or/c dummy keyword?)))
              (          dummy (not/c keyword?))
              (  register-name keyword?)
              (nr-of-registers (and/c exact-integer? (>=/c 2)))
              (           move (or/c 'R 'L 'N))
-             (         symbol symbol?))]{
+             (    name-symbol symbol?))]{
 Procedure @rack[make-TM] returns a procedure that emulates a Turing-machine.
 Providing an @racketlink[exact-integer? "exact integer"] @tt{n≥2}
 for @rack[registers] is the same as providing:
 
-@inset{@rack[(for/list ((k (in-range n))) (string->keyword (format "~s" k)))]}
+@inset{@rack[(for/list ((k (in-range n))) (string->keyword (~s k)))]}
 
 For example, @nonbreaking{@rack[#:registers]@(hspace 1)@rack[3]}
 does the same as @nonbreaking{@rack[#:registers]@(hspace 1)@rack['(#:0 #:1 #:2)]}.
@@ -300,7 +300,8 @@ It contains the @rack[tape-symbol] read from or to be written into
 the current cell under the tape-head.
 
 @inset{@itemlist[#:style 'ordered
-@item{A Turing-machine halts when the primary state equals one of the @rack[final-states].}
+@item{A Turing-machine halts if the primary state equals one of the @rack[final-states],
+      else it continues with the following steps.}
 
 @item{The current tape-symbol is read and put into the input/output-register.@(linebreak)
       The tape-head does not move during this reading.}
@@ -335,7 +336,8 @@ then the @rack[updater] @rack[(new-state #:2 #:1)] indicates that
 register @rack[#:0] is filled with @rack[new-state] and the registers @rack[#:1] and @rack[#:2]
 exchange their contents.
 @rack[new-state] will be the new primary state and
-the old content of register @rack[#:2] is written into the current cell of the tape.}
+the old content of register @rack[#:2] will be written into the current cell of the tape
+as described in the next item.}
 
 @item{Now the @rack[tape-symbol] of the input/output-register is written in the current cell
 of the tape, replacing the former current tape-symbol.
@@ -430,8 +432,8 @@ This is like using a push-down/pop-up machine with two stacks.
 Indeed, every Turing-machine can be simulated by such a machine.
 When the content of the tape is to be shown, the stack containing the head is reversed
 such as to show the cells in correct order.
-This may slightly slow down the printing of a report with very long tape-contents,
-but hardly noticable, because the printing takes much more time.}
+This may slightly slow down printing of a report with very long tape-contents,
+but hardly noticable, because printing proper requires much more time.}
 
 If @rack[report] is @rack['short] the Turing-machine
 prints a short record of the moves it makes (on the @racket[current-output-port])
@@ -490,10 +492,11 @@ As another example consider:
             'B     (code:comment "blank")
             'S     (code:comment "space")
             '_     (code:comment "dummy")
-            '(((A _) (A S) R))
+            '(((A _) (B 1) R)
+              ((B _) (A 0) R))
             #:name 'Another-non-halting-TM))
 (code:line)
-(TM '() #:report 'short #:limit 5)]
+(TM '() #:report 'short #:limit 10)]
 
 By means of mathematical induction it is easily proven that the above machine never halts,
 although it never reproduces the same state for the machine as a whole.
@@ -1440,7 +1443,8 @@ as @elemref["book" "mentioned above"].
 (code:line)
 (code:comment "Given input '(1 1 1) the TM returns '(0 1 1 1).")
 (code:comment "The following is an encoding of the above TM.")
-(code:comment "1 ... R/L 0/1 is a rule, the number of 1s specifying the new state.")
+(code:comment "(1 ... move bit) is a rule, the number of 1s specifying the new state,")
+(code:comment "the bit being the 0 or 1 to be written.")
 (code:comment "0 indicates absence of a rule.")
 (code:comment "Rules are separated by c.")
 (code:comment "States are separated by c c.")
@@ -1473,7 +1477,7 @@ as @elemref["book" "mentioned above"].
 (code:comment "The rules (states in the first column)")
 (code:comment "R = (_ _ R), L = (_ _ L), N = (_ _ N)")
 (code:comment "stop and error are final states.")
-(code:comment "(new-state move) leaves the current symbol as it is.")
+(code:comment "(new-state move) = (new-state _ move.")
 (code:comment "(new-state new-symbol move) obvious.")
 (code:comment "")
 (code:comment "First find the current element of the data.")
