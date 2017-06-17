@@ -563,7 +563,7 @@ the machine halts in state @rack[F] with empty tape.
   ((B /) (C /) R)
   ((C S) (C _) R) (code:comment "Go erase first non-space at the right.")
   ((C B) (I S) L) (code:comment "Error, no non-space with index k found.")
-  ((C _) (D S) L) (code:comment "Non-space found, erase it by replacing by a space.")
+  ((C _) (D S) L) (code:comment "Non-space found, erase it by replacing it by a space.")
   ((D _) (D _) L) (code:comment "Rewind the tape.")
   ((D /) (E /) L)
   ((E 1) (E 1) L)
