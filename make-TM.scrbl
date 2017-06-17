@@ -58,7 +58,8 @@ Procedure @rack[make-TM] returns a procedure that emulates a two-way single tape
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machine"]
 programmed as described by the arguments given to @rack[make-TM].
 The reader is supposed to be familiar with Turing-machines.
-Nevertheless a short introduction with the details of the machines as returned by @rack[make-TM].
+Nevertheless a short introduction with the details of the machines as returned by
+procedure @rack[make-TM].
 
 @elemtag["book" ""]
 @note{John E. Hopcroft and Jeffrey D. Ullman provide a comprehensive description
@@ -78,10 +79,11 @@ Each cell contains one of a finite set of tape-symbols.
 Together the cells form the current tape-content.
 The data-bus transports one tape-symbol at a time,
 either from the control-unit to the cell currently under the tape-head or reverse.
-The state of a Turing-machine as a whole includes
+@elemtag["configuration"]{
+The configuration of a Turing-machine is its state as a whole including
 the internal state of the control-unit,
 the current content of the tape and
-the current position of the tape-head.
+the current position of the tape-head.}
 The first cell of the tape-content is considered to be at the left,
 the last one to be at the right.
 In the @elemref["figure" "figure"] they are blue.
@@ -101,7 +103,8 @@ The rule to be applied is determined by the the current internal state of the co
 and the current tape-symbol.
 The machine halts as soon as the control-unit assumes a final state.
 If there is no matching rule, the machine halts in a stuck state.
-If it never reaches a final state and never gets stuck, it runs forever.
+If it never reaches a final state and never gets stuck, it runs forever,
+possibly, but not necessarily, with an ever growing tape-content.
 A move consists of three steps:
 
 @inset{@itemlist[#:style 'ordered
@@ -140,7 +143,7 @@ The tape-unit of a Turing-machine does not have this problem.}
 Let's start with a simple example of a Turing-machine.
 Its states are the initial state @rack['A], the intermediate states @rack['B], @rack['C] and
 @rack['D] and the final state @rack['T].
-In the rules @rack['R] indicates a move of the tape-head one step to the right.
+In the rules @rack['R] indicates a move of the tape-head one cell to the right.
 In this example the two other options @rack['N] (no move) and @rack['L] (move left)
 are not used.
 @rack['_] is a dummy, which is not a tape-symbol.
@@ -193,8 +196,8 @@ The returned values are the number of moves made, the final state and
 the modified content of the tape.
 Let's see more details in a report of the moves.
 In such a report the new content of the tape is shown as
-@tt{((head ...) (current tail ...))} representing the content
-@tt{(head ... current tail ...)} where @tt{current} is the current tape-symbol.
+@tt{((tape-symbol ...) (current tape-symbol ...))} representing the content
+@tt{(tape-symbol ... current tape-symbol...)} where @tt{current} is the current tape-symbol.
 The following machine replaces the second and the fourth tape-symbol.
 
 @interaction[
@@ -256,14 +259,14 @@ section @secref["More registers"].
 (blank         tape-symbol)
 (space         tape-symbol)
 (name          (code:line @#,(element "roman" "default =") @#,(racket 'TM-without-name))
-               name-symbol))
+               symbol))
 #:contracts ((          state (not/c (or/c dummy keyword?)))
              (    tape-symbol (not/c (or/c dummy keyword?)))
              (          dummy (not/c keyword?))
              (  register-name keyword?)
              (nr-of-registers (and/c exact-integer? (>=/c 2)))
              (           move (or/c 'R 'L 'N))
-             (    name-symbol symbol?))]{
+             (         symbol symbol?))]{
 Procedure @rack[make-TM] returns a procedure that emulates a Turing-machine.
 Providing an @racketlink[exact-integer? "exact integer"] @tt{n≥2}
 for @rack[registers] is the same as providing:
@@ -289,6 +292,13 @@ equality or being distinct to be understood in the sense of @rack[equal?].
 
 When not all of these conditions are satisfied,
 procedure @rack[make-TM] raises an @rack[error].
+
+The @rack[name] is attached to the returned procedure, for example:
+
+@interaction[
+(require "make-TM.rkt")
+(make-TM 1 '() 2 3 4 '())
+(make-TM 1 '() 2 3 4 '() #:name 'TM-without-rules)]
 
 @section{Running a Turing-machine}
 The control-unit interprets the @rack[rules] as follows,
@@ -345,10 +355,11 @@ However, if the input/output-register contains a @rack[blank] a @rack[space] is 
 During this operation the tape-head does not move.}
 
 @item{Finally the tape-head may be moved:@(linebreak)
-@rack[move] @rack['L] : move the tape-head one step to the left.@(linebreak)
-@rack[move] @rack['R] : move the tape-head one step to the right.@(linebreak)
+@rack[move] @rack['L] : move the tape-head one cell to the left.@(linebreak)
+@rack[move] @rack['R] : move the tape-head one cell to the right.@(linebreak)
 @rack[move] @rack['N] : don't move the tape-head.@(linebreak)
-When the tape-head moves to the left or the right of the current content of the tape,
+When the tape-head moves to the left of the left-most cell of the tape or to the right of
+the right-most cell,
 a blank cell is added and the tape-head is positioned at this cell.
 These are the only two situations in which a @rack[blank] is written.}
 
@@ -478,8 +489,7 @@ the @rack[limit]:
 
 In this example @rack[rule] @rack['(((A _) (A S) N))] alone already implies an infinite loop.
 While the @rack[TM] is running,
-its state (the content of the tape and the position of the tape-head included)
-never changes after the first move,
+its @elemref["configuration" "configuration"] never changes after the first move,
 which could be detected while the @rack[TM] is running.
 However, the @rack[TM] does no such check.
 As another example consider:
@@ -499,12 +509,12 @@ As another example consider:
 (TM '() #:report 'short #:limit 10)]
 
 By means of mathematical induction it is easily proven that the above machine never halts,
-although it never reproduces the same state for the machine as a whole.
+although it never reproduces the same @elemref["configuration" "configuration"].
 
 @note{Procedure @rack[make-TM] could be adapted such as to
 predict the infinite loops of the last two examples just by checking the rules.
 It also could be adapted such as to produce
-Turing-machines that can detect a repeated state of the machine as a whole.
+Turing-machines that can detect a repeated @elemref["configuration" "configuration"].
 These adaptations have not been made,
 for the Halting Problem implies that there always remain cases
 in which it is not possible to predict whether or not the machine will halt.}}}]
@@ -530,6 +540,63 @@ When a rule instructs to write a blank, in fact a space is written:
    ((B blank) (C blank) R) (code:comment "A space is written.")
    ((C blank) (T y) R))))
 (TM '() #:report 'long)]
+
+@subsection{List-ref}
+The following machine expects as input @rack[(1 ... / tape-symbol ...+)]
+Let k be the number of ones before the slash.
+The machine erases all tape-symbols except the one with index k
+in the list @rack[(tape-symbol ...+)].
+Spaces in the input are ignored and do not count for the index.
+The machine halts in state @rack[T] with a tape of all spaces,
+the indexed symbol excepted.
+If there are less than k+1 non-spaces,
+the machine halts in state @rack[F] with empty tape.
+
+@interaction[
+(require racket "make-TM.rkt")
+(code:line)
+(define rules
+(code:comment "B is the blank, S the space and _ the dummy.")
+'(((A 1) (B S) R) (code:comment "Go erase the first non-space.")
+  ((A /) (G S) R) (code:comment "Go erase all following the first non-space.")
+  ((B 1) (B 1) R) (code:comment "Skip to the right of the slash following the ones.")
+  ((B /) (C /) R)
+  ((C S) (C _) R) (code:comment "Go erase first non-space at the right.")
+  ((C B) (I S) L) (code:comment "Error, no non-space with index k found.")
+  ((C _) (D S) L) (code:comment "Non-space found, erase it by replacing by a space.")
+  ((D _) (D _) L) (code:comment "Rewind the tape.")
+  ((D /) (E /) L)
+  ((E 1) (E 1) L)
+  ((E S) (A S) R) (code:comment "We are at the start of the tape. Repeat.")
+  ((G S) (G S) R) (code:comment "Keep looking for first non-space.")
+  ((G _) (H _) R) (code:comment "Found the non-space.")
+  ((G B) (I S) N) (code:comment "Error, no non-space found")
+  ((H _) (H S) R) (code:comment "Erase all following the non-space.")
+  ((H B) (T S) N) (code:comment "Done.")
+  ((I B) (J S) R) (code:comment "Error case.")
+  ((I _) (I S) L) (code:comment "Erase the whole tape and")
+  ((J B) (F S) N) (code:comment "halt in final state F.")
+  ((J _) (J S) R)))
+(code:line)
+(define TM
+ (make-TM
+  'A     (code:comment "Initial state.")
+  '(T F) (code:comment "Final states.")
+  'B     (code:comment "Blank")
+  'S     (code:comment "Space")
+  '_     (code:comment "Dummy")
+  rules
+  #:name 'list-ref-TM))
+(code:line)
+(TM '(1 1 1 / a b c d e f) #:report 'short)
+(code:line)
+(define input '(a S b S c S d S e S f S g S h S i S j S k))
+(code:line)
+(for ((k (in-range 0 15)))
+ (define-values (nr-of-moves state tape)
+  (TM (append (make-list k 1) '(/) input)))
+ (printf "k=~s, nr-of-moves=~s, final-state=~s, tape=~s~n"
+  k nr-of-moves state tape))]
 
 @subsection{Remove symbols}
 The following Turing-machine always halts.
@@ -750,8 +817,8 @@ tape-symbols @element['tt "x"] and @element['tt "y"] are reverted to
 (code:comment "Test the Turing-machine.")
 (code:line)
 (for/and ((k (in-range 0 100)))
- (define n (random 3000000))
- (define m (random 3000000))
+ (define n (random 30000000))
+ (define m (random 30000000))
  (define input
   (append
    (exact-nonnegative-integer->list-of-bits n)
@@ -1212,7 +1279,7 @@ yields @itel{final-state} @rack['F].
   (code:comment "Rewind the tape.")
   ((2  B) (3  S) R)
   ((2  _) (2  _) L)
-  (code:comment "Shift every symbol one step to the left up to mark M.")
+  (code:comment "Shift every symbol one cell to the left up to mark M.")
   (code:comment "Replace a or b or x by S.")
   (code:comment "Replace preceding S by a or b or x.")
   (code:comment "Replace M by b and replace preceding S by x.")
@@ -1384,7 +1451,7 @@ in order to make space for an x.
    ((1 S) (T S          B        ) N) (code:comment "end of tape, accept.")
    ((1 B) (T S          B        ) N) (code:comment "end of tape, accept.")
    ((1 _) (F S          B        ) N) (code:comment "disallowed input, halt.")
-   (code:comment "Shift all cells at the left one step to the left.")
+   (code:comment "Shift all cells at the left one cell to the left.")
    ((2 _) (2 #:previous #:current) L) (code:comment "Does the shift.")
    ((2 B) (0 #:previous B        ) R) (code:comment "Done, repeat the whole process.")
    ((2 S) (0 #:previous B        ) R) ))
