@@ -77,8 +77,7 @@ The tape has a finite number of cells,
 but can stepwise grow in both directions without limitation.
 Each cell contains one of a finite set of tape-symbols.
 Together the cells form the current tape-content.
-The data-bus transports one tape-symbol at a time,
-either from the control-unit to the cell currently under the tape-head or reverse.
+The data-bus transports one tape-symbol at a time.
 @elemtag["configuration"]{
 The configuration of a Turing-machine is its state as a whole including
 the internal state of the control-unit,
@@ -92,7 +91,8 @@ contains the current tape-symbol.
 
 The Turing-machine must be given an input for the initial tape-content.
 The input must be a finite list of non-blank tape-symbols.
-The blank is a special tape-symbol used as explained in @elemref["item 3" "item 3 below"].
+The blank is a special tape-symbol used to indicate that a cell is empty
+(see @elemref["item 3" "item 3 below"]).
 The machine starts with a given initial internal state for the control-unit
 and with the tape-head positioned at the leftmost cell of the initial tape-content.
 If the input is not empty, the initial tape-content has no blank cell.
@@ -114,7 +114,8 @@ A move consists of three steps:
 @item{Optionally writing a new non-blank tape-symbol in the current cell.
 This step is not optional when the current cell is blank.
 A blank cell always is filled with a non-blank tape-symbol,
-possibly but not necessarily with a space.}
+possibly but not necessarily with a space,
+which is not a blank.}
 
 @item{@elemtag["item 3"]{Optionally moving the tape-head one cell to the right or to the left.
 When the tape-head moves left of the start of the tape-content or right of the end,
@@ -253,20 +254,22 @@ section @secref["More registers"].
 (old-symbol    tape-symbol dummy)
 (new-symbol    tape-symbol dummy register-name)
 (register      new-state new-symbol)
-(registers     (code:line @#,(element "roman" "default =") 2)
-               (code:line (register-name register-name ...+))
+(registers     (code:line @#,element["roman"]{default =} 2)
+               (code:line (register-name register-name register-name ...))
                nr-of-registers)
 (blank         tape-symbol)
 (space         tape-symbol)
 (name          (code:line @#,(element "roman" "default =") @#,(racket 'TM-without-name))
                symbol))
-#:contracts ((          state (not/c (or/c dummy keyword?)))
-             (    tape-symbol (not/c (or/c dummy keyword?)))
-             (          dummy (not/c keyword?))
-             (  register-name keyword?)
-             (nr-of-registers (and/c exact-integer? (>=/c 2)))
-             (           move (or/c 'R 'L 'N))
-             (         symbol symbol?))]{
+#:contracts
+((          state (not/c (or/c dummy keyword?)))
+ (    tape-symbol (not/c (or/c dummy keyword?)))
+ (          dummy (not/c keyword?))
+ (  register-name keyword?)
+ (nr-of-registers (and/c exact-integer? (>=/c 2)))
+ (           move (or/c 'R 'L 'N))
+ (         symbol symbol?)
+)]{
 Procedure @rack[make-TM] returns a procedure that emulates a Turing-machine.
 Providing an @racketlink[exact-integer? "exact integer"] @tt{n≥2}
 for @rack[registers] is the same as providing:
@@ -297,14 +300,15 @@ The @rack[name] is attached to the returned procedure, for example:
 
 @interaction[
 (require "make-TM.rkt")
-(make-TM 1 '() 2 3 4 '())
-(make-TM 1 '() 2 3 4 '() #:name 'TM-without-rules)]
+(make-TM 'state '(state) 'blank 'space 'dummy '())
+(make-TM 'state '(state) 'blank 'space 'dummy '()
+         #:name 'TM-without-rules)]
 
 @section{Running a Turing-machine}
 The control-unit interprets the @rack[rules] as follows,
 equality again to be understood in the sense of @rack[equal?].
 The first @rack[register] will be referred to as the primary state-register
-and its contents as the primary state.
+and its content as the primary state.
 The second @rack[register] is the input/output-register.
 It contains the @rack[tape-symbol] read from or to be written into
 the current cell under the tape-head.
@@ -325,7 +329,7 @@ A @rack[rule] whose @rack[old-symbol] equals the current tape-symbol
 prevails over a @rack[rule] with the same @rack[old-state] and
 whose @rack[old-symbol] is the @rack[dummy].
 For @rack[rules] with the same @rack[old-state] the @rack[dummy]
-is like @rack[else] in a @rack[cond]-form,
+is like @rack[else] in a @rack[cond]- or @rack[case]-form,
 but is not required to be at the end.
 The order of the @rack[rules] is irrelevant.
 When there is no matching rule the machine halts by raising an @rack[error].}
@@ -344,7 +348,7 @@ For example, assuming there are three registers with the names @rack[#:0], @rack
 and @rack[#:2],
 then the @rack[updater] @rack[(new-state #:2 #:1)] indicates that
 register @rack[#:0] is filled with @rack[new-state] and the registers @rack[#:1] and @rack[#:2]
-exchange their contents.
+exchange their content.
 @rack[new-state] will be the new primary state and
 the old content of register @rack[#:2] will be written into the current cell of the tape
 as described in the next item.}
@@ -432,7 +436,7 @@ For each move the report shows:
 @item{The move counter, starting from 1.}
 @item{The @rack[rule] being applied.}
 @item{The original and new contents of the @rack[registers],
-      the original contents of the input/output-register already showing the current tape-symbol.}
+      the original content of the input/output-register already showing the current tape-symbol.}
 @item{The new position of the tape-head and the new content of the tape shown as
 @nonbreaking{@tt{((h ...) (c t ...))}},
 where the new position of the tape-head is at tape-symbol @tt{c}.}]}
@@ -443,7 +447,7 @@ This is like using a push-down/pop-up machine with two stacks.
 Indeed, every Turing-machine can be simulated by such a machine.
 When the content of the tape is to be shown, the stack containing the head is reversed
 such as to show the cells in correct order.
-This may slightly slow down printing of a report with very long tape-contents,
+This may slightly slow down printing of a report with very long tape-content,
 but hardly noticable, because printing proper requires much more time.}
 
 If @rack[report] is @rack['short] the Turing-machine
@@ -544,13 +548,13 @@ When a rule instructs to write a blank, in fact a space is written:
 @subsection{List-ref}
 The following machine expects as input @rack[(1 ... / tape-symbol ...+)]
 Let k be the number of ones before the slash.
-The machine erases all tape-symbols except the one with index k
-in the list @rack[(tape-symbol ...+)].
-Spaces in the input are ignored and do not count for the index.
-The machine halts in state @rack[T] with a tape of all spaces,
-the indexed symbol excepted.
+The machine halts in state @rack[T]
+after erasing all tape-symbols by replacing them by a space,
+the one with index k in the list @rack[(tape-symbol ...+)] excepted.
+Spaces in this list are ignored and do not count for the index.
 If there are less than k+1 non-spaces,
-the machine halts in state @rack[F] with empty tape.
+the machine halts in state @rack[F] with empty tape,
+id est consisting of spaces only.
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -916,12 +920,6 @@ State @element['tt "A"] is the initial internal state and @element['tt "T"] the 
  (define sum (output->nr output))
  (values sum (= sum (+ n m))))
 (code:line)
-(let ((n 987654) (m 9876))
- (define-values (nr-of-moves final-state output)
-  (TM (prepare-input n m) #:report 'short))
- (define sum (output->nr output))
- (values sum (= sum (+ n m))))
-(code:line)
 (code:comment "Test the TM.")
 (code:line)
 (for/and ((k (in-range 0 1000)))
@@ -938,6 +936,11 @@ Wikipedia article @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy b
 Another interesting point is, that the one shown here never writes a @rack[0].
 As in this example @rack[0] is a blank,
 it even would be impossible to write a @rack[0].
+
+@note{
+Some authors make no distinction between a @italic{@tt{blank}} and a @italic{@tt{space}},
+meaning that they allow writing a @italic{@tt{blank}}.
+I prefer to make the distinction.}
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -1157,13 +1160,13 @@ See @hyperlink["https://en.wikipedia.org/wiki/Catalan_number" "Catalan numbers"]
   (else (values count (add1 total)))))]
 
 When counting a @rack['<] as @element['tt "+1"] and an @rack['>] as @element['tt "-1"],
-going from left to right the addition never must go below zero and must end in zero.
+going from left to right the addition must never go below zero and must end in zero.
 The following machine uses such a counter.
 It is put at the end of the input between two slashes.
 The counter consists of @rack[0]s and @rack[1]s,
 and the number of @rack[1]s is the count.
 When decreasing the counter the first @rack[1] is replaced by a @rack[0].
-If no @rack[1] can be found, the parentheses are not matching.
+If no @rack[1] can be found, the parentheses do not match.
 When increasing the counter the first @rack[0] is replaced by a @rack[1],
 or, if no @rack[0] can be found, a @rack[1] is added at the end.
 After all parentheses have been processed,
@@ -1374,8 +1377,7 @@ such as to indicate they already have been copied.
 (TM '() #:limit 162 #:report 'short)]
 
 The following counter is like the previous one,
-but writes its numbers in binary notation and in reversed order,
-every new one at the left of the previous one.
+but writes its numbers in binary notation and every new one at the left of the previous one.
 Bits 0 and 1 are used, but the most recently computed number consists of bits o for 0 and i for 1.
 Bits o and i indicate that they have not yet been copied.
 Every next number is formed by copying the most recent one
@@ -1421,7 +1423,6 @@ i is added to the copy before the next number is generated.
   ((9  B) (3  /) R)))
 (code:line)
 (define TM (make-TM 0 '() 'B 'S '_ rules #:name 'binary-counter))
-
 (TM '() #:limit 175 #:report 'short)]
 
 @subsection[#:tag "More registers"]{More registers}
@@ -1510,11 +1511,14 @@ as @elemref["book" "mentioned above"].
 (code:line)
 (code:comment "Given input '(1 1 1) the TM returns '(0 1 1 1).")
 (code:comment "The following is an encoding of the above TM.")
-(code:comment "(1 ... move bit) is a rule, the number 1s of specifies the new state,")
+(code:comment "(1 ... move bit) is a rule, the number of 1s specifies the new state,")
 (code:comment "the bit being the 0 or 1 to be written.")
 (code:comment "0 indicates absence of a rule.")
 (code:comment "Rules are separated by c.")
+(code:comment "The rules are in order of the tape-symbols B, 0 and 1.")
 (code:comment "States are separated by c c.")
+(code:comment "The states are in order 1, 1 1, 1 1 1 and 1 1 1 1")
+(code:comment "State 1 1 1 1 corresponds to state Y of the above TM.")
 (code:comment "m is used as marker, initially marking the block of state 1.")
 (code:comment "m is is also used as marker for the current symbol in the data.")
 (define input
@@ -1544,9 +1548,9 @@ as @elemref["book" "mentioned above"].
 '((     0         1         c         L        R        S         B
         m0        m1        mc        mL       mR       mS)
 (code:comment "The rules (states in the first column)")
-(code:comment "R = (_ _ R), L = (_ _ L), N = (_ _ N)")
+(code:comment "R = (_ _ R), L = (_ _ L)")
 (code:comment "stop and error are erroneous final states.")
-(code:comment "(new-state move) = (new-state _ move.")
+(code:comment "(new-state move) = (new-state _ move).")
 (code:comment "(new-state new-symbol move) obvious.")
 (code:comment "")
 (code:comment "First find the current element of the data.")
@@ -1562,7 +1566,7 @@ as @elemref["book" "mentioned above"].
   (C1  (L         L         L         L        L        stop      stop
         stop      stop      (D1 c R)  stop     stop     stop))
 (code:comment "Find the sub-block corresponding to the current datum.")
-  (DB  ((V N)     (E m1 L)  stop      stop     stop     stop      stop
+  (DB  ((V L)     (E m1 L)  stop      stop     stop     stop      stop
         error     error     error     error    error    error))
   (D0  (R         R         (DB R)    R        R        stop      stop
         error     error     error     error    error    error))
@@ -1591,7 +1595,7 @@ as @elemref["book" "mentioned above"].
 (code:comment "and shift marker m1 one to the right until no 1-s remain.")
 (code:comment "When done go to the block marked with m2")
 (code:comment "find the instruction corresponding to the current tape-symbol")
-(code:comment "and execute the instruction (R0, R1, L0, or L1)")
+(code:comment "and execute the instruction (TR0, TR1, TL0, or TL1)")
   (KL  (stop      (ML m1 L) stop      (TL R)   (TR R)   stop      stop
         error     error     error     error    error    error))
   (ML  (L         L         L         L        L        stop      stop
@@ -1652,8 +1656,8 @@ as @elemref["book" "mentioned above"].
         R         R         R         R        R        (ZL S L)))
   (ZL  (L         L         (ZS S L)  error    error    error     error
         (ZL 0 L)  (ZL 1 L)  (ZS S L)  error    error    error))
-  (ZS  ((ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y N)     (Y N)
-        (ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y S N)))
+  (ZS  ((ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y L)     (Y L)
+        (ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y S L)))
   ))
 (code:line)
 (code:comment "We have to expand the simplified rules.")
