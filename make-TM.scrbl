@@ -199,7 +199,7 @@ Let's see more details in a report of the moves.
 In such a report the new content of the tape is shown as
 @tt{((tape-symbol ...) (current tape-symbol ...))} representing the content
 @tt{(tape-symbol ... current tape-symbol...)} where @tt{current} is the current tape-symbol.
-The following machine replaces the second and the fourth tape-symbol.
+The following machine replaces the second and the fifth tape-symbol.
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -211,12 +211,13 @@ The following machine replaces the second and the fourth tape-symbol.
   'blank  (code:comment "Not used.")
   'space  (code:comment "Not used.")
   '_      (code:comment "The dummy.")
-  '(((A _) (B _  ) R)
-    ((B _) (C is ) R)
-    ((C _) (D _  ) R)
-    ((D _) (T new) R))))
+  '(((A _) (B _        ) R)
+    ((B _) (C will     ) R)
+    ((C _) (D _        ) R)
+    ((D _) (E _        ) R)
+    ((E _) (T tomorrow?) R))))
 (code:line)
-(TM '(What was your previous hobby?) #:report 'long)]
+(TM '(What did you do yesterday?) #:report 'long)]
 
 @section{Additional registers}
 The control unit of a Turing-machine emulated by a procedure made by @rack[make-TM]
@@ -448,7 +449,7 @@ Indeed, every Turing-machine can be simulated by such a machine.
 When the content of the tape is to be shown, the stack containing the head is reversed
 such as to show the cells in correct order.
 This may slightly slow down printing of a report with very long tape-content,
-but hardly noticable, because printing proper requires much more time.}
+but hardly noticable, because the printing proper requires much more time.}
 
 If @rack[report] is @rack['short] the Turing-machine
 prints a short record of the moves it makes (on the @racket[current-output-port])
