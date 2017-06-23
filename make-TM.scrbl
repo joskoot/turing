@@ -135,7 +135,8 @@ Only after it has done its reading from and its writing into the current cell,
 the tape-head is moved one cell to the right
 or to the left or remains where it is as indicated by the rule being applied.}
 
-@note{Magnetic tape-equipment of the old days (nineteen-sixties and -seventies)
+@note{Magnetic tape-equipment of the old days (nineteen-sixties, -seventies, -eighties
+and even the nineteen-ninetees)
 usually destroyed all data following the newly written data,
 although with some effort part of it could be recovered.
 This equipment was not designed for replacement of part of the data in the middle of a file.
@@ -477,7 +478,7 @@ do no checks at all against infinite loops.
 Whether or not a Turing-machine halts may depend on its input.
 Argument @rack[limit] provides protection.
 The following trivial Turing-machine
-clearly would loop forever with arbitrary input when it would not be halted by
+obviously would loop forever with arbitrary input when it would not be halted by
 the @rack[limit]:
 
 @interaction[
@@ -550,7 +551,7 @@ When a rule instructs to write a blank, in fact a space is written:
 The following machine expects as input @rack[(1 ... / tape-symbol ...+)]
 Let k be the number of ones before the slash.
 The machine halts in state @rack[T]
-after erasing all tape-symbols by replacing them by a space,
+after erasing all tape-symbols by replacing them by spaces,
 the one with index k in the list @rack[(tape-symbol ...+)] excepted.
 Spaces in this list are ignored and do not count for the index.
 If there are less than k+1 non-spaces,
