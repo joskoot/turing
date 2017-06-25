@@ -189,7 +189,7 @@ The machine replaces the fourth element by @rack['new].
     ((B _) (C _  ) R)    
     (code:comment "Do not modify third  tape-symbol.    Move right.")
     ((C _) (D _  ) R)    
-    (code:comment "Replace fourth tape-symbol by 'new'. Move right.")
+    (code:comment "Replace fourth tape-symbol by 'new'. Move right and halt.")
     ((D _) (T new) R))))
 (code:line)
 (TM '(This is the original tape))]
@@ -200,7 +200,8 @@ Let's see more details in a report of the moves.
 In such a report the new content of the tape is shown as
 @tt{((tape-symbol ...) (current tape-symbol ...))} representing the content
 @tt{(tape-symbol ... current tape-symbol...)} where @tt{current} is the current tape-symbol.
-The following machine replaces the second and the fifth tape-symbol.
+With the given input,
+the following machine replaces the second and the fifth tape-symbol.
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -212,11 +213,9 @@ The following machine replaces the second and the fifth tape-symbol.
   'blank  (code:comment "Not used.")
   'space  (code:comment "Not used.")
   '_      (code:comment "The dummy.")
-  '(((A _) (B _        ) R)
-    ((B _) (C will     ) R)
-    ((C _) (D _        ) R)
-    ((D _) (E _        ) R)
-    ((E _) (T tomorrow?) R))))
+  '(((A          _) (A _        ) R)
+    ((A        did) (A will     ) R)
+    ((A yesterday?) (T tomorrow?) N))))
 (code:line)
 (TM '(What did you do yesterday?) #:report 'long)]
 
@@ -292,7 +291,7 @@ equality or being distinct to be understood in the sense of @rack[equal?].
  @item{The list of @rack[final-states] must not contain any @rack[old-state].}
  @item{The @rack[rules] must have distinct @rack[selector]s.}
  @item{Every @rack[updater] must have as many elements as there are @rack[registers].}
- @item{Every keyword in a @rack[rule] must be a @rack[register-name].}
+ @item{Every keyword in a @rack[rule] must be one of the @rack[register-name]s.}
  @item{The list of @rack[register-name]s must not contain duplicates.}]}
 
 When not all of these conditions are satisfied,
@@ -302,8 +301,9 @@ The @rack[name] is attached to the returned procedure, for example:
 
 @interaction[
 (require "make-TM.rkt")
-(make-TM 'state '(state) 'blank 'space 'dummy '())
-(make-TM 'state '(state) 'blank 'space 'dummy '()
+(define no-rules '())
+(make-TM 'state '(state) 'blank 'space 'dummy no-rules)
+(make-TM 'state '(state) 'blank 'space 'dummy no-rules
          #:name 'TM-without-rules)]
 
 @section{Running a Turing-machine}
@@ -334,7 +334,7 @@ For @rack[rules] with the same @rack[old-state] the @rack[dummy]
 is like @rack[else] in a @rack[cond]- or @rack[case]-form,
 but is not required to be at the end.
 The order of the @rack[rules] is irrelevant.
-When there is no matching rule the machine halts by raising an @rack[error].}
+When there is no matching rule the machine halts in a stuck state by raising an @rack[error].}
 
 @item{The @rack[registers] are updated.
 The element with index k of the @rack[updater]
@@ -448,9 +448,7 @@ which allows fast movement of the tape-head.
 This is like using a push-down/pop-up machine with two stacks.
 Indeed, every Turing-machine can be simulated by such a machine.
 When the content of the tape is to be shown, the stack containing the head is reversed
-such as to show the cells in correct order.
-This may slightly slow down printing of a report with very long tape-content,
-but hardly noticable, because the printing proper requires much more time.}
+such as to show the cells in correct order.}
 
 If @rack[report] is @rack['short] the Turing-machine
 prints a short record of the moves it makes (on the @racket[current-output-port])
@@ -1502,6 +1500,7 @@ as @elemref["book" "mentioned above"].
 (code:comment "I have replaced the entries in column mc")
 (code:comment "and rows TL0, TL1, TR0 and TR1 by an R.")
 (code:comment "In the book these are underscores, but that does not work.")
+(code:comment "Below the single tape equivalent of the copied UTM is used.")
 (code:line)
 (code:comment "Consider")
 (code:line)
@@ -1520,13 +1519,20 @@ as @elemref["book" "mentioned above"].
 (code:comment "The rules are in order of the tape-symbols B, 0 and 1.")
 (code:comment "States are separated by c c.")
 (code:comment "The states are in order 1, 1 1, 1 1 1 and 1 1 1 1")
-(code:comment "State 1 1 1 1 corresponds to state Y of the above TM.")
+(code:comment "A rule 0 indicates absence of a rule.")
+(code:comment "A final state is marked as one with all rules 0.")
+(code:comment "This holds for state 4 (1 1 1 1).")
+(code:comment "State 4 corresponds to state Y of the above TM.")
 (code:comment "m is used as marker, initially marking the block of state 1.")
 (code:comment "m is is also used as marker for the current symbol in the data.")
+(code:comment "The marked version of symbol x is mx.")
+(code:comment "A symbol x without mark simply is x itself.")
+(code:comment "Notice that m is not used as a separate tape-symbol.")
 (define input
 (code:comment "The encoded Turing machine.")
 '(c c mc
 (code:comment "The encoded machine accepts the tape-symbols B, 0 and 1.")
+(code:comment "For every state there are 3 rules, one for B, one for 0 and one for 1.")
 (code:comment "B           0             1")
 (code:comment "State 1.")
   0           c 0           c   1 1 R 0
@@ -1537,7 +1543,7 @@ as @elemref["book" "mentioned above"].
 (code:comment "State 3.")
   1 1 1 1 R 0 c 1 1 1 1 R 0 c 1 1 1 L 1
   c c
-(code:comment "State 4.")
+(code:comment "State 4, the final state.")
   0           c 0           c 0
   c c c
 (code:comment "The data.")
@@ -1568,6 +1574,7 @@ as @elemref["book" "mentioned above"].
   (C1  (L         L         L         L        L        stop      stop
         stop      stop      (D1 c R)  stop     stop     stop))
 (code:comment "Find the sub-block corresponding to the current datum.")
+(code:comment "Jump to state V when there is no rule for the current datum.")
   (DB  ((V L)     (E m1 L)  stop      stop     stop     stop      stop
         error     error     error     error    error    error))
   (D0  (R         R         (DB R)    R        R        stop      stop
@@ -1632,7 +1639,7 @@ as @elemref["book" "mentioned above"].
         (U 0 R)   (U 0 R)   R         stop     stop     (U 0 R)))
   (TR1 (R         R         R         R        R        stop      stop
         (U 1 R)   (U 1 R)   R         stop     stop     (U 1 R)))
-(code:comment "Adjust the marker,")
+(code:comment "Adjust the marker and process the new datum.")
   (U   ((C0 m0 L) (C1 m1 L) stop      stop     stop     (CB mS L) (CB mS L)
         error     error     error     error    error    error))
 (code:comment "No new rule found (zero encountered in state DB)")
@@ -1712,6 +1719,8 @@ The Universal Turing-machine requires many more moves,
 but the final state and tape-content are correct!
 If you want a report of the moves of the @rack[UTM],
 run module @hyperlink["UTM-with-report.rkt" "UTM-with-report.rkt"],
-but be aware that the output consists of almost 2000 lines.
+but be aware that the output has almost 2000 lines
+with widths of up to 155 characters.
+Nevertheless, on my simple PC it runs within 15 seconds, producing the output included.
 
 @larger{@larger{@bold{The end}}}
