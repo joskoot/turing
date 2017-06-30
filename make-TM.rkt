@@ -61,29 +61,21 @@
        tape))
      (define current-tape-symbol (car (tape-tail tape)))
      (hash-set! register-hash bus-register-name current-tape-symbol)
+     (define old-state (hash-ref register-hash state-register-name))
+     (define old-symbol (hash-ref register-hash bus-register-name))
      (define rule (find-rule old-state current-tape-symbol))
-     (define new-state (rule-new-state rule))
-     (define new-symbol
-      (let ((new-symbol (rule-new-symbol rule)))
-       (cond
-        ((dummy? new-symbol) current-tape-symbol)
-        ((keyword? new-symbol) (hash-ref register-hash new-symbol))
-        (else new-symbol))))
      (define old-registers
-      (cons old-state
-       (cons current-tape-symbol
-        (for/list ((register-name (in-list (cddr register-names))))
-         (hash-ref register-hash register-name)))))
+      (for/list ((register-name (in-list register-names)))
+       (hash-ref register-hash register-name)))
      (define new-registers
-      (cons new-state
-       (cons new-symbol
-        (for/list ((new-register (in-list (cddr (rule-registers rule))))
-          (register-name (in-list (cddr register-names))))
-         (cond
-          ((dummy? new-register) (hash-ref register-hash register-name))
-          ((keyword? new-register) (hash-ref register-hash new-register))
-          (else new-register))))))
+      (for/list ((new-register (in-list (rule-registers rule)))
+                 (register-name (in-list register-names)))
+       (cond
+        ((dummy? new-register) (hash-ref register-hash register-name))
+        ((keyword? new-register) (hash-ref register-hash new-register))
+        (else new-register))))
      (define new-register-hash (make-hash (map cons register-names new-registers)))
+     (define new-state (hash-ref new-register-hash state-register-name))
      (define new-tape-symbol (hash-ref new-register-hash bus-register-name))
      (define new-tape
       (case (rule-move rule)
@@ -116,6 +108,7 @@
    (printf "Report of ~s~n" name)
    (printf "Initial tape: ~s~n" initial-tape)
    (print-line))
+  
   (define-values (nr-of-moves final-state tape) (TM-proper 1 register-hash initial-tape))
   (when (eq? report 'short) (print-line))
   (when report (printf "End of report of ~s~n" name) (print-line))
@@ -136,7 +129,7 @@
  
  (define (find-rule old-state current-tape-symbol)
   (define (find-rule-error)
-   (error name "no rule with old-state: ~s and old-symbol: ~s" old-state current-tape-symbol))
+   (error name "no rule for:~n old-state: ~s~nold-symbol: ~s" old-state current-tape-symbol))
   (define (find-dummy-rule) (hash-ref dummy-rule-hash old-state find-rule-error))
   (hash-ref normal-rule-hash (list old-state current-tape-symbol) find-dummy-rule))
  
