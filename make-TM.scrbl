@@ -555,16 +555,20 @@ When a rule instructs to write a blank, in fact a space is written:
 Every Turing-machine whose tape can be extended at both ends
 can be simulated by a Turing-machine that never extends its tape at the left.
 The machine below starts in state @rack[a].
-The program includes a subroutine that starts with state @rack[A]
+The program includes a subroutine that starts with state @rack[sub0]
 and wants two arguments, the state to return to and a tape-symbol to be inserted.
-These arguments are called @rack[#:return-state] and @rack[#:return-symbol].
-The subroutine shifts all at the right one cell to the right,
+These arguments are put in registers @rack[#:return-state] and @rack[#:symbol-arg].
+The subroutine shifts all at the right of the current cell one cell to the right,
 moves back to the cell it came from,
-writes the given @rack[#:return-symbol]
+writes the given @rack[#:symbol-arg]
 and returns by entering the @rack[#:return-state].
 The subroutine is called twice.
 The first time with return-state @rack[b] and tape-symbol @rack[x],
 the second time with return-state @rack[d] and tape-symbol @rack[y].
+It is possible to code the machine without additional registers,
+but this would require a separate coding of the subroutine
+for each time it is called.
+It also would complicate coding the shifting of cells of the tape one place to the right.
 
 @interaction[
 (require "make-TM.rkt")
@@ -574,30 +578,33 @@ the second time with return-state @rack[d] and tape-symbol @rack[y].
    #:current-symbol
    #:prev-symbol
    #:return-state
-   #:return-symbol)) 
-(code:line)
-(code:comment "Make sure mark cannot occur in the input.")
-(define mark (string->uninterned-symbol "|mark|"))
+   #:symbol-arg)) 
 (code:line)
 (define rules
-`((code:comment "Call subroutine A with arguments return-state b and symbol x.")
-  ((a _) (A _ _ b x) N)
-  (code:comment "After return call the subroutine once more.")
-  ((b _) (c _ blank blank blank) R)
-  ((c _) (A _ _ d y) N)
-  (code:comment "Upon return, halt.")
-  ((d _) (T _ _ _ _) N)
-  (code:comment "The subroutine.")
-  (code:comment "First mark the current cell.")
-  ((A _) (B ,mark #:current-symbol _ _) R)
-  (code:comment "Shift all cells at the right one cell to the right.")
-  ((B _) (B #:prev-symbol #:current-symbol _ _) R)
-  ((B blank) (C #:prev-symbol blank _ _) L)
-  (code:comment "After reaching the end of the tape, return to the mark.")
-  (code:comment "When the mark is found, write the symbol")
-  (code:comment "and return from the subroutine.")
-  ((C _) (C _ _ _ _) L)
-  ((C ,mark) (#:return-state #:return-symbol blank blank blank) N)))
+ (code:comment "Make sure the mark cannot be confused with symbol mark in the input.")
+ (code:comment "The mark is used to mark the cell where to return by shifting left")
+ (code:comment "after all cells have been shifted one place to the right.")
+ (let ((mark (string->uninterned-symbol "-mark-")))
+  (code:comment "Notice the quasiquotation '`'. It is used to insert the mark as ',mark'")
+ `((code:comment "Call subroutine sub0 with arguments return-state b and symbol x.")
+   ((a _) (sub0 _ _ b x) N)
+   (code:comment "After return call the subroutine once more.")
+   ((b _) (c _ blank blank blank) R)
+   ((c _) (sub0 _ _ d y) N)
+   (code:comment "Upon return, halt.")
+   ((d _) (T _ _ _ _) N)
+   (code:comment "The subroutine.")
+   (code:comment "First mark the current cell and")
+   (code:comment "memorize the original content in #:prev-symbol.")
+   ((sub0 _) (sub1 ,mark #:current-symbol _ _) R)
+   (code:comment "Shift all cells at the right one cell to the right.")
+   ((sub1 _) (sub1 #:prev-symbol #:current-symbol _ _) R)
+   ((sub1 blank) (sub2 #:prev-symbol blank _ _) L)
+   (code:comment "After reaching the end of the tape, return to the mark.")
+   (code:comment "When the mark is found, write the symbol")
+   (code:comment "and return from the subroutine.")
+   ((sub2 _) (sub2 _ _ _ _) L)
+   ((sub2 ,mark) (#:return-state #:symbol-arg blank blank blank) N))))
 (code:line)
 (define TM
  (make-TM
