@@ -142,7 +142,7 @@ usually destroyed all data following the newly written data,
 although with some effort part of it could be recovered.
 This equipment was not designed for replacement of part of the data in the middle of a file.
 The tape-unit of a Turing-machine does not have this problem,
-although it can replace one tape-symbol only at a time.}
+but it can read or write one tape-symbol only at a time.}
 
 Let's start with a simple example of a Turing-machine.
 Its states are the initial state @rack['A], the intermediate states @rack['B], @rack['C] and
@@ -236,8 +236,10 @@ of the tape to another position on the tape.
 They also help the simulation of subroutines. See section @secref{Subroutines}.
 It always is possible, although it may be tedious, to rewrite rules with more than 2 registers
 as a set of rules with 2 registers by including the contents of the additional registers in the
-primary state. For an example, compare section @secref["Inserting symbols"] with
-section @secref["More registers"].
+primary state.
+For an example,
+compare section @secref["Inserting symbols"] with section @secref["More registers"].
+See section @secref{Subroutines} too.
 
 @section{Procedure make-TM}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
@@ -467,7 +469,8 @@ the Turing-machine halts by raising an error
 when no @rack[final-state] is encountered within @rack[limit] moves.
 When @rack[limit] is @rack[#f] and the Turing-machine never reaches a @rack[final-state],
 the procedure keeps running forever,
-unless it halts with an error because it cannot find an applying rule.
+unless it halts with an error because it cannot find an applying rule
+or runs out of memory because of an ever growing tape-content.
                                                  
 @section{Halting problem}
 Many Turing-machines never halt.
@@ -519,14 +522,30 @@ As another example consider:
 
 It is obvious that the above machine, no matter its initial tape-content, never halts,
 although it never reproduces the same @elemref["configuration" "configuration"].
-
 @note{Procedure @rack[make-TM] could be adapted such as to
 predict the infinite loops of the last two examples just by checking the rules.
 It also could be adapted such as to produce
 Turing-machines that can detect a repeated @elemref["configuration" "configuration"].
 These adaptations have not been made,
 for the Halting Problem implies that there always remain cases
-in which it is not possible to predict whether or not the machine will halt.}}}]
+in which it is not possible to predict whether or not the machine will halt.}
+Halting or not may depend on the initial tape-content.
+For example, the following machine halts only when its input contains @rack[tape-symbol] @rack[0].
+
+@interaction[
+(require racket "make-TM.rkt")
+(define TM (make-TM #:name 'TM-does-it-halt?
+            'A     (code:comment "initial state")
+            '(T)   (code:comment "Final state")
+            'B     (code:comment "blank")
+            'S     (code:comment "space")
+            '_     (code:comment "dummy")
+            '(((A 0) (T 0) N)
+              ((A _) (A _) R))))
+(code:line)
+(code:line (TM '(3 2 1 0 1 2 3) #:report 'short) (code:comment "Halts."))
+(code:line)
+(code:line (TM '(3 2 1 2 3) #:report 'short #:limit 9) (code:comment "Never halts."))]}}]
 
 @section{Examples}
 
@@ -550,80 +569,6 @@ When a rule instructs to write a blank, in fact a space is written:
    ((C blank) (T y) R))
   #:name 'TM:blank->space))
 (TM '() #:report 'long)]
-
-@subsection{Subroutines}
-Every Turing-machine whose tape can be extended at both ends
-can be simulated by a Turing-machine that never extends its tape at the left.
-The machine below starts in state @rack[a].
-The program includes a subroutine that starts with state @rack[sub0]
-and wants two arguments, the state to return to and a tape-symbol to be inserted.
-These arguments are put in registers @rack[#:return-state] and @rack[#:symbol-arg].
-The subroutine shifts all at the right of the current cell one cell to the right,
-moves back to the cell it came from,
-writes the given @rack[#:symbol-arg]
-and returns by entering the @rack[#:return-state].
-The subroutine is called twice.
-The first time with return-state @rack[b] and tape-symbol @rack[x],
-the second time with return-state @rack[d] and tape-symbol @rack[y].
-It is possible to code the machine without additional registers,
-but this would require a separate coding of the subroutine
-for each time it is called.
-It also would complicate coding the shifting of cells of the tape one place to the right.
-
-@interaction[
-(require "make-TM.rkt")
-(code:line)
-(define registers
- '(#:state
-   #:current-symbol
-   #:prev-symbol
-   #:return-state
-   #:symbol-arg)) 
-(code:line)
-(define rules
- (code:comment "Make sure the mark cannot be confused with symbol mark in the input.")
- (code:comment "The mark is used to mark the cell where to return to")
- (code:comment "after all cells have been shifted one place to the right.")
- (let ((mark (string->uninterned-symbol "‹mark›")))
-  (code:comment "Notice the quasiquotation '`'. It is used to insert the mark as ',mark'")
- `((code:comment "Call subroutine sub0 with arguments return-state b and symbol x.")
-   ((a _) (sub0 _ _ b x) N)
-   (code:comment "After return call the subroutine once more,")
-   (code:comment "this time with return-state d and symbol y.")
-   ((b _) (c _ B B B) R)
-   ((c _) (sub0 _ _ d y) N)
-   (code:comment "Upon return, halt.")
-   ((d _) (T _ _ _ _) N)
-   (code:comment "The subroutine.")
-   (code:comment "First mark the current cell and")
-   (code:comment "memorize the original content in #:prev-symbol.")
-   ((sub0 _) (sub1 ,mark #:current-symbol _ _) R)
-   (code:comment "Shift all cells at the right one cell to the right.")
-   ((sub1 _) (sub1 #:prev-symbol #:current-symbol _ _) R)
-   ((sub1 B) (sub2 #:prev-symbol B _ _) L)
-   (code:comment "After reaching the end of the tape, return to the mark.")
-   (code:comment "When the mark is found, write the symbol")
-   (code:comment "and return from the subroutine.")
-   ((sub2 _) (sub2 _ _ _ _) L)
-   ((sub2 ,mark) (#:return-state #:symbol-arg B B B) N))))
-(code:line)
-(define TM
- (make-TM
-  'a   (code:comment "Initial state.")
-  '(T) (code:comment "Final state.")
-  'B
-  'S
-  '_
-  rules
-  #:registers registers))
-(code:line)
-(TM '() #:report #t)
-(code:line)
-(TM '(a) #:report #t)
-(code:line)
-(TM '(mark mark mark) #:report #t)
-(code:line)
-(TM '(a b c d) #:report #t)]
 
 @subsection{List-ref}
 The following machine expects as input @rack[(1 ... / tape-symbol ...+)]
@@ -1564,6 +1509,83 @@ O@interaction[
   (and
    (equal? (ab->axb input) output)
    (equal? state 'T))))]
+
+@subsection{Subroutines}
+Every Turing-machine whose tape can be extended at both ends
+can be simulated by a Turing-machine that never extends its tape at the left.
+The machine below starts in state @rack[1].
+The program includes a subroutine that starts with state @rack[sub0]
+and wants two arguments, the state to return to and a tape-symbol to be inserted.
+These arguments are put in registers @rack[#:return-state] and @rack[#:symbol-arg].
+The subroutine shifts each cell one step to the right starting from the current cell,
+moves back to the cell it came from,
+writes the given @rack[#:symbol-arg]
+and returns by entering the @rack[#:return-state].
+The subroutine is called twice.
+The first time with return-state @rack[2] and tape-symbol @rack[x],
+the second time with return-state @rack[4] and tape-symbol @rack[y].
+It is possible to code the machine without additional registers,
+but this would require a separate coding of the subroutine
+for each time it is called with different arguments.
+It also would complicate coding the shift of cells to the right.
+@tt["B"] is the blank, @tt["S"] the space and @tt["_"] the dummy.
+
+@interaction[
+(require "make-TM.rkt")
+(code:line)
+(define registers
+ '(#:state          (code:comment "primary state")
+   #:current-symbol (code:comment "current tape-symbol")
+   #:prev-symbol    (code:comment "used for shifting cells to the right")
+   #:return-state   (code:comment "arguments for subroutine")
+   #:symbol-arg))
+(code:line)
+(define rules
+ (code:comment "Make sure the mark cannot be confused with symbol mark in the input.")
+ (code:comment "The mark is used to mark the cell where to return to")
+ (code:comment "after all cells have been shifted one place to the right.")
+ (let ((mark (string->uninterned-symbol "mark")))
+ `((code:comment "Notice the quasiquotation '`'. It is used to insert the mark as ',mark'.")
+   (code:comment "Call subroutine sub0 with arguments return-state b and symbol x.")
+   ((1 _) (sub0 _ _ 2 x) N)
+   (code:comment "After return call the subroutine once more,")
+   (code:comment "this time with return-state d and symbol y.")
+   ((2 _) (3 _ B B B) R)
+   ((3 _) (sub0 _ _ 4 y) N)
+   (code:comment "Upon return, halt.")
+   ((4 _) (T _ _ _ _) N)
+   (code:comment "The subroutine.")
+   (code:comment "First mark the current cell and")
+   (code:comment "memorize the original content (#:current-symbol)")
+   (code:comment "in register #:prev-symbol.")
+   ((sub0 _) (sub1 ,mark #:current-symbol _ _) R)
+   (code:comment "Shift all cells at the right one cell to the right.")
+   ((sub1 _) (sub1 #:prev-symbol #:current-symbol _ _) R)
+   ((sub1 B) (sub2 #:prev-symbol B _ _) L)
+   (code:comment "After reaching the end of the tape, return to the mark.")
+   (code:comment "When the mark is found, write the symbol")
+   (code:comment "and return from the subroutine.")
+   ((sub2 _) (sub2 _ _ _ _) L)
+   ((sub2 ,mark) (#:return-state #:symbol-arg B B B) N))))
+(code:line)
+(define TM
+ (make-TM
+  1    (code:comment "Initial state.")
+  '(T) (code:comment "Final state.")
+  'B   (code:comment "blank")
+  'S   (code:comment "space")
+  '_   (code:comment "dummy")
+  rules
+  #:registers registers
+  #:name 'TM-with-subroutine))
+(code:line)
+(TM '() #:report #t)
+(code:line)
+(TM '(a b c d) #:report #t)
+(code:line)
+(TM '(mark mark mark) #:report 'short)
+(code:comment "Notice that tape-symbol mark has not been")
+(code:comment "confused with the mark used by the subroutine.")]
 
 @subsection{Universal Turing-machine}
 The following Universal Turing-machine is an adapted copy from
