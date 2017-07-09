@@ -68,6 +68,8 @@ of Turing-machines in chapter 6 of their book:
 @nonbreaking{“Formal Languages and their Relation to Automata”},
 @nonbreaking{Addison-Wesley} 1969 @nonbreaking{(ISBN 0-201-0298 3-9)}.}
 
+@elemtag["figure" @image["make-TM.jpg"]]
+
 A Turing-machine consists of a control-unit, a tape, a tape-head
 and a bidirectional data-bus between the control-unit and the tape-head.
 At every moment the control-unit has one out of a finite set of internal states.
@@ -83,12 +85,9 @@ the current content of the tape and
 the current position of the tape-head.}
 The first cell of the tape-content is considered to be at the left,
 the last one to be at the right.
-In the @elemref["figure" "figure"] below they are blue.
+In the @elemref["figure" "figure"] above they are blue.
 The current cell (red) is the one below the tape-head and
 contains the current tape-symbol.
-
-@elemtag["figure" ""]
-@inset[@image["make-TM.jpg"]]
 
 The Turing-machine must be given an input for the initial tape-content.
 The input must be a finite list of non-blank tape-symbols.
@@ -131,9 +130,9 @@ and at the right of its current non-blank content.
 In that case moving left or right of the current content does not require writing a blank
 because it already is there.
 A nicer name for a blank cell would be `empty cell',
-but in @elemref["book" "the book mentioned above"] the word `blank' is used
-and a blank is considered to be a tape-symbol
-that can be read, but never is written.}
+but in @elemref["book" "the book mentioned above"] the word `blank' is used.
+It is considered to be a tape-symbol
+that can be read, but cannot be written.}
 
 @note{In real life tape-equipment usually the tape is moving
 with the tape-head in fixed position.
