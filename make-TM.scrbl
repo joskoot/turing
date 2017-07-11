@@ -43,7 +43,7 @@
             (list (table (style "specgrammar" tspec-style) without-empty-lines))) more)))))
       after))]))
 
-@(define-syntax-rule (rack x) (nonbreaking(racket x)))
+@(define-syntax-rule (rack x ...) (nonbreaking(racket x ...)))
 @(define (inset . x) (apply nested #:style 'inset x))
 @(define (note . x) (inset (apply smaller x)))
 @(define (itel x) (italic (element 'tt x)))
@@ -131,7 +131,7 @@ In that case moving left or right of the current content does not require writin
 because it already is there.
 A nicer name for a blank cell would be `empty cell',
 but in @elemref["book" "the book mentioned above"] the word `blank' is used.
-It is considered to be a tape-symbol
+In this book a blank is considered to be a tape-symbol
 that can be read, but cannot be written.}
 
 @note{In real life tape-equipment usually the tape is moving
@@ -247,6 +247,19 @@ primary state.
 For an example,
 compare section @secref["Inserting symbols"] with section @secref["More registers"].
 
+@section{Multiple tracks and tapes}
+The tape can have more than one track, but with one tape-head only.
+Such a tape can be simulated by using tape-symbols
+each of which is a tuple (e.g. a list or a vector) of as many elements as there are tracks.
+Programming a Turing machine for a multiple track tape may require many rules. 
+It is possible to simulate a machine with more than one tape, each one with its own tape-head.
+To simulate such a machine with n tapes, use a multiple track tape with 2n tracks.
+Track i+n can be used for a mark that indicates the current position in track i.
+To read from or to write into track i, the mark in track i+n must first be looked for.
+Hence such a machine can be emulated by a Turing machine according to the formal definition,
+although its programming can be very complicated.
+A simpler way of using marks is shown in section @secref["UTM"].
+
 @section{Procedure make-TM}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
 (make-TM initial-state final-states
@@ -282,10 +295,10 @@ compare section @secref["Inserting symbols"] with section @secref["More register
  (           move (or/c 'R 'L 'N)))]{
 Procedure @rack[make-TM] returns a procedure that emulates a Turing-machine.
 Keywords are reserved for the names of registers.
-Providing an @racketlink[exact-integer? "exact integer"] @tt{n≥2}
-for the @rack[registers] is the same as providing:
+Providing @rack[#:registers n] with @racketlink[exact-integer? "exact integer"] @tt{n≥2}
+is the same as providing:
 
-@inset{@rack[(for/list ((k (in-range n))) (string->keyword (~s k)))]}
+@inset{@rack[#:registers (for/list ((k (in-range n))) (string->keyword (~s k)))]}
 
 For example, @nonbreaking{@rack[#:registers]@(hspace 1)@rack[3]}
 does the same as @nonbreaking{@rack[#:registers]@(hspace 1)@rack['(#:0 #:1 #:2)]}.
@@ -300,9 +313,9 @@ equality or being distinct to be understood in the sense of @rack[equal?].
  @item{The list of @rack[final-states] must not contain duplicates}
  @item{The list of @rack[final-states] must not contain any @rack[old-state].}
  @item{The @rack[rules] must have distinct @rack[selector]s.}
+ @item{All @rack[register-name]s must be distinct.}
  @item{Every @rack[updater] must have as many elements as there are @rack[registers].}
- @item{Every keyword in a @rack[rule] must be one of the @rack[registers].}
- @item{The list of @rack[register-name]s must not contain duplicates.}]}
+ @item{Every keyword in a @rack[rule] must be one of the @rack[register-name]s.}]}
 
 When not all of these conditions are satisfied,
 procedure @rack[make-TM] raises an @rack[error].
@@ -351,14 +364,14 @@ Let x be element k of the @rack[updater].
 @(linebreak)
 ∘ If x is a @rack[state] or a @rack[tape-symbol], it is put into register k.
 
-For example, assuming there are three registers with the names @rack[#:state], @rack[#:symbol]
+For example, assuming there are three registers with the names @rack[#:state], @rack[#:bus]
 and @rack[#:extra],
-then the @rack[updater] @rack[(new-state #:extra #:symbol)] indicates that
-register @rack[#:state] is filled with @rack[new-state] and the registers @rack[#:symbol]
+then the @rack[updater] @rack[(new-state #:extra #:bus)] indicates that
+register @rack[#:state] is filled with @rack[new-state] and the registers @rack[#:bus]
 and @rack[#:extra] exchange their content.
 @rack[new-state] will be the new primary state and
 the old content of register @rack[#:extra], which becomes the new content of register
-@rack[#:symbol] will be written into the current cell of the tape as described in the next item.}
+@rack[#:bus] will be written into the current cell of the tape as described in the next item.}
 
 @item{Now the @rack[tape-symbol] of the input/output-register is written in the current cell
 of the tape, replacing the former current tape-symbol.
@@ -419,15 +432,13 @@ Hence, using @rack[dummy]s is not an offence against the formal definition of Tu
 
 @note{No distinction is made between registers that can contain a @rack[state]
       and those that can contain a @rack[tape-symbol].
-      In fact no distinction is made between @rack[state]s and @rack[tape-symbol]s.
-      For example the rule @rack[((A B) (B A) N)] indicates that
-      @rack[state] @rack[A] becomes @rack[state] @rack[B] and that
-      the current @rack[tape-symbol] @rack[B] is replaced by @rack[tape-symbol] @rack[A].
-      Here @rack[A] and @rack[B] are used both for a @rack[state] and for a @rack[tape-symbol].
-      This is not in contradiction with the formal definition of Turing-machines.
       The set of @rack[tape-symbol]s and the set of @rack[state]s
       are not required to be disjunct.
-      The rules can always be rewritten such as to make the two sets disjunct.}
+      This is not in contradiction with the formal definition of Turing-machines.
+      The rules can always be rewritten such as to make the two sets disjunct.
+      When the primary state-register receives something that is not a @rack[final-state]
+      nor one of the @rack[old-state]s,
+      the machine will halt in a stuck state during the next move.}
 
 If @rack[register-values] is @rack[#f] all @rack[registers] are initialized with the
 @rack[blank], the primary state-register excepted, which is initialized with the
@@ -517,7 +528,7 @@ As another example consider:
               ((B _) (A 0) R))
             #:name 'Another-non-halting-TM))
 (code:line)
-(TM '() #:report 'short #:limit 10)]
+(TM '() #:report 'short #:limit 9)]
 
 It is obvious that the above machine, no matter its initial tape-content, never halts,
 although it never reproduces the same @elemref["configuration" "configuration"].
@@ -687,12 +698,12 @@ The machine never moves left of the start of the input.
  (define expected (make-list n* '*))
  (for/and ((n+ (in-range 0 10)))
   (define input (append expected (make-list n+ '+)))
-  (for/and ((k (in-range 0 20)))
+  (for/and ((k (in-range 0 100)))
    (define-values (nr-of-moves final-state output)
     (TM (shuffle input)))
    (and (eq? final-state 'T) (equal? output expected)))))
 (code:line (TM '() #:report 'long) (code:comment "What happens with empty input?"))
-(code:line (TM '(* * *) #:report 'long) (code:comment "What happens with *s only?"))
+(code:line (TM '(* * *) #:report 'long) (code:comment "What happens with stars only?"))
 (code:line (TM '(+ + +) #:report 'short) (code:comment "What happens with plusses only?"))]
 
 @subsection{Binary addition}
@@ -842,7 +853,7 @@ tape-symbols @element['tt "x"] and @element['tt "y"] are reverted to
 (code:line)
 (random-seed 0)
 (for*/and ((m (in-range 0 100)))
- (define n (if (< m 50) m (random 30000000)))
+ (define n (random 30000000))
  (= n
   (list-of-bits->exact-nonnegative-integer
    (exact-nonnegative-integer->list-of-bits n))))
@@ -1620,7 +1631,7 @@ This is not checked.
 (code:line)
 (TM '(a b mark c d) #:report #t)]
 
-@subsection{Universal Turing-machine}
+@subsection[#:tag "UTM"]{Universal Turing-machine}
 The following Universal Turing-machine is an adapted copy from
 @nonbreaking{"Formal Languages and their Relation to Automata"}
 as @elemref["book" "mentioned above"].
@@ -1686,7 +1697,7 @@ as @elemref["book" "mentioned above"].
 (code:comment "The universal Turing-machine.")
 (code:line)
 (define simplified-rules
-(code:comment "The tape-symbols:")
+(code:comment "The tape-symbols, the second line showing marked symbols.")
 '((     0         1         c         L        R        S         B
         m0        m1        mc        mL       mR       mS)
 (code:comment "The rules (states in the first column)")
