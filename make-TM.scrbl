@@ -1646,6 +1646,7 @@ as @elemref["book" "mentioned above"].
 (code:comment "and rows TL0, TL1, TR0 and TR1 by an R.")
 (code:comment "In the book these are underscores, but that does not work.")
 (code:comment "Below the single tape equivalent of the copied UTM is used.")
+(code:comment "The encoded machine must not move left of the data.")
 (code:line)
 (code:comment "Consider")
 (code:line)
@@ -1680,17 +1681,13 @@ as @elemref["book" "mentioned above"].
 (code:comment "For every state there are 3 rules, one for B, one for 0 and one for 1.")
 (code:comment "B           0             1")
 (code:comment "State 1.")
-  0           c 0           c   1 1 R 0
-  c c
+  0           c 0           c   1 1 R 0 c c
 (code:comment "State 2.")
-    1 1 1 L 1 c   1 1 1 L 1 c   1 1 R 1
-  c c
+    1 1 1 L 1 c   1 1 1 L 1 c   1 1 R 1 c c
 (code:comment "State 3.")
-  1 1 1 1 R 0 c 1 1 1 1 R 0 c 1 1 1 L 1
-  c c
+  1 1 1 1 R 0 c 1 1 1 1 R 0 c 1 1 1 L 1 c c
 (code:comment "State 4, the final state.")
-  0           c 0           c 0
-  c c c
+  0           c 0           c 0         c c c
 (code:comment "The data.")
   m1 1 1))
 (code:line)
@@ -1702,29 +1699,29 @@ as @elemref["book" "mentioned above"].
         m0        m1        mc        mL       mR       mS)
 (code:comment "The rules (states in the first column)")
 (code:comment "R = (_ _ R), L = (_ _ L)")
-(code:comment "stop and error are erroneous final states.")
+(code:comment "error is an erroneous final state.")
 (code:comment "(new-state move) = (new-state _ move).")
 (code:comment "(new-state new-symbol move) obvious.")
 (code:comment "")
 (code:comment "First find the current element of the data.")
-  (A   (R         R         R         R        R        stop      stop
-        stop      stop      (B R)     stop     stop     stop))
-  (B   (R         R         R         R        R        stop      stop
-        (C0 L)    (C1 L)    stop      stop     stop     (CB L)))
+  (A   (R         R         R         R        R        error     error
+        error     error     (B R)     error    error    error))
+  (B   (R         R         R         R        R        error     error
+        (C0 L)    (C1 L)    error     error    error    (CB L)))
 (code:comment "Find the block of the current state.")
-  (CB  (L         L         L         L        L        stop      stop
-        stop      stop      (DB c R)  stop     stop     stop))
-  (C0  (L         L         L         L        L        stop      stop
-        stop      stop      (D0 c R)  stop     stop     stop))
-  (C1  (L         L         L         L        L        stop      stop
-        stop      stop      (D1 c R)  stop     stop     stop))
+  (CB  (L         L         L         L        L        error     error
+        error     error     (DB c R)  error    error    error))
+  (C0  (L         L         L         L        L        error     error
+        error     error     (D0 c R)  error    error    error))
+  (C1  (L         L         L         L        L        error     error
+        error     error     (D1 c R)  error    error    error))
 (code:comment "Find the sub-block corresponding to the current datum.")
 (code:comment "Jump to state V when there is no rule for the current datum.")
-  (DB  ((V L)     (E m1 L)  stop      stop     stop     stop      stop
+  (DB  ((V L)     (E m1 L)  error     error    error    error     error
         error     error     error     error    error    error))
-  (D0  (R         R         (DB R)    R        R        stop      stop
+  (D0  (R         R         (DB R)    R        R        error     error
         error     error     error     error    error    error))
-  (D1  (R         R         (D0 R)    R        R        stop      stop
+  (D1  (R         R         (D0 R)    R        R        error     error
         error     error     error     error    error    error))
 (code:comment "Rewind to start of program and mark first block.")
 (code:comment "Id est find the 3 starting c-s and mark the third one.")
@@ -1732,78 +1729,81 @@ as @elemref["book" "mentioned above"].
 (code:comment "Let m1 be the marker of the current sub-block.")
 (code:comment "The distinction between m1 and m2 has been copied from")
 (code:comment "Formal Languages and their Relation to Automata, Hopcroft and Ullman.")
-  (E   (L         L         (F L)     L        L        stop      stop
+  (E   (L         L         (F L)     L        L        error     error
         error     error     error     error    error    error))
-  (F   ((E L)     (E L)     (G L)     (E L)    (E L)    stop      stop
+  (F   ((E L)     (E L)     (G L)     (E L)    (E L)    error     error
         error     error     error     error    error    error))
-  (G   ((E L)     (E L)     (H R)     (E L)    (E L)    stop      stop
+  (G   ((E L)     (E L)     (H R)     (E L)    (E L)    error     error
         error     error     error     error    error    error))
-  (H   (stop      stop      (I R)     stop     stop     stop      stop
+  (H   (error     error     (I R)     error    error    error     error
         error     error     error     error    error    error))
-  (I   (stop      stop      (J mc R)  stop     stop     stop      stop
+  (I   (error     error     (J mc R)  error    error    error     error
         error     error     error     error    error    error))
 (code:comment "Locate next state.")
-  (J   (R         R         R         R        R        stop      stop
-        stop      (KL 1 R)  stop      stop     stop     stop))
+  (J   (R         R         R         R        R        error     error
+        error     (KL 1 R)  error     error    error    error))
 (code:comment "For each remaining 1 of next state shift marker m2 to next block")
 (code:comment "and shift marker m1 one to the right until no 1-s remain.")
 (code:comment "When done go to the block marked with m2")
 (code:comment "find the instruction corresponding to the current tape-symbol")
 (code:comment "and execute the instruction (TR0, TR1, TL0, or TL1)")
-  (KL  (stop      (ML m1 L) stop      (TL R)   (TR R)   stop      stop
+  (KL  (error     (ML m1 L) error     (TL R)   (TR R)   error     error
         error     error     error     error    error    error))
-  (ML  (L         L         L         L        L        stop      stop
-        stop      stop      (NL c R)  stop     stop     stop))
-  (NL  (R         R         (PL R)    R        R        stop      stop
-        stop      (NR R)    stop      stop     stop     stop))
-  (PL  ((NL R)    (NL R)    (SL mc R) (NL R)   (NL R)   stop      stop
-        stop      (NR R)    stop      stop     stop     stop))
-  (SL  (R         R         R         R        R        stop      stop
-        stop      (KL 1 R)  stop      stop     stop     stop))
-  (KR  (stop      (MR m1 R) stop      (TL R)   (TR R)   stop      stop
+  (ML  (L         L         L         L        L        error     error
+        error     error     (NL c R)  error    error    error))
+  (NL  (R         R         (PL R)    R        R        error     error
+        error     (NR R)    error     error    error    error))
+  (PL  ((NL R)    (NL R)    (SL mc R) (NL R)   (NL R)   error     error
+        error     (NR R)    error     error    error    error))
+  (SL  (R         R         R         R        R        error     error
+        error     (KL 1 R)  error     error    error    error))
+  (KR  (error     (MR m1 R) error     (TL R)   (TR R)   error     error
         error     error     error     error    error    error))
-  (MR  (R         R         R         R        R        stop      stop
-        stop      stop      (NL c R)  stop     stop     stop))
-  (NR  (R         R         (PR R)    R        R        stop      stop
+  (MR  (R         R         R         R        R        error     error
+        error     error     (NR c R)  error    error    error))
+  (NR  (R         R         (PR R)    R        R        error     error
         error     error     error     error    error    error))
-  (PR  ((NR R)    (NR R)    (SR mc L) (NR R)   (NR R)   stop      stop
+  (PR  ((NR R)    (NR R)    (SR mc L) (NR R)   (NR R)   error     error
         error     error     error     error    error    error))
-  (SR  (L         L         L         L        L        stop      stop
-        stop      (KR 1 R)  stop      stop     stop     stop))
+  (SR  (L         L         L         L        L        error     error
+        error     (KR 1 R)  error     error    error    error))
 (code:comment "Record symbol to be written.")
-  (TL  ((TL0 R)   (TL1 R)   stop      stop     stop     stop      stop
+  (TL  ((TL0 R)   (TL1 R)   error     error    error    error     error
         error     error     error     error    error    error))
-  (TR  ((TR0 R)   (TR1 R)   stop      stop     stop     stop      stop
+  (TR  ((TR0 R)   (TR1 R)   error     error    error    error     error
         error     error     error     error    error    error))
 (code:comment "Find marker in data region and write the new symbol.")
-  (TL0 (R         R         R         R        R        stop      stop
-        (U 0 L)   (U 0 L)   stop      stop     stop     (U 0 L)))
-  (TL1 (R         R         R         R        R        stop      stop
-        (U 1 L)   (U 1 L)   R         stop     stop     (U 1 L)))
-  (TR0 (R         R         R         R        R        stop      stop
-        (U 0 R)   (U 0 R)   R         stop     stop     (U 0 R)))
-  (TR1 (R         R         R         R        R        stop      stop
-        (U 1 R)   (U 1 R)   R         stop     stop     (U 1 R)))
+(code:comment "Mark the symbol moved to.")
+(code:comment "The encoded machine is supposed not to move left of the data.")
+(code:comment "If it does the UTM halts in a stuck state.")
+  (TL0 (R         R         R         R        R        error     error
+        (U 0 L)   (U 0 L)   error     error    error    (U 0 L)))
+  (TL1 (R         R         R         R        R        error     error
+        (U 1 L)   (U 1 L)   R         error    error    (U 1 L)))
+  (TR0 (R         R         R         R        R        error     error
+        (U 0 R)   (U 0 R)   R         error    error    (U 0 R)))
+  (TR1 (R         R         R         R        R        error     error
+        (U 1 R)   (U 1 R)   R         error    error    (U 1 R)))
 (code:comment "Adjust the marker and process the new datum.")
-  (U   ((C0 m0 L) (C1 m1 L) stop      stop     stop     (CB mS L) (CB mS L)
+  (U   ((C0 m0 L) (C1 m1 L) error     error    error    (CB mS L) (CB mS L)
         error     error     error     error    error    error))
 (code:comment "No new rule found (zero encountered in state DB)")
 (code:comment "Check that we have a final state.")
-  (V   (L         L         (W L)     L        L        stop      stop
+  (V   (L         L         (W L)     L        L        error     error
         error     error     error     error    error    error))
-  (W   ((V L)     (V L)     (X1 R)    (V L)    (V L)    stop      stop
+  (W   ((V L)     (V L)     (X1 R)    (V L)    (V L)    error     error
         error     error     error     error    error    error))
-  (X1  (stop      stop      (X2 R)    stop     stop     stop      stop
+  (X1  (error     error     (X2 R)    error    error    error     error
         error     error     error     error    error    error))
-  (X2  ((X3 R)    stop      stop      stop     stop     stop      stop
+  (X2  ((X3 R)    error     error     error    error    error     error
         error     error     error     error    error    error))
-  (X3  (stop      stop      (X4 R)    stop     stop     stop      stop
+  (X3  (error     error     (X4 R)    error    error    error     error
         error     error     error     error    error    error))
-  (X4  ((X5 R)    stop      stop      stop     stop     stop      stop
+  (X4  ((X5 R)    error     error     error    error    error     error
         error     error     error     error    error    error))
-  (X5  (stop      stop      (X6 R)    stop     stop     stop      stop
+  (X5  (error     error     (X6 R)    error    error    error     error
         error     error     error     error    error    error))
-  (X6  ((ZR R)    stop      stop      stop     stop     stop      stop
+  (X6  ((ZR R)    error     error     error    error    error     error
         error     error     error     error    error    error))
 (code:comment "We have a final state. Erase all at the left of the data.")
   (ZR  (R         R         R         R        R        (ZL L)    (ZL L)
@@ -1818,8 +1818,8 @@ as @elemref["book" "mentioned above"].
 (code:line)
 (define symbols (car simplified-rules))
 (code:line)
-(code:comment "We omit all rules with new state error or stop.")
-(code:comment "The UTM produced by make-TM halts with an error for these two states.")
+(code:comment "We omit all rules with new state error.")
+(code:comment "The UTM produced by make-TM halts with an error for this state.")
 (code:line)
 (define rules
  (for/fold ((r '()))
@@ -1829,7 +1829,7 @@ as @elemref["book" "mentioned above"].
    (for/list
     ((rule (in-list (cadr rule)))
      (old-symbol (in-list symbols))
-     #:when (not (or (equal? rule 'stop) (equal? rule 'error))))
+     #:unless (equal? rule 'error))
     (case rule
      ((R L) (list (list old-state old-symbol) (list old-state old-symbol) rule))
      (else
