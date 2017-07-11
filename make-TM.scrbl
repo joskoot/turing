@@ -11,6 +11,13 @@
              racket (only-in typed/racket Setof Exact-Nonnegative-Integer Sequenceof))
   (for-syntax racket))
 
+@(define (make-color-style color elem)
+  (define prop:color (color-property color))
+  (define color-style (style #f (list prop:color)))
+  (element color-style elem))
+
+@(define (red elem) (make-color-style "red" elem))
+
 @; With thanks to Dupéron Georges
 @(define (defform-remove-empty-lines the-defform)
   (define 5blanks
@@ -56,8 +63,8 @@ This module exports one binding only, that of procedure @rack[make-TM].
 @section{Introduction}
 
 Procedure @rack[make-TM] returns a procedure that emulates a two-way single tape
-@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machine"]
-programmed as described by the arguments given to @rack[make-TM].
+@nonbreaking[@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machine"]]
+programmed as described by the arguments given to @rack[make-TM].@(linebreak)
 The reader is supposed to be familiar with Turing-machines.
 Nevertheless a short introduction with the details of the machines as returned by
 procedure @rack[make-TM].
@@ -136,7 +143,7 @@ that can be read, but cannot be written.}
 
 @note{In real life tape-equipment usually the tape is moving
 with the tape-head in fixed position.
-Moving the tape-head, as assumed in this document, has the same effect
+Moving the tape-head, as usually assumed for Turing-machines, has the same effect
 as keeping it at fixed position and moving the tape in opposit direction.}
 
 @note{The tape-head of a Turing-machine does not move while reading
@@ -151,6 +158,7 @@ although with some effort part of it could be recovered.
 This equipment was not designed for replacement of part of the data in the middle of a file.
 The abstract tape-unit of a Turing-machine does not have this problem.}
 
+@subsection{Two simple examples}
 Let's start with a simple example of a Turing-machine.
 Its states are the initial state @rack['A], the intermediate states @rack['B], @rack['C] and
 @rack['D] and the final state @rack['T].
@@ -228,7 +236,7 @@ the following machine replaces the second and the fifth tape-symbol.
 (code:line)
 (TM '(What did you do yesterday?) #:report 'long)]
 
-@section{Additional registers}
+@subsection{Additional registers}
 The control unit of a Turing-machine emulated by a procedure made by @rack[make-TM]
 has at least two registers.
 The first one is the primary state-register and the second one the input/output-register,
@@ -247,7 +255,7 @@ primary state.
 For an example,
 compare section @secref["Inserting symbols"] with section @secref["More registers"].
 
-@section{Multiple tracks and tapes}
+@subsection{Multiple tracks/tapes}
 The tape can have more than one track, but with one tape-head only.
 Such a tape can be simulated by using tape-symbols
 each of which is a tuple (e.g. a list or a vector) of as many elements as there are tracks.
@@ -1646,7 +1654,7 @@ as @elemref["book" "mentioned above"].
 (code:comment "and rows TL0, TL1, TR0 and TR1 by an R.")
 (code:comment "In the book these are underscores, but that does not work.")
 (code:comment "Below the single tape equivalent of the copied UTM is used.")
-(code:comment "The encoded machine must not move left of the data.")
+(code:comment @#,(red "The encoded machine must not move to the left of the start of the data."))
 (code:line)
 (code:comment "Consider")
 (code:line)
@@ -1774,8 +1782,9 @@ as @elemref["book" "mentioned above"].
         error     error     error     error    error    error))
 (code:comment "Find marker in data region and write the new symbol.")
 (code:comment "Mark the symbol moved to.")
-(code:comment "The encoded machine is supposed not to move left of the data.")
-(code:comment "If it does the UTM halts in a stuck state.")
+(code:comment @#,(red "The encoded machine is supposed not to move"))
+(code:comment @#,(red "to the left of the begin of the data."))
+(code:comment @#,(red "If it does the UTM halts in a stuck state."))
   (TL0 (R         R         R         R        R        error     error
         (U 0 L)   (U 0 L)   error     error    error    (U 0 L)))
   (TL1 (R         R         R         R        R        error     error
@@ -1866,6 +1875,6 @@ If you want a report of the moves of the @rack[UTM],
 run module @hyperlink["UTM-with-report.rkt" "UTM-with-report.rkt"],
 but be aware that the output has almost 2000 lines
 with widths up to 155 characters.
-Nevertheless, on my simple PC it runs within 15 seconds, prining the output included.
+Nevertheless, on my simple PC it runs within 15 seconds, display of the output included.
 
 @larger{@larger{@bold{The end}}}
