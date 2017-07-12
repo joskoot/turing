@@ -1654,7 +1654,8 @@ as @elemref["book" "mentioned above"].
 (code:comment "and rows TL0, TL1, TR0 and TR1 by an R.")
 (code:comment "In the book these are underscores, but that does not work.")
 (code:comment "Below the single tape equivalent of the copied UTM is used.")
-(code:comment @#,(red "The encoded machine must not move to the left of the start of the data."))
+(code:comment "The present Universal Turing Machine is adapted such as")
+(code:comment "to allow the encoded machine to move left of the data.")
 (code:line)
 (code:comment "Consider")
 (code:line)
@@ -1782,9 +1783,6 @@ as @elemref["book" "mentioned above"].
         error     error     error     error    error    error))
 (code:comment "Find marker in data region and write the new symbol.")
 (code:comment "Mark the symbol moved to.")
-(code:comment @#,(red "The encoded machine is supposed not to move"))
-(code:comment @#,(red "to the left of the begin of the data."))
-(code:comment @#,(red "If it does the UTM halts in a stuck state."))
   (TL0 (R         R         R         R        R        error     error
         (U 0 L)   (U 0 L)   error     error    error    (U 0 L)))
   (TL1 (R         R         R         R        R        error     error
@@ -1794,8 +1792,17 @@ as @elemref["book" "mentioned above"].
   (TR1 (R         R         R         R        R        error     error
         (U 1 R)   (U 1 R)   R         error    error    (U 1 R)))
 (code:comment "Adjust the marker and process the new datum.")
-  (U   ((C0 m0 L) (C1 m1 L) error     error    error    (CB mS L) (CB mS L)
+(code:comment "Allow move left of the data.")
+  (U   ((C0 m0 L) (C1 m1 L) (Uc R)    error    error    (CB mS L) (CB mS L)
         error     error     error     error    error    error))
+  (Uc  ((U0 mS R) (U1 mS R) error     error    error    error     error
+        error     error     error     error    error    error))
+  (U0  ((U0 R)    (U1 0 R)  error     error    error    (UB 0 L)  (UB 0 L)
+        error     error     error     error    error    error))
+  (U1  ((U0 1 R)  (U1 R)    error     error    error    (UB 1 L)  (UB 1 L)
+        error     error     error     error    error    error))
+  (UB  (L         L         error     error    error    error     error
+        error     error     error     error    error    (CB L)))
 (code:comment "No new rule found (zero encountered in state DB)")
 (code:comment "Check that we have a final state.")
   (V   (L         L         (W L)     L        L        error     error
@@ -1867,13 +1874,30 @@ as @elemref["book" "mentioned above"].
 (code:comment "produces the same as (TM '(1 1 1)).")
 (code:line)
 (TM '(1 1 1))
-(UTM input)]
+(UTM input)
+(code:line)
+(code:comment "Encoding of 3 state busy beaver.")
+(code:comment "Does move left of the data.")
+(code:line)
+(define BB-input
+'(c c mc   1 1 1 R 1 c
+           1 1 1 R 1 c
+               1 R 1 c c
+               1 R 1 c
+               1 R 1 c
+           1 1 1 L 1 c c
+             1 1 L 1 c
+             1 1 L 1 c
+         1 1 1 1 R 1 c c
+         0 c 0 c 0 c c c m0))
+(code:line)
+(UTM BB-input)]
 
 The Universal Turing-machine requires many more moves,
 but the final state and tape-content are correct!
 If you want a report of the moves of the @rack[UTM],
 run module @hyperlink["UTM-with-report.rkt" "UTM-with-report.rkt"],
-but be aware that the output has almost 2000 lines
+but be aware that the output has almost 4500 lines
 with widths up to 155 characters.
 Nevertheless, on my simple PC it runs within 15 seconds, display of the output included.
 

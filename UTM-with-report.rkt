@@ -46,7 +46,7 @@
   (KR  (stop      (MR m1 R) stop      (TL R)   (TR R)   stop      stop
         error     error     error     error    error    error))
   (MR  (R         R         R         R        R        stop      stop
-        stop      stop      (NL c R)  stop     stop     stop))
+        stop      stop      (NR c R)  stop     stop     stop))
   (NR  (R         R         (PR R)    R        R        stop      stop
         error     error     error     error    error    error))
   (PR  ((NR R)    (NR R)    (SR mc L) (NR R)   (NR R)   stop      stop
@@ -65,8 +65,16 @@
         (U 0 R)   (U 0 R)   R         stop     stop     (U 0 R)))
   (TR1 (R         R         R         R        R        stop      stop
         (U 1 R)   (U 1 R)   R         stop     stop     (U 1 R)))
-  (U   ((C0 m0 L) (C1 m1 L) stop      stop     stop     (CB mS L) (CB mS L)
+  (U   ((C0 m0 L) (C1 m1 L) (Uc R)    error    error    (CB mS L) (CB mS L)
         error     error     error     error    error    error))
+  (Uc  ((U0 mS R) (U1 mS R) error     error    error    error     error
+        error     error     error     error    error    error))
+  (U0  ((U0 R)    (U1 0 R)  error     error    error    (UB 0 L)  (UB 0 L)
+        error     error     error     error    error    error))
+  (U1  ((U0 1 R)  (U1 R)    error     error    error    (UB 1 L)  (UB 1 L)
+        error     error     error     error    error    error))
+  (UB  (L         L         error     error    error    error     error
+        error     error     error     error    error    (CB L)))
   (V   (L         L         (W L)     L        L        stop      stop
         error     error     error     error    error    error))
   (W   ((V L)     (V L)     (X1 R)    (V L)    (V L)    stop      stop
@@ -137,3 +145,17 @@
 (TM '(1 1 1))
 
 (UTM input #:report 'short)
+
+(define BB-input
+'(c c mc   1 1 1 R 1 c
+           1 1 1 R 1 c
+               1 R 1 c c
+               1 R 1 c
+               1 R 1 c
+           1 1 1 L 1 c c
+             1 1 L 1 c
+             1 1 L 1 c
+         1 1 1 1 R 1 c c
+         0 c 0 c 0 c c c m0))
+
+(UTM BB-input #:report 'short)
