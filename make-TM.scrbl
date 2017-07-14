@@ -75,7 +75,7 @@ of Turing-machines in chapter 6 of their book:
 @nonbreaking{“Formal Languages and their Relation to Automata”},
 @nonbreaking{Addison-Wesley} 1969 @nonbreaking{(ISBN 0-201-0298 3-9)}.}
 
-@elemtag["figure" @image["make-TM.jpg"]]
+@inset{@elemtag["figure" @image["make-TM.jpg"]]}
 
 A Turing-machine consists of a control-unit, a tape, a tape-head
 and a bidirectional data-bus between the control-unit and the tape-head.
@@ -139,7 +139,8 @@ because it already is there.
 A nicer name for a blank cell would be `empty cell',
 but in @elemref["book" "the book mentioned above"] the word `blank' is used.
 In this book a blank is considered to be a tape-symbol
-that can be read, but cannot be written.}
+that can be read, but cannot be written.
+The same holds for the Turing-machines produced by procedure @rack[make-TM].}
 
 @note{In real life tape-equipment usually the tape is moving
 with the tape-head in fixed position.
@@ -303,13 +304,22 @@ A simpler way of using marks is shown in section @secref["UTM"].
  (           move (or/c 'R 'L 'N)))]{
 Procedure @rack[make-TM] returns a procedure that emulates a Turing-machine.
 Keywords are reserved for the names of registers.
-Providing @rack[#:registers n] with @racketlink[exact-integer? "exact integer"] @tt{n≥2}
-is the same as providing:
+Providing
+
+@inset{@rack[#:registers n]}
+
+with @racketlink[exact-integer? "exact integer"] @tt{n≥2} is the same as providing:
 
 @inset{@rack[#:registers (for/list ((k (in-range n))) (string->keyword (~s k)))]}
 
-For example, @nonbreaking{@rack[#:registers]@(hspace 1)@rack[3]}
-does the same as @nonbreaking{@rack[#:registers]@(hspace 1)@rack['(#:0 #:1 #:2)]}.
+For example,
+
+@inset{@nonbreaking{@rack[#:registers]@(hspace 1)@rack[3]}}
+
+does the same as:
+
+@inset{@nonbreaking{@rack[#:registers]@(hspace 1)@rack['(#:0 #:1 #:2)]}}
+
 The first @rack[register-name] is for the primary state-register and the second one
 for the input/output-register.
 Before the machine is produced the arguments are checked to satisfy all contracts
@@ -1639,7 +1649,7 @@ This is not checked.
 (code:line)
 (TM '(a b mark c d) #:report #t)]
 
-@subsection[#:tag "UTM"]{Universal Turing-machine}
+@section[#:tag "UTM"]{Universal Turing-machine}
 The following Universal Turing-machine is an adapted copy from
 @nonbreaking{"Formal Languages and their Relation to Automata"}
 as @elemref["book" "mentioned above"].
@@ -1652,12 +1662,14 @@ as @elemref["book" "mentioned above"].
 (code:comment "Addison-Wesley, 1969, p 105-107 (ISBN 0-201-0298 3-9)")
 (code:comment "I have replaced the entries in column mc")
 (code:comment "and rows TL0, TL1, TR0 and TR1 by an R.")
-(code:comment "In the book these are underscores, but that does not work.")
-(code:comment "Below the single tape equivalent of the copied UTM is used.")
-(code:comment "The present Universal Turing Machine is adapted such as")
-(code:comment "to allow the encoded machine to move left of the data.")
+(code:comment "In the book these entries contain no rule, but that does not work.")
+(code:comment "Below the single track tape equivalent of the copied UTM is used.")
+(code:comment "In addition the copy is adapted such as to allow")
+(code:comment "the encoded machine to move left of the data.")
+(code:comment "The UTM erases the program before halting,")
+(code:comment "thus returning the resulting data only.")
 (code:line)
-(code:comment "Consider")
+(code:comment "Consider:")
 (code:line)
 (define TM
  (make-TM 1 '(Y) 'B 'S '_
@@ -1665,48 +1677,63 @@ as @elemref["book" "mentioned above"].
    ((2 B) (3 1) L) ((2 0) (3 1) L) ((2 1) (2 1) R)
    ((3 B) (Y 0) R) ((3 0) (Y 0) R) ((3 1) (3 1) L))))
 (code:line)
-(code:comment "Given input '(1 1 1) the TM returns '(0 1 1 1).")
+(code:comment "Given input (1 1 1) the TM returns (0 1 1 1).")
 (code:comment "The following is an encoding of the above TM.")
-(code:comment "(1 ... move bit) is a rule, the number of 1s specifies the new state,")
-(code:comment "the bit being the 0 or 1 to be written.")
-(code:comment "0 indicates absence of a rule.")
+(code:line)
+(define input
+(code:comment "The encoded Turing machine.")
+(code:comment "The encoded machine accepts the tape-symbols B, 0 and 1.")
+(code:comment "For every state there are 3 rules, one for B, one for 0 and one for 1.")
+'(c c mc
+(code:comment "State 1.")
+  0           c    (code:comment "No rule for state 1 with input B.")
+  0           c    (code:comment "No rule for state 1 with input 0.")
+      1 1 R 0 c c  (code:comment "((1 1) (2 0) R")
+(code:comment "State 2.")
+    1 1 1 L 1 c    (code:comment "((2 B) (3 1) L")
+    1 1 1 L 1 c    (code:comment "((2 0) (3 1) L")
+      1 1 R 1 c c  (code:comment "((2 1) (2 1) R")
+(code:comment "State 3.")
+  1 1 1 1 R 0 c    (code:comment "((3 B) (4 0) R")
+  1 1 1 1 R 0 c    (code:comment "((3 0) (4 0) R")
+    1 1 1 L 1 c c  (code:comment "((3 1) (3 1) L")
+(code:comment "State 4, the final state.")
+  0           c
+  0           c
+  0           c c c
+(code:comment "The data.")
+  m1 1 1))
+(code:line)
+(code:comment "The states are identified by (1 ...+).")
+(code:comment "(1 ...+ move bit) is a rule.")
+(code:comment "The number of 1s specifies the new state.")
+(code:comment "The bit is 0 or 1, the tape-symbol to be written.")
+(code:comment "The move is either R or L.")
 (code:comment "Rules are separated by c.")
 (code:comment "The rules are in order of the tape-symbols B, 0 and 1.")
 (code:comment "States are separated by c c.")
 (code:comment "The states are in order 1, 1 1, 1 1 1 and 1 1 1 1")
-(code:comment "A rule 0 indicates absence of a rule.")
+(code:comment "A rule consisting of a 0 only indicates absence of a rule.")
 (code:comment "A final state is marked as one with all rules 0.")
 (code:comment "This holds for state 4 (1 1 1 1).")
 (code:comment "State 4 corresponds to state Y of the above TM.")
-(code:comment "m is used as marker, initially marking the block of state 1.")
-(code:comment "m is is also used as marker for the current symbol in the data.")
-(code:comment "The marked version of symbol x is mx.")
-(code:comment "A symbol x without mark simply is x itself.")
-(code:comment "Notice that m is not used as a separate tape-symbol.")
-(define input
-(code:comment "The encoded Turing machine.")
-'(c c mc
-(code:comment "The encoded machine accepts the tape-symbols B, 0 and 1.")
-(code:comment "For every state there are 3 rules, one for B, one for 0 and one for 1.")
-(code:comment "B           0             1")
-(code:comment "State 1.")
-  0           c 0           c   1 1 R 0 c c
-(code:comment "State 2.")
-    1 1 1 L 1 c   1 1 1 L 1 c   1 1 R 1 c c
-(code:comment "State 3.")
-  1 1 1 1 R 0 c 1 1 1 1 R 0 c 1 1 1 L 1 c c
-(code:comment "State 4, the final state.")
-  0           c 0           c 0         c c c
-(code:comment "The data.")
-  m1 1 1))
 (code:line)
 (code:comment "The universal Turing-machine.")
+(code:comment "B is the blank and S the space.")
+(code:comment "The Universal Turing machine treats S and B as identical.")
+(code:comment "m is used as marker, initially marking the block of state 1")
+(code:comment "and marking the current symbol in the data.")
+(code:comment "The marker is used too when looking for the new state")
+(code:comment "when applying a rule.")
+(code:comment "The marked version of symbol x is mx.")
+(code:comment "A symbol x without mark simply is x itself.")
+(code:comment "Marking a B produces mS.")
 (code:line)
-(define simplified-rules
+(define UTM-rules-table
 (code:comment "The tape-symbols, the second line showing marked symbols.")
 '((     0         1         c         L        R        S         B
         m0        m1        mc        mL       mR       mS)
-(code:comment "The rules (states in the first column)")
+(code:comment "The rules (old-states in the first column) are:")
 (code:comment "R = (_ _ R), L = (_ _ L)")
 (code:comment "error is an erroneous final state.")
 (code:comment "(new-state move) = (new-state _ move).")
@@ -1792,9 +1819,12 @@ as @elemref["book" "mentioned above"].
   (TR1 (R         R         R         R        R        error     error
         (U 1 R)   (U 1 R)   R         error    error    (U 1 R)))
 (code:comment "Adjust the marker and process the new datum.")
-(code:comment "Allow move left of the data.")
+(code:comment "Allow move left of the data via state Uc.")
   (U   ((C0 m0 L) (C1 m1 L) (Uc R)    error    error    (CB mS L) (CB mS L)
         error     error     error     error    error    error))
+(code:comment "We have a move left of the data.")
+(code:comment "Insert symbol mS and shift the data one cell to the right.")
+(code:comment "After shifting go left to the inserted mS and return to state CB.")
   (Uc  ((U0 mS R) (U1 mS R) error     error    error    error     error
         error     error     error     error    error    error))
   (U0  ((U0 R)    (U1 0 R)  error     error    error    (UB 0 L)  (UB 0 L)
@@ -1832,16 +1862,16 @@ as @elemref["book" "mentioned above"].
 (code:line)
 (code:comment "We have to expand the simplified rules.")
 (code:line)
-(define symbols (car simplified-rules))
+(define symbols (car UTM-rules-table))
 (code:line)
 (code:comment "We omit all rules with new state error.")
 (code:comment "The UTM produced by make-TM halts with an error for this state.")
 (code:line)
-(define rules
+(define UTM-rules
  (for/fold ((r '()))
-  ((rule (in-list (cdr simplified-rules))))
+  ((rule (in-list (cdr UTM-rules-table))))
   (define old-state (car rule))
-  (define rules
+  (define UTM-rules
    (for/list
     ((rule (in-list (cadr rule)))
      (old-symbol (in-list symbols))
@@ -1854,21 +1884,21 @@ as @elemref["book" "mentioned above"].
         ((= (length rule) 2) (values (car rule) old-symbol (cadr rule))) 
         (else (apply values rule))))
       (list (list old-state old-symbol) (list new-state new-symbol) move)))))
-  (append r rules)))
+  (append r UTM-rules)))
 (code:line)
 (code:comment "The rules of the UTM. None of the rules has a dummy.")
 (code:line)
 (define width
- (for/fold ((w 0)) ((rule (in-list rules)))
+ (for/fold ((w 0)) ((rule (in-list UTM-rules)))
   (max w (string-length (~s rule)))))
-(for ((rule (in-list rules)) (newline? (in-cycle '(#f #f #f #t))))
+(for ((rule (in-list UTM-rules)) (newline? (in-cycle '(#f #f #f #t))))
  (printf
   (if newline? "~a~n" "~a ")
   (~s #:min-width width #:width width rule)))
 (code:line)
 (define UTM
  (make-TM
-  'A '(Y) 'B 'S '_ rules #:name 'UTM))
+  'A '(Y) 'B 'S '_ UTM-rules #:name 'UTM))
 (code:line)
 (code:comment "Now let's check that (UTM input)")
 (code:comment "produces the same as (TM '(1 1 1)).")
@@ -1880,25 +1910,36 @@ as @elemref["book" "mentioned above"].
 (code:comment "Does move left of the data.")
 (code:line)
 (define BB-input
-'(c c mc   1 1 1 R 1 c
-           1 1 1 R 1 c
-               1 R 1 c c
-               1 R 1 c
-               1 R 1 c
-           1 1 1 L 1 c c
-             1 1 L 1 c
-             1 1 L 1 c
-         1 1 1 1 R 1 c c
-         0 c 0 c 0 c c c m0))
+'(c c mc (code:comment "State 1.")
+           1 1 1 R 1 c     (code:comment "((1 B) (3 1) R)")
+           1 1 1 R 1 c     (code:comment "((1 0) (3 1) R)")
+               1 R 1 c     (code:comment "((1 1) (1 1) R)")
+       c (code:comment "State 2.")
+               1 R 1 c     (code:comment "((2 B) (1 1) R)")
+               1 R 1 c     (code:comment "((2 0) (1 1) R)")
+           1 1 1 L 1 c     (code:comment "((2 1) (3 1) L)")
+       c (code:comment "State 3.")
+             1 1 L 1 c     (code:comment "((3 B) (2 1) L)")
+             1 1 L 1 c     (code:comment "((3 0) (2 1) L)")
+         1 1 1 1 R 1 c     (code:comment "((3 1) (4 1) R)")
+       c (code:comment "State 4, final state.")
+                   0 c
+                   0 c
+                   0 c
+       c
+       (code:comment "The data (empty):")
+       c mS))
 (code:line)
 (UTM BB-input)]
 
-The Universal Turing-machine requires many more moves,
+The Universal Turing-machine requires many moves,
 but the final state and tape-content are correct!
 If you want a report of the moves of the @rack[UTM],
 run module @hyperlink["UTM-with-report.rkt" "UTM-with-report.rkt"],
-but be aware that the output has almost 4500 lines
-with widths up to 155 characters.
-Nevertheless, on my simple PC it runs within 15 seconds, display of the output included.
+but be aware that the output has almost 4450 lines
+with widths up to 160 characters.
+On my simple PC it takes about a minute, display of the output included.
+@hyperlink["UTM-with-report.rkt" "UTM-with-report.rkt"]
+runs both examples of the above interaction.
 
 @larger{@larger{@bold{The end}}}
