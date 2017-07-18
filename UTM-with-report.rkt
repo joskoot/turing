@@ -142,18 +142,18 @@
    ((2 B) (3 1) L) ((2 0) (3 1) L) ((2 1) (2 1) R)
    ((3 B) (Y 0) R) ((3 0) (Y 0) R) ((3 1) (3 1) L))))
 
-(TM '(1 1 1))
-
 (UTM input #:report 'short)
 
+(TM '(1 1 1))
+
 (define BB
- (make-TM 1 '(Y) 'B 'S '_
+ (make-TM 1 '(4) 'B 'S '_
  '(((1 _) (3 1) R)
    ((1 1) (1 1) R)
    ((2 _) (1 1) R)
    ((2 1) (3 1) L)
    ((3 _) (2 1) L)
-   ((3 1) (Y 1) R))))
+   ((3 1) (4 1) R))))
 
 (define BB-input
 '(c c mc   1 1 1 R 1 c
@@ -167,6 +167,7 @@
          1 1 1 1 R 1 c c
          0 c 0 c 0 c c c mS))
 
+(UTM BB-input #:report 'short)
+
 (BB '())
 
-(UTM BB-input #:report 'short)

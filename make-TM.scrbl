@@ -97,16 +97,16 @@ The current cell (red) is the one below the tape-head and
 contains the current tape-symbol.
 
 The Turing-machine must be given an input for the initial tape-content.
-The input must be a finite list of non-blank tape-symbols.
-The blank is a special tape-symbol used to indicate that a cell is empty
-(see @elemref["item 3" "item 3 below"]).
+The input must be a finite list of non-blank tape-symbols
+(the blank is a special tape-symbol used to indicate that a cell is empty;
+see @elemref["item 3" "item 3 below"]).
 The machine starts with a given initial internal state for the control-unit
 and with the tape-head positioned at the start of the initial tape-content.
 If the input is not empty, the initial tape-content has no blank cell.
 If the input is empty, the initial tape-content consists of one single blank cell.
 The control-unit makes moves according to a program consisting of a finite set of
 instructions, which we call `rules'.
-The rule to be applied is determined by the the current internal state of the control-unit
+The rule to be applied is determined by the current internal state of the control-unit
 and the current tape-symbol.
 The machine halts as soon as the control-unit assumes a final state.
 If there is no matching rule, the machine halts in a stuck state.
@@ -118,7 +118,7 @@ A move consists of three steps:
           
 @item{Optionally putting the control-unit in another internal state.}
 
-@item{Optionally writing a new non-blank tape-symbol in the current cell.
+@item{Optionally writing another non-blank tape-symbol in the current cell.
 This step is not optional when the current cell is blank.
 A blank cell always is filled with a non-blank tape-symbol,
 possibly but not necessarily with a space,
@@ -130,7 +130,7 @@ a blank cell is added. This cell becomes the current one.
 In this way a tape is simulated with an infinite number of
 blank cells both at the left and at the right of the actual content.
 The new blank cell will be filled with a non-blank tape-symbol during the next move,
-assuming a next move will follow.}}]}
+assuming a move will follow.}}]}
 
 @note{One can imagine the tape to have an infinite number of blank cells both at the left
 and at the right of its current non-blank content.
@@ -138,9 +138,10 @@ In that case moving left or right of the current content does not require writin
 because it already is there.
 A nicer name for a blank cell would be `empty cell',
 but in @elemref["book" "the book mentioned above"] the word `blank' is used.
-In this book a blank is considered to be a tape-symbol
-that can be read, but cannot be written.
-The same holds for the Turing-machines produced by procedure @rack[make-TM].}
+In this book a blank is introduced as a tape-symbol that can be read,
+but cannot be written in an existing cell, although later this restriction is relaxed.
+The Turing-machines made by procedure @rack[make-TM]
+adhere to the resticted definition.}
 
 @note{In real life tape-equipment usually the tape is moving
 with the tape-head in fixed position.
@@ -164,7 +165,7 @@ Let's start with a simple example of a Turing-machine.
 Its states are the initial state @rack['A], the intermediate states @rack['B], @rack['C] and
 @rack['D] and the final state @rack['T].
 In the rules @rack['R] indicates a move of the tape-head one cell to the right.
-In this example the two other options @rack['N] (no move) and @rack['L] (move left)
+In this example the other two options @rack['N] (no move) and @rack['L] (move left)
 are not used.
 @rack['_] is a dummy, which is not a tape-symbol.
 In this example a rule has the form:
@@ -187,7 +188,8 @@ A rule whose @racket[new-tape-symbol] is a tape-symbol indicates that the conten
 of the current cell must be replaced by this tape-symbol.
 A rule whose @racket[new-tape-symbol] is the dummy indicates that
 the current cell must not be altered, unless it is blank,
-in which case it is filled with a space, but this does not occur in the present example.
+in which case it is filled with a space,
+but this does not occur in the present example.
 The machine replaces the fourth element by @rack['new].
 
 @interaction[
@@ -358,11 +360,11 @@ the cell currently under the tape-head.
 @item{The current tape-symbol is read and put into the input/output-register.@(linebreak)
       The tape-head does not move during this reading.}
 
-@item{A rule is looked for.
+@item{A @rack[rule] is looked for.
 A @rack[rule] applies if its @rack[old-state] equals the current primary state
-and the @rack[old-symbol] matches the current tape-symbol in the input/output-register.
+and the @rack[old-symbol] matches the current @rack[tape-symbol] in the input/output-register.
 The @rack[dummy] matches every tape-symbol.
-Every other @rack[old-symbol] matches only when equal to the current tape-symbol.
+Every other @rack[old-symbol] matches only when equal to the current @rack[tape-symbol].
 A @rack[rule] whose @rack[old-symbol] equals the current tape-symbol
 prevails over a @rack[rule] with the same @rack[old-state] and
 whose @rack[old-symbol] is the @rack[dummy].
@@ -370,11 +372,15 @@ For @rack[rules] with the same @rack[old-state] the @rack[dummy]
 is like @rack[else] in a @rack[cond]- or @rack[case]-form,
 but is not required to be at the end.
 The order of the @rack[rules] is irrelevant.
-When there is no matching rule the machine halts in a stuck state by raising an @rack[error].}
+When there is no matching @rack[rule]
+the machine halts in a stuck state by raising an @rack[error].
+Because @rack[make-TM] checks that the @rack[selector]s of the @rack[rules] are distinct,
+there can never be more than one applying @rack[rule]
+(the machine is deterministic)}
 
-@item{The @rack[registers] are updated.
+@item{The registers are updated.
 The element with index k of the @rack[updater]
-of the rule indicates what to put in register k.
+of the @rack[rule] indicates what to put in register k.
 Let x be element k of the @rack[updater].
 
 ∘ If x is a @rack[dummy] register k remains unaffected.@(linebreak)
@@ -389,11 +395,12 @@ register @rack[#:state] is filled with @rack[new-state] and the registers @rack[
 and @rack[#:extra] exchange their content.
 @rack[new-state] will be the new primary state and
 the old content of register @rack[#:extra], which becomes the new content of register
-@rack[#:bus] will be written into the current cell of the tape as described in the next item.}
+@rack[#:bus], will be written into the current cell of the tape as described in the next item.}
 
 @item{Now the @rack[tape-symbol] of the input/output-register is written in the current cell
-of the tape, replacing the former current tape-symbol.
+of the tape, replacing the former current @rack[tape-symbol].
 However, if the input/output-register contains a @rack[blank] a @rack[space] is written.
+The written @rack[tape-symbol] can be the same as the one already present in the current cell.
 During this operation the tape-head does not move.}
 
 @item{Finally the tape-head may be moved:@(linebreak)
@@ -406,8 +413,8 @@ a blank cell is added and the tape-head is positioned at this cell.
 These are the only two situations in which a @rack[blank] is written.}
 
 @item{The above process is repeated until the primary state equals a @rack[final-state]
-      or the machine gets stuck because it has no rule matching the current primary state
-      and the current tape-symbol.}]}
+      or the machine gets stuck because it has no @rack[rule] matching the current primary state
+      and the current @rack[tape-symbol].}]}
 
 A procedure returned by procedure @rack[make-TM],
 say @(larger (bold (element 'tt (larger (bold "Turing-machine"))))),
@@ -440,9 +447,9 @@ At that moment we have a running procedure that emulates
 a Turing-machine with a finite set of @rack[tape-symbol]s
 in accordance with the formal definition.}
 
-@note{Define a regular rule as a rule without @rack[dummy]s.
-The @rack[dummy] allows a finite multitude of regular rules to be written
-as one single rule.
+@note{Define a regular @rack[rule] as a @rack[rule] without @rack[dummy]s.
+The @rack[dummy] allows a finite multitude of regular @rack[rule]s to be written
+as one single @rack[rule].
 When the set of @rack[tape-symbol]s allowed in the initial content of the tape is known,
 every @rack[rule] containing one or more @rack[dummy]s
 can be written as a finite collection of regular @rack[rule]s.
@@ -478,11 +485,12 @@ For each move the report shows:
 @nonbreaking{@tt{((h ...) (c t ...))}},
 where the new position of the tape-head is at tape-symbol @tt{c}.}]}
 
-@note{Internally list @rack[(h ...)] is guarded in reversed order,
+@note{Internally list @rack[(h ...)] is stored in @racketlink[reverse]{reversed} order,
 which allows fast movement of the tape-head.
 This is like using a push-down/pop-up machine with two stacks.
 Indeed, every Turing-machine can be simulated by such a machine.
-When the content of the tape is to be shown, the stack containing the head is reversed
+When the content of the tape is to be shown, the stack containing the head is
+@racketlink[reverse]{reversed}
 such as to show the cells in correct order.}
 
 If @rack[report] is @rack['short] the Turing-machine
@@ -497,8 +505,9 @@ the Turing-machine halts by raising an error
 when no @rack[final-state] is encountered within @rack[limit] moves.
 When @rack[limit] is @rack[#f] and the Turing-machine never reaches a @rack[final-state],
 the procedure keeps running forever,
-unless it halts with an error because it cannot find an applying rule
+unless it halts with an error because it cannot find an applying @rack[rule]
 or runs out of memory because of an ever growing tape-content.
+(An abstract Turing-machine has an infinite tape and cannot run out of memory)
                                                  
 @section{Halting problem}
 Many Turing-machines never halt.
@@ -509,10 +518,10 @@ However, because of the
 there always remain cases for which it is impossible to decide whether or not the machine will halt.
 Procedure @rack[make-TM] and the Turing-machines it produces
 do no checks at all against infinite loops.
-Whether or not a Turing-machine halts may depend on its input.
+Whether or not a Turing-machine halts may depend on its @rack[input].
 Argument @rack[limit] provides protection.
 The following trivial Turing-machine
-obviously would loop forever with arbitrary input when it would not be halted by
+obviously would loop forever with arbitrary @rack[input] when it would not be halted by
 the @rack[limit]:
 
 @interaction[
@@ -551,14 +560,15 @@ As another example consider:
 It is obvious that the above machine, no matter its initial tape-content, never halts,
 although it never reproduces the same @elemref["configuration" "configuration"].
 @note{Procedure @rack[make-TM] could be adapted such as to
-predict the infinite loops of the last two examples just by checking the rules.
+predict the infinite loops of the last two examples just by checking the @rack[rules].
 It also could be adapted such as to produce
 Turing-machines that can detect a repeated @elemref["configuration" "configuration"].
 These adaptations have not been made,
 for the Halting Problem implies that there always remain cases
 in which it is not possible to predict whether or not the machine will halt.}
 Halting or not may depend on the initial tape-content.
-For example, the following machine halts only when its input contains @rack[tape-symbol] @rack[0].
+For example, the following machine halts only when its @rack[input]
+contains @rack[tape-symbol] @rack[0].
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -581,7 +591,7 @@ Some of the examples are inspired by material of Jay McCarthy
 that can be found in @hyperlink["http://jeapostrophe.github.io/2013-10-29-tmadd-post.html"
                                 "http://jeapostrophe.github.io/2013-10-29-tmadd-post.html"].
 
-In the examples @rack['B] usually is a blank, @rack['S] a space and @rack['_] the dummy.
+In the examples @rack['B] usually is the blank, @rack['S] the space and @rack['_] the dummy.
 Usually @rack['T] is the final state for an accepted input and @rack['F] for a rejected input.
 
 @subsection{Blank → space}
@@ -1210,7 +1220,7 @@ See @hyperlink["https://en.wikipedia.org/wiki/Catalan_number" "Catalan numbers"]
 (code:comment "Test now.")
 (code:comment "Try all (expt 2 k) inputs of k elements,")
 (code:comment "k running from 0 to 10 (inclusive).")
-(code:comment "A total of 2047 tests of which only 65 yield final state T.")
+(code:comment "A total of 2048 tests of which only 65 yield final state T.")
 (code:line)
 (define (Catalan n)
  (cond
@@ -1315,9 +1325,6 @@ the counter is checked to be zero.
  (match-parentheses lst 0))
 (code:line)
 (code:comment "Test now.")
-(code:comment "Try all (expt 2 k) inputs of k elements,")
-(code:comment "k running from 0 to 10 (inclusive).")
-(code:comment "A total of 2047 tests of which only 65 yield final state T.")
 (code:line)
 (define (Catalan n)
  (cond
@@ -1491,7 +1498,7 @@ i is added to the copy before the next number is generated.
   ((4  /) (8  _) L) (code:comment "All copied, go add i=1 to the copy.")
   ((4  o) (5o 0) L) (code:comment "Mark as copied and go put bit o at start of tape.")
   ((4  i) (5i 1) L) (code:comment "Mark as copied and go put bit i at start of tape.")
-  (code:comment "Go to end of tape and write the bit memorized in state 5o or 5i")
+  (code:comment "Go to start of tape and write the bit memorized in state 5o or 5i")
   ((5o _) (5o _) L)
   ((5o B) (6  o) R) (code:comment "write the o.")
   ((5i _) (5i _) L)
@@ -1574,6 +1581,9 @@ in order to make space for an x.
    (equal? (ab->axb input) output)
    (equal? state 'T))))]
 
+The machine with additional register requires 25 moves for input @rack['(b a b a b a)],
+whereas the one in section @secref{Inserting symbols} requires 43 moves.
+
 @subsection{Subroutine}
 Every Turing-machine whose tape can be extended at both ends
 can be simulated by a Turing-machine that never extends its tape at the left.
@@ -1601,10 +1611,10 @@ This is not checked.
 (require "make-TM.rkt")
 (code:line)
 (define registers
- '(#:state          (code:comment "primary state")
-   #:current-symbol (code:comment "current tape-symbol")
-   #:prev-symbol    (code:comment "used for shifting cells to the right")
-   #:return-state   (code:comment "arguments for subroutine")
+ '(#:state          (code:comment "Primary state.")
+   #:current-symbol (code:comment "Current tape-symbol.")
+   #:prev-symbol    (code:comment "Used for shifting cells to the right.")
+   #:return-state   (code:comment "Two arguments for subroutine.")
    #:symbol-arg))
 (code:line)
 (define rules
@@ -1666,16 +1676,16 @@ as @elemref["book" "mentioned above"].
 (code:comment "Below the single track tape equivalent of the copied UTM is used.")
 (code:comment "In addition the copy is adapted such as to allow")
 (code:comment "the encoded machine to move left of the data.")
-(code:comment "The UTM erases the program before halting,")
+(code:comment "The UTM erases the encoded program before halting,")
 (code:comment "thus returning the resulting data only.")
 (code:line)
 (code:comment "Consider:")
 (code:line)
 (define TM
- (make-TM 1 '(Y) 'B 'S '_
+ (make-TM 1 '(4) 'B 'S '_
  '(((1 1) (2 0) R)
    ((2 B) (3 1) L) ((2 0) (3 1) L) ((2 1) (2 1) R)
-   ((3 B) (Y 0) R) ((3 0) (Y 0) R) ((3 1) (3 1) L))))
+   ((3 B) (4 0) R) ((3 0) (4 0) R) ((3 1) (3 1) L))))
 (code:line)
 (code:comment "Given input (1 1 1) the TM returns (0 1 1 1).")
 (code:comment "The following is an encoding of the above TM.")
@@ -1709,25 +1719,25 @@ as @elemref["book" "mentioned above"].
 (code:comment "The number of 1s specifies the new state.")
 (code:comment "The bit is 0 or 1, the tape-symbol to be written.")
 (code:comment "The move is either R or L.")
-(code:comment "Rules are separated by c.")
-(code:comment "The rules are in order of the tape-symbols B, 0 and 1.")
 (code:comment "States are separated by c c.")
 (code:comment "The states are in order 1, 1 1, 1 1 1 and 1 1 1 1")
+(code:comment "For each state there are three rules separated by c.")
+(code:comment "The rules are in order of the tape-symbols B, 0 and 1.")
 (code:comment "A rule consisting of a 0 only indicates absence of a rule.")
 (code:comment "A final state is marked as one with all rules 0.")
 (code:comment "This holds for state 4 (1 1 1 1).")
-(code:comment "State 4 corresponds to state Y of the above TM.")
 (code:line)
 (code:comment "The universal Turing-machine.")
 (code:comment "B is the blank and S the space.")
-(code:comment "The Universal Turing machine treats S and B as identical.")
+(code:comment "All rules treat S and B identically.")
 (code:comment "m is used as marker, initially marking the block of state 1")
 (code:comment "and marking the current symbol in the data.")
 (code:comment "The marker is used too when looking for the new state")
-(code:comment "when applying a rule.")
+(code:comment "when applying a rule of the encoded machine.")
+(code:comment "Hence the marker can have three different meanings,")
+(code:comment "but it is always clear which meaning it has.")
 (code:comment "The marked version of symbol x is mx.")
-(code:comment "A symbol x without mark simply is x itself.")
-(code:comment "Marking a B produces mS.")
+(code:comment "Marking a B produces a marked space: mS.")
 (code:line)
 (define UTM-rules-table
 (code:comment "The tape-symbols, the second line showing marked symbols.")
@@ -1735,137 +1745,140 @@ as @elemref["book" "mentioned above"].
         m0        m1        mc        mL       mR       mS)
 (code:comment "The rules (old-states in the first column) are:")
 (code:comment "R = (_ _ R), L = (_ _ L)")
-(code:comment "error is an erroneous final state.")
-(code:comment "(new-state move) = (new-state _ move).")
-(code:comment "(new-state new-symbol move) obvious.")
+(code:comment "(new-state move) = (new-state current-tape-symbol move).")
+(code:comment "(new-state new-tape-symbol move) = obvious.")
+(code:comment "----- indicates the absence of a rule.")
 (code:comment "")
 (code:comment "First find the current element of the data.")
-  (A   (R         R         R         R        R        error     error
-        error     error     (B R)     error    error    error))
-  (B   (R         R         R         R        R        error     error
-        (C0 L)    (C1 L)    error     error    error    (CB L)))
+  (A   (R         R         R         R        R        -----     -----
+        -----     -----     (B R)     -----    -----    -----))
+  (B   (R         R         R         R        R        -----     -----
+        (C0 L)    (C1 L)    -----     -----    -----    (CB L)))
 (code:comment "Find the block of the current state.")
-  (CB  (L         L         L         L        L        error     error
-        error     error     (DB c R)  error    error    error))
-  (C0  (L         L         L         L        L        error     error
-        error     error     (D0 c R)  error    error    error))
-  (C1  (L         L         L         L        L        error     error
-        error     error     (D1 c R)  error    error    error))
+  (CB  (L         L         L         L        L        -----     -----
+        -----     -----     (DB c R)  -----    -----    -----))
+  (C0  (L         L         L         L        L        -----     -----
+        -----     -----     (D0 c R)  -----    -----    -----))
+  (C1  (L         L         L         L        L        -----     -----
+        -----     -----     (D1 c R)  -----    -----    -----))
 (code:comment "Find the sub-block corresponding to the current datum.")
 (code:comment "Jump to state V when there is no rule for the current datum.")
-  (DB  ((V L)     (E m1 L)  error     error    error    error     error
-        error     error     error     error    error    error))
-  (D0  (R         R         (DB R)    R        R        error     error
-        error     error     error     error    error    error))
-  (D1  (R         R         (D0 R)    R        R        error     error
-        error     error     error     error    error    error))
+  (DB  ((V L)     (E m1 L)  -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (D0  (R         R         (DB R)    R        R        -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (D1  (R         R         (D0 R)    R        R        -----     -----
+        -----     -----     -----     -----    -----    -----))
 (code:comment "Rewind to start of program and mark first block.")
 (code:comment "Id est find the 3 starting c-s and mark the third one.")
 (code:comment "This is marker m2.")
 (code:comment "Let m1 be the marker of the current sub-block.")
 (code:comment "The distinction between m1 and m2 has been copied from")
 (code:comment "Formal Languages and their Relation to Automata, Hopcroft and Ullman.")
-  (E   (L         L         (F L)     L        L        error     error
-        error     error     error     error    error    error))
-  (F   ((E L)     (E L)     (G L)     (E L)    (E L)    error     error
-        error     error     error     error    error    error))
-  (G   ((E L)     (E L)     (H R)     (E L)    (E L)    error     error
-        error     error     error     error    error    error))
-  (H   (error     error     (I R)     error    error    error     error
-        error     error     error     error    error    error))
-  (I   (error     error     (J mc R)  error    error    error     error
-        error     error     error     error    error    error))
+  (E   (L         L         (F L)     L        L        -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (F   ((E L)     (E L)     (G L)     (E L)    (E L)    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (G   ((E L)     (E L)     (H R)     (E L)    (E L)    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (H   (-----     -----     (I R)     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (I   (-----     -----     (J mc R)  -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
 (code:comment "Locate next state.")
-  (J   (R         R         R         R        R        error     error
-        error     (KL 1 R)  error     error    error    error))
+  (J   (R         R         R         R        R        -----     -----
+        -----     (KL 1 R)  -----     -----    -----    -----))
 (code:comment "For each remaining 1 of next state shift marker m2 to next block")
 (code:comment "and shift marker m1 one to the right until no 1-s remain.")
 (code:comment "When done go to the block marked with m2")
 (code:comment "find the instruction corresponding to the current tape-symbol")
 (code:comment "and execute the instruction (TR0, TR1, TL0, or TL1)")
-  (KL  (error     (ML m1 L) error     (TL R)   (TR R)   error     error
-        error     error     error     error    error    error))
-  (ML  (L         L         L         L        L        error     error
-        error     error     (NL c R)  error    error    error))
-  (NL  (R         R         (PL R)    R        R        error     error
-        error     (NR R)    error     error    error    error))
-  (PL  ((NL R)    (NL R)    (SL mc R) (NL R)   (NL R)   error     error
-        error     (NR R)    error     error    error    error))
-  (SL  (R         R         R         R        R        error     error
-        error     (KL 1 R)  error     error    error    error))
-  (KR  (error     (MR m1 R) error     (TL R)   (TR R)   error     error
-        error     error     error     error    error    error))
-  (MR  (R         R         R         R        R        error     error
-        error     error     (NR c R)  error    error    error))
-  (NR  (R         R         (PR R)    R        R        error     error
-        error     error     error     error    error    error))
-  (PR  ((NR R)    (NR R)    (SR mc L) (NR R)   (NR R)   error     error
-        error     error     error     error    error    error))
-  (SR  (L         L         L         L        L        error     error
-        error     (KR 1 R)  error     error    error    error))
+  (KL  (-----     (ML m1 L) -----     (TL R)   (TR R)   -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (ML  (L         L         L         L        L        -----     -----
+        -----     -----     (NL c R)  -----    -----    -----))
+  (NL  (R         R         (PL R)    R        R        -----     -----
+        -----     (NR R)    -----     -----    -----    -----))
+  (PL  ((NL R)    (NL R)    (SL mc R) (NL R)   (NL R)   -----     -----
+        -----     (NR R)    -----     -----    -----    -----))
+  (SL  (R         R         R         R        R        -----     -----
+        -----     (KL 1 R)  -----     -----    -----    -----))
+  (KR  (-----     (MR m1 R) -----     (TL R)   (TR R)   -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (MR  (R         R         R         R        R        -----     -----
+        -----     -----     (NR c R)  -----    -----    -----))
+  (NR  (R         R         (PR R)    R        R        -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (PR  ((NR R)    (NR R)    (SR mc L) (NR R)   (NR R)   -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (SR  (L         L         L         L        L        -----     -----
+        -----     (KR 1 R)  -----     -----    -----    -----))
 (code:comment "Record symbol to be written.")
-  (TL  ((TL0 R)   (TL1 R)   error     error    error    error     error
-        error     error     error     error    error    error))
-  (TR  ((TR0 R)   (TR1 R)   error     error    error    error     error
-        error     error     error     error    error    error))
+  (TL  ((TL0 R)   (TL1 R)   -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (TR  ((TR0 R)   (TR1 R)   -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
 (code:comment "Find marker in data region and write the new symbol.")
 (code:comment "Mark the symbol moved to.")
-  (TL0 (R         R         R         R        R        error     error
-        (U 0 L)   (U 0 L)   error     error    error    (U 0 L)))
-  (TL1 (R         R         R         R        R        error     error
-        (U 1 L)   (U 1 L)   R         error    error    (U 1 L)))
-  (TR0 (R         R         R         R        R        error     error
-        (U 0 R)   (U 0 R)   R         error    error    (U 0 R)))
-  (TR1 (R         R         R         R        R        error     error
-        (U 1 R)   (U 1 R)   R         error    error    (U 1 R)))
+  (TL0 (R         R         R         R        R        -----     -----
+        (U 0 L)   (U 0 L)   -----     -----    -----    (U 0 L)))
+  (TL1 (R         R         R         R        R        -----     -----
+        (U 1 L)   (U 1 L)   R         -----    -----    (U 1 L)))
+  (TR0 (R         R         R         R        R        -----     -----
+        (U 0 R)   (U 0 R)   R         -----    -----    (U 0 R)))
+  (TR1 (R         R         R         R        R        -----     -----
+        (U 1 R)   (U 1 R)   R         -----    -----    (U 1 R)))
 (code:comment "Adjust the marker and process the new datum.")
 (code:comment "Allow move left of the data via state Uc.")
-  (U   ((C0 m0 L) (C1 m1 L) (Uc R)    error    error    (CB mS L) (CB mS L)
-        error     error     error     error    error    error))
+  (U   ((C0 m0 L) (C1 m1 L) (Uc R)    -----    -----    (CB mS L) (CB mS L)
+        -----     -----     -----     -----    -----    -----))
 (code:comment "We have a move left of the data.")
 (code:comment "Insert symbol mS and shift the data one cell to the right.")
 (code:comment "After shifting go left to the inserted mS and return to state CB.")
-  (Uc  ((U0 mS R) (U1 mS R) error     error    error    error     error
-        error     error     error     error    error    error))
-  (U0  ((U0 R)    (U1 0 R)  error     error    error    (UB 0 L)  (UB 0 L)
-        error     error     error     error    error    error))
-  (U1  ((U0 1 R)  (U1 R)    error     error    error    (UB 1 L)  (UB 1 L)
-        error     error     error     error    error    error))
-  (UB  (L         L         error     error    error    error     error
-        error     error     error     error    error    (CB L)))
+  (Uc  ((U0 mS R) (U1 mS R) -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (U0  ((U0 R)    (U1 0 R)  -----     -----    -----    (UB 0 L)  (UB 0 L)
+        -----     -----     -----     -----    -----    -----))
+  (U1  ((U0 1 R)  (U1 R)    -----     -----    -----    (UB 1 L)  (UB 1 L)
+        -----     -----     -----     -----    -----    -----))
+  (UB  (L         L         -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    (CB L)))
 (code:comment "No new rule found (zero encountered in state DB)")
 (code:comment "Check that we have a final state.")
-  (V   (L         L         (W L)     L        L        error     error
-        error     error     error     error    error    error))
-  (W   ((V L)     (V L)     (X1 R)    (V L)    (V L)    error     error
-        error     error     error     error    error    error))
-  (X1  (error     error     (X2 R)    error    error    error     error
-        error     error     error     error    error    error))
-  (X2  ((X3 R)    error     error     error    error    error     error
-        error     error     error     error    error    error))
-  (X3  (error     error     (X4 R)    error    error    error     error
-        error     error     error     error    error    error))
-  (X4  ((X5 R)    error     error     error    error    error     error
-        error     error     error     error    error    error))
-  (X5  (error     error     (X6 R)    error    error    error     error
-        error     error     error     error    error    error))
-  (X6  ((ZR R)    error     error     error    error    error     error
-        error     error     error     error    error    error))
+  (V   (L         L         (W L)     L        L        -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (W   ((V L)     (V L)     (X1 R)    (V L)    (V L)    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X1  (-----     -----     (X2 R)    -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X2  ((X3 R)    -----     -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X3  (-----     -----     (X4 R)    -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X4  ((X5 R)    -----     -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X5  (-----     -----     (X6 R)    -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X6  ((ZR R)    -----     -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
 (code:comment "We have a final state. Erase all at the left of the data.")
   (ZR  (R         R         R         R        R        (ZL L)    (ZL L)
         R         R         R         R        R        (ZL S L)))
-  (ZL  (L         L         (ZS S L)  error    error    error     error
-        (ZL 0 L)  (ZL 1 L)  (ZS S L)  error    error    error))
-  (ZS  ((ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y L)     (Y L)
-        (ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y S L)))
+  (ZL  (L         L         (ZS S L)  -----    -----    -----     -----
+        (ZL 0 L)  (ZL 1 L)  (ZS S L)  -----    -----    -----))
+  (ZS  ((ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Ok L)    (Ok L)
+        (ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Ok S L)))
   ))
 (code:line)
 (code:comment "We have to expand the simplified rules.")
 (code:line)
 (define symbols (car UTM-rules-table))
 (code:line)
-(code:comment "We omit all rules with new state error.")
-(code:comment "The UTM produced by make-TM halts with an error for this state.")
+(code:comment "We omit all rules marked as -----.")
+(code:comment "The UTM produced by make-TM halts with an error")
+(code:comment "when it cannot find an applying rule.")
+(code:comment "This may mean that the encoded machine cannot handle its input")
+(code:comment "or that the UTM has a bug.")
 (code:line)
 (define UTM-rules
  (for/fold ((r '()))
@@ -1875,7 +1888,7 @@ as @elemref["book" "mentioned above"].
    (for/list
     ((rule (in-list (cadr rule)))
      (old-symbol (in-list symbols))
-     #:unless (equal? rule 'error))
+     #:unless (equal? rule '-----))
     (case rule
      ((R L) (list (list old-state old-symbol) (list old-state old-symbol) rule))
      (else
@@ -1898,13 +1911,13 @@ as @elemref["book" "mentioned above"].
 (code:line)
 (define UTM
  (make-TM
-  'A '(Y) 'B 'S '_ UTM-rules #:name 'UTM))
+  'A '(Ok) 'B 'S '_ UTM-rules #:name 'UTM))
 (code:line)
 (code:comment "Now let's check that (UTM input)")
 (code:comment "produces the same as (TM '(1 1 1)).")
+(UTM input)
 (code:line)
 (TM '(1 1 1))
-(UTM input)
 (code:line)
 (code:comment "Encoding of 3 state busy beaver.")
 (code:comment "Does move left of the data.")
