@@ -54,7 +54,7 @@
 @(define (inset . x) (apply nested #:style 'inset x))
 @(define (note . x) (inset (apply smaller x)))
 @(define (itel x) (italic (element 'tt x)))
-@(define (ttt x) (nonbreaking (element 'tt x)))
+@(define (ttt . x) (nonbreaking (apply element 'tt x)))
 @title[#:version ""]{Turing-machines}
 @author{Jacob J. A. Koot}
 @(defmodule "make-TM.rkt" #:packages ())
@@ -218,8 +218,8 @@ The returned values are the number of moves made, the final state and
 the modified content of the tape.
 Let's see more details in a report of the moves.
 In such a report the new content of the tape is shown as
-@tt{((tape-symbol ...) (current tape-symbol ...))} representing the content
-@tt{(tape-symbol ... current tape-symbol...)} where @tt{current} is the current tape-symbol.
+@ttt{((tape-symbol ...) (current tape-symbol ...))} representing the content
+@ttt{(tape-symbol ... current tape-symbol...)} where @ttt{current} is the current tape-symbol.
 With the given input,
 the following machine replaces the second and the fifth tape-symbol.
 
@@ -310,7 +310,7 @@ Providing
 
 @inset{@rack[#:registers n]}
 
-with @racketlink[exact-integer? "exact integer"] @tt{n≥2} is the same as providing:
+with @racketlink[exact-integer? "exact integer"] @ttt{n≥2} is the same as providing:
 
 @inset{@rack[#:registers (for/list ((k (in-range n))) (string->keyword (~s k)))]}
 
@@ -482,10 +482,10 @@ For each move the report shows:
       the original content of the input/output-register showing the read tape-symbol,
       the new content showing the tape-symbol to be written.}
 @item{The new position of the tape-head and the new content of the tape shown as
-@nonbreaking{@tt{((h ...) (c t ...))}},
-where the new position of the tape-head is at tape-symbol @tt{c}.}]}
+@nonbreaking{@ttt{((h ...) (c t ...))}},
+where the new position of the tape-head is at tape-symbol @ttt{c}.}]}
 
-@note{Internally list @rack[(h ...)] is stored in @racketlink[reverse]{reversed} order,
+@note{Internally list @ttt{(h ...)} is stored in @racketlink[reverse]{reversed} order,
 which allows fast movement of the tape-head.
 This is like using a push-down/pop-up machine with two stacks.
 Indeed, every Turing-machine can be simulated by such a machine.
@@ -609,10 +609,10 @@ When a rule instructs to write a blank, in fact a space is written:
 (TM '() #:report 'long)]
 
 @subsection{List-ref}
-The following machine expects as input @rack[(1 ... / tape-symbol ...+)].
+The following machine expects as input @ttt{(1 ... / tape-symbol ...+)}.
 Let k be the number of ones before the slash.
 The machine halts in state @rack[T] after replacing all non-spaces by spaces,
-the one with index k in the list @rack[(tape-symbol ...+)] excepted.
+the one with index k in the list @ttt{(tape-symbol ...+)} excepted.
 Spaces in this list do not count for the index.
 If there are less than k+1 non-spaces,
 the machine halts in state @rack[F] with empty tape,
@@ -670,11 +670,11 @@ id est consisting of spaces only.
 
 @subsection{Remove symbols}
 The following Turing-machine always halts.
-A correct input is a list of which every element is an @tt["*"] or a @tt["+"],
-The result of a correct input is the input without @tt["+"]
+A correct input is a list of which every element is an @ttt["*"] or a @ttt["+"],
+The result of a correct input is the input without @ttt["+"]
 followed by n+1 spaces if there are n plus-signs.
 This is like addition of zero, one or more natural numbers,
-where natural number k is written as `@tt["* ..."]' with k @tt["*"]s.
+where natural number k is written as `@ttt["* ..."]' with k @ttt["*"]s.
 The machine never moves left of the start of the input.
 
 @interaction[
@@ -745,10 +745,10 @@ operand = bit ...+
 bit     = 0 | 1"]}
 
 An incorrect input yields @itel{final-state} @element['tt "F"].
-A correct input yields @itel{final-state} @element['tt "T"] and @tt{output}
+A correct input yields @itel{final-state} @element['tt "T"] and @ttt{output}
 @nonbreaking{@rack[(bit bit ...)]}
 showing the sum of the two operands.
-More precisely the @tt{output} is @nonbreaking{@rack[(1 bit ...)]} or @rack[(0)],
+More precisely the @ttt{output} is @nonbreaking{@rack[(1 bit ...)]} or @rack[(0)],
 id est, without leading zeros.
 The initial content of the tape is modified such as to result in the sum.
 In the sum a 0 bit is written as @element['tt "x"] and a 1 bit as @element['tt "y"]
@@ -999,7 +999,7 @@ State @element['tt "A"] is the initial internal state and @element['tt "T"] the 
 
 @subsection{@hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "Busy beaver"]}
 @subsubsection{3 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]}
-In fact there are four states, but @itel{final-state} @tt{T} does not count.
+In fact there are four states, but @itel{final-state} @ttt{T} does not count.
 
 @note{The Turing-machine program shown here takes 2 moves less than the one shown in
 Wikipedia article @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"].
@@ -1008,8 +1008,8 @@ As in this example @rack[0] is a blank,
 it even would be impossible to write a @rack[0].}
 
 @note{
-Some authors make no distinction between a @italic{@tt{blank}} and a @italic{@tt{space}},
-meaning that they allow writing a @italic{@tt{blank}}.
+Some authors make no distinction between a @italic{@ttt{blank}} and a @italic{@ttt{space}},
+meaning that they allow writing a @italic{@ttt{blank}}.
 I prefer to make the distinction,
 because it always allows a Turing machine program
 to find the real start or end of the current tape-content.}
@@ -1034,7 +1034,7 @@ to find the real start or end of the current tape-content.}
 (TM '() #:report 'long)]
 
 @subsubsection{4 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]}
-In fact there are five states, but @itel{final-state} @tt{T} does not count.
+In fact there are five states, but @itel{final-state} @ttt{T} does not count.
 For every non-final state @rack[X] there are two rules,
 @rack[((X _) (? ?) ?)] and
 @rack[((X 1) (? ?) ?)].
@@ -1164,7 +1164,7 @@ and the machine halts in state @rack[F].
 ways to write n pairs of matching parentheses, n≥0.@(linebreak)
 There are two recurrent relations starting with @nonbreaking{C@subscript{0} = 1}:@(linebreak)
 @nonbreaking{C@subscript{n+1} = ((4n+2)C@subscript{n})/(n+2) =
-@bold{@larger{Σ}}@subscript{(k=0:n)}(C@subscript{k}C@subscript{n@subscript{@tt{-}}k})}.
+@bold{@larger{Σ}}@subscript{(k=0:n)}(C@subscript{k}C@subscript{n@subscript{@ttt{-}}k})}.
 See @hyperlink["https://en.wikipedia.org/wiki/Catalan_number" "Catalan numbers"].}
 
 @interaction[
@@ -1425,13 +1425,13 @@ yields @itel{final-state} @rack['F].
 
 @subsection{Counter}
 
-Represent natural number n as @tt{x ...} or @tt{y ...} with n @tt{x}s or @tt{y}s.
+Represent natural number n as @ttt{x ...} or @ttt{y ...} with n @ttt{x}s or @ttt{y}s.
 The following Turing-machine never halts when given an empty input.
 It forms an infinite tape containing the numbers 0, 1, 2 etc.
 separated by slashes.
-Every next number is formed by putting an @tt{x} at the end of the content
-and copying the previous number, which has the form @tt{x ...}.
-While copying, the @tt{x}s of the previous number are replaced by @tt{y}s
+Every next number is formed by putting an @ttt{x} at the end of the content
+and copying the previous number, which has the form @ttt{x ...}.
+While copying, the @ttt{x}s of the previous number are replaced by @ttt{y}s
 such as to indicate they already have been copied.
 
 @interaction[
@@ -1602,7 +1602,7 @@ It is possible to code the machine without additional registers,
 but this would require a separate coding of the subroutine
 for each time it is called with different arguments.
 It also would complicate coding the shift of cells to the right.
-@tt["B"] is the blank, @tt["S"] the space and @tt["_"] the dummy.
+@ttt["B"] is the blank, @ttt["S"] the space and @ttt["_"] the dummy.
 The subroutine uses a mark indicating to which cell it must move
 the tape-head before returning. This mark must not occur in the input.
 This is not checked.
@@ -1662,22 +1662,44 @@ This is not checked.
 @section[#:tag "UTM"]{Universal Turing-machine}
 The following Universal Turing-machine is an adapted copy from
 @nonbreaking{"Formal Languages and their Relation to Automata"}
+Addison-Wesley, 1969, @nonbreaking{p 105-107 (ISBN 0-201-0298 3-9)}
 as @elemref["book" "mentioned above"].
+I have replaced the entries in column @ttt{mc}
+and rows @ttt{TL0}, @ttt{TL1}, @ttt{TR0} and @ttt{TR1} by an @ttt{R}.
+In the book these entries contain no rule, but that does not work.
+Below the single track tape equivalent of the copied UTM is used.
+In addition the copy is adapted such as to allow
+the encoded machine to move left of the data.
+The UTM erases the encoded program before halting,
+thus returning the resulting data only.
+
+An UTM wants an encoded Turing-machine plus data for its input.
+The encoded machine is enclosed between two triplets `@ttt{c c c}',
+the terminating triplet being followed by the data, which can contain
+tape-symbols @ttt{B}, @ttt{0} and @ttt{1} only.
+The rules are sorted by old state and within an old state by current tape-symbol.
+The states are separated by a doublet `@ttt{c c}' and the rules within a state by a single @ttt{c}.
+An encoded rule has the form @ttt{1 ...+ move bit},
+@ttt{1 ...} is the next state,
+@ttt{move} is either @ttt{R} or @ttt{L} and
+@ttt{bit} is the symbol to be written,
+either @ttt{0} or @ttt{1}.
+An omitted rule is included as a @ttt{0}.
+
+The UTM accepts symbols @ttt{B}, @ttt{0}, @ttt{1}, @ttt{c}, @ttt{R}, @ttt{L}, @ttt{S} and @ttt{B}.
+plus the marked version of each symbol obtained by prefixing it with an @ttt{m}.
+@ttt{B} is the blank and @ttt{S} the space.
+Marking a @ttt{B} produces a marked space: @ttt{mS}.
+All rules treat @ttt{B} and @ttt{S} identically.
+The marker is used to identify the current state of the encoded machine and
+the current position of its tape-head within the data.
+The marker is used too when looking for the new state
+when applying a rule of the encoded machine.
+Hence the marker can have three different meanings,
+but it always is clear which meaning it has.
 
 @interaction[
 (require racket "make-TM.rkt")
-(code:line)
-(code:comment "Universal Turing Machine")
-(code:comment "Copied from “Formal Languages and their Relation to Automata”,")
-(code:comment "Addison-Wesley, 1969, p 105-107 (ISBN 0-201-0298 3-9)")
-(code:comment "I have replaced the entries in column mc")
-(code:comment "and rows TL0, TL1, TR0 and TR1 by an R.")
-(code:comment "In the book these entries contain no rule, but that does not work.")
-(code:comment "Below the single track tape equivalent of the copied UTM is used.")
-(code:comment "In addition the copy is adapted such as to allow")
-(code:comment "the encoded machine to move left of the data.")
-(code:comment "The UTM erases the encoded program before halting,")
-(code:comment "thus returning the resulting data only.")
 (code:line)
 (code:comment "Consider:")
 (code:line)
@@ -1692,8 +1714,6 @@ as @elemref["book" "mentioned above"].
 (code:line)
 (define input
 (code:comment "The encoded Turing machine.")
-(code:comment "The encoded machine accepts the tape-symbols B, 0 and 1.")
-(code:comment "For every state there are 3 rules, one for B, one for 0 and one for 1.")
 '(c c mc
 (code:comment "State 1.")
   0           c    (code:comment "No rule for state 1 with input B.")
@@ -1714,36 +1734,14 @@ as @elemref["book" "mentioned above"].
 (code:comment "The data.")
   m1 1 1))
 (code:line)
-(code:comment "The states are identified by (1 ...+).")
-(code:comment "(1 ...+ move bit) is a rule.")
-(code:comment "The number of 1s specifies the new state.")
-(code:comment "The bit is 0 or 1, the tape-symbol to be written.")
-(code:comment "The move is either R or L.")
-(code:comment "States are separated by c c.")
-(code:comment "The states are in order 1, 1 1, 1 1 1 and 1 1 1 1")
-(code:comment "For each state there are three rules separated by c.")
-(code:comment "The rules are in order of the tape-symbols B, 0 and 1.")
-(code:comment "A rule consisting of a 0 only indicates absence of a rule.")
-(code:comment "A final state is marked as one with all rules 0.")
-(code:comment "This holds for state 4 (1 1 1 1).")
-(code:line)
 (code:comment "The universal Turing-machine.")
-(code:comment "B is the blank and S the space.")
-(code:comment "All rules treat S and B identically.")
-(code:comment "m is used as marker, initially marking the block of state 1")
-(code:comment "and marking the current symbol in the data.")
-(code:comment "The marker is used too when looking for the new state")
-(code:comment "when applying a rule of the encoded machine.")
-(code:comment "Hence the marker can have three different meanings,")
-(code:comment "but it is always clear which meaning it has.")
-(code:comment "The marked version of symbol x is mx.")
-(code:comment "Marking a B produces a marked space: mS.")
 (code:line)
 (define UTM-rules-table
 (code:comment "The tape-symbols, the second line showing marked symbols.")
 '((     0         1         c         L        R        S         B
         m0        m1        mc        mL       mR       mS)
-(code:comment "The rules (old-states in the first column) are:")
+(code:comment "The first column of the table below are old states.")
+(code:comment "For each old state the rules are:")
 (code:comment "R = (_ _ R), L = (_ _ L)")
 (code:comment "(new-state move) = (new-state current-tape-symbol move).")
 (code:comment "(new-state new-tape-symbol move) = obvious.")
