@@ -137,14 +137,15 @@ and at the right of its current non-blank content.
 When the tape-head is reading from an empty cell,
 it sends a blank to the control unit, for it must send something.
 In the @elemref["book" "the book mentioned above"] the word `blank'
-is introduced for a tape-symbol that can be read from,
+is introduced as a tape-symbol that can be read from,
 but cannot be written into an existing cell,
-although later this restriction is relaxed.
+although some pages further on this restriction is relaxed.
 The Turing-machines made by procedure @rack[make-TM] adhere to the resticted definition.
 A space can be written in an existing cell within the current tape-content.
-It can be used such as to indicate that the cell is considered to be empty.
+It can be used to indicate that the cell is considered to be empty.
 The space and the blank are two distinct tape-symbols, though.
 The rules can interpret a space like any other non-blank tape-symbol.
+That's up to the programmer of the Turing-machine.
 
 @note{In real life tape-equipment usually the tape is moving
 with the tape-head in fixed position.
@@ -207,14 +208,10 @@ The Turing-machine replaces the fourth element by @rack['new].
   'space  (code:comment "Not used.")
   '_      (code:comment "The dummy.")
   (code:comment "The rules:")
-  '((code:comment "Do not modify first  tape-symbol.    Move right.")
-    ((A _) (B _  ) R)    
-    (code:comment "Do not modify second tape-symbol.    Move right.")
-    ((B _) (C _  ) R)    
-    (code:comment "Do not modify third  tape-symbol.    Move right.")
-    ((C _) (D _  ) R)    
-    (code:comment "Replace fourth tape-symbol by 'new'. Move right and halt.")
-    ((D _) (T new) R))))
+  '(((A _) (B _  ) R) (code:comment "Do not modify first  tape-symbol. Move right.")
+    ((B _) (C _  ) R) (code:comment "Do not modify second tape-symbol. Move right.")
+    ((C _) (D _  ) R) (code:comment "Do not modify third  tape-symbol. Move right.")
+    ((D _) (T new) R) (code:comment "Replace fourth tape-symbol by 'new' and halt.\n      "))))
 (code:line)
 (TM '(This is the original tape))]
 
@@ -1698,7 +1695,7 @@ An omitted rule is included as a @ttt{0}.
 A state with omitted rules @ttt{0} only is interpreted as a final state.
 
 The universal Turing-machine accepts symbols
-@ttt{B}, @ttt{0}, @ttt{1}, @ttt{c}, @ttt{R}, @ttt{L}, @ttt{S} and @ttt{B}.
+@ttt{B}, @ttt{0}, @ttt{1}, @ttt{c}, @ttt{R}, @ttt{L}, @ttt{S}, @ttt{B}
 plus the marked version of each symbol obtained by prefixing it with an @ttt{m}.
 @ttt{B} is the blank and @ttt{S} the space.
 Marking a @ttt{B} produces a marked space: @ttt{mS}.
