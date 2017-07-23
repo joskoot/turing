@@ -271,8 +271,7 @@ with more than one tape, each one with its own tape-head.
 To simulate such a Turing-machine with n tapes, use a multiple track tape with 2n tracks.
 Track i+n can be used for a mark that indicates the current position in track i.
 To read from or to write into track i, the mark in track i+n must first be looked for.
-Hence such a Turing-machine can be emulated by a Turing-machine
-according to the formal definition,
+Such a Turing-machine can be emulated by a Turing-machine according to the formal definition,
 although its programming can be very complicated.
 A simpler way of using marks is shown in section @secref["UTM"].
 
