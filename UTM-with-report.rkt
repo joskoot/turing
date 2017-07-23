@@ -5,96 +5,96 @@
 (define simplified-rules
 '((     0         1         c         L        R        S         B
         m0        m1        mc        mL       mR       mS)
-  (A   (R         R         R         R        R        stop      stop
-        stop      stop      (B R)     stop     stop     stop))
-  (B   (R         R         R         R        R        stop      stop
-        (C0 L)    (C1 L)    stop      stop     stop     (CB L)))
-  (CB  (L         L         L         L        L        stop      stop
-        stop      stop      (DB c R)  stop     stop     stop))
-  (C0  (L         L         L         L        L        stop      stop
-        stop      stop      (D0 c R)  stop     stop     stop))
-  (C1  (L         L         L         L        L        stop      stop
-        stop      stop      (D1 c R)  stop     stop     stop))
-  (DB  ((V L)     (E m1 L)  stop      stop     stop     stop      stop
-        error     error     error     error    error    error))
-  (D0  (R         R         (DB R)    R        R        stop      stop
-        error     error     error     error    error    error))
-  (D1  (R         R         (D0 R)    R        R        stop      stop
-        error     error     error     error    error    error))
-  (E   (L         L         (F L)     L        L        stop      stop
-        error     error     error     error    error    error))
-  (F   ((E L)     (E L)     (G L)     (E L)    (E L)    stop      stop
-        error     error     error     error    error    error))
-  (G   ((E L)     (E L)     (H R)     (E L)    (E L)    stop      stop
-        error     error     error     error    error    error))
-  (H   (stop      stop      (I R)     stop     stop     stop      stop
-        error     error     error     error    error    error))
-  (I   (stop      stop      (J mc R)  stop     stop     stop      stop
-        error     error     error     error    error    error))
-  (J   (R         R         R         R        R        stop      stop
-        stop      (KL 1 R)  stop      stop     stop     stop))
-  (KL  (stop      (ML m1 L) stop      (TL R)   (TR R)   stop      stop
-        error     error     error     error    error    error))
-  (ML  (L         L         L         L        L        stop      stop
-        stop      stop      (NL c R)  stop     stop     stop))
-  (NL  (R         R         (PL R)    R        R        stop      stop
-        stop      (NR R)    stop      stop     stop     stop))
-  (PL  ((NL R)    (NL R)    (SL mc R) (NL R)   (NL R)   stop      stop
-        stop      (NR R)    stop      stop     stop     stop))
-  (SL  (R         R         R         R        R        stop      stop
-        stop      (KL 1 R)  stop      stop     stop     stop))
-  (KR  (stop      (MR m1 R) stop      (TL R)   (TR R)   stop      stop
-        error     error     error     error    error    error))
-  (MR  (R         R         R         R        R        stop      stop
-        stop      stop      (NR c R)  stop     stop     stop))
-  (NR  (R         R         (PR R)    R        R        stop      stop
-        error     error     error     error    error    error))
-  (PR  ((NR R)    (NR R)    (SR mc L) (NR R)   (NR R)   stop      stop
-        error     error     error     error    error    error))
-  (SR  (L         L         L         L        L        stop      stop
-        stop      (KR 1 R)  stop      stop     stop     stop))
-  (TL  ((TL0 R)   (TL1 R)   stop      stop     stop     stop      stop
-        error     error     error     error    error    error))
-  (TR  ((TR0 R)   (TR1 R)   stop      stop     stop     stop      stop
-        error     error     error     error    error    error))
-  (TL0 (R         R         R         R        R        stop      stop
-        (U 0 L)   (U 0 L)   stop      stop     stop     (U 0 L)))
-  (TL1 (R         R         R         R        R        stop      stop
-        (U 1 L)   (U 1 L)   R         stop     stop     (U 1 L)))
-  (TR0 (R         R         R         R        R        stop      stop
-        (U 0 R)   (U 0 R)   R         stop     stop     (U 0 R)))
-  (TR1 (R         R         R         R        R        stop      stop
-        (U 1 R)   (U 1 R)   R         stop     stop     (U 1 R)))
-  (U   ((C0 m0 L) (C1 m1 L) (Uc R)    error    error    (CB mS L) (CB mS L)
-        error     error     error     error    error    error))
-  (Uc  ((U0 mS R) (U1 mS R) error     error    error    error     error
-        error     error     error     error    error    error))
-  (U0  ((U0 R)    (U1 0 R)  error     error    error    (UB 0 L)  (UB 0 L)
-        error     error     error     error    error    error))
-  (U1  ((U0 1 R)  (U1 R)    error     error    error    (UB 1 L)  (UB 1 L)
-        error     error     error     error    error    error))
-  (UB  (L         L         error     error    error    error     error
-        error     error     error     error    error    (CB L)))
-  (V   (L         L         (W L)     L        L        stop      stop
-        error     error     error     error    error    error))
-  (W   ((V L)     (V L)     (X1 R)    (V L)    (V L)    stop      stop
-        error     error     error     error    error    error))
-  (X1  (stop      stop      (X2 R)    stop     stop     stop      stop
-        error     error     error     error    error    error))
-  (X2  ((X3 R)    stop      stop      stop     stop     stop      stop
-        error     error     error     error    error    error))
-  (X3  (stop      stop      (X4 R)    stop     stop     stop      stop
-        error     error     error     error    error    error))
-  (X4  ((X5 R)    stop      stop      stop     stop     stop      stop
-        error     error     error     error    error    error))
-  (X5  (stop      stop      (X6 R)    stop     stop     stop      stop
-        error     error     error     error    error    error))
-  (X6  ((ZR R)    stop      stop      stop     stop     stop      stop
-        error     error     error     error    error    error))
+  (A   (R         R         R         R        R        -----     -----
+        -----     -----     (B R)     -----    -----    -----))
+  (B   (R         R         R         R        R        -----     -----
+        (C0 L)    (C1 L)    -----     -----    -----    (CB L)))
+  (CB  (L         L         L         L        L        -----     -----
+        -----     -----     (DB c R)  -----    -----    -----))
+  (C0  (L         L         L         L        L        -----     -----
+        -----     -----     (D0 c R)  -----    -----    -----))
+  (C1  (L         L         L         L        L        -----     -----
+        -----     -----     (D1 c R)  -----    -----    -----))
+  (DB  ((V L)     (E m1 L)  -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (D0  (R         R         (DB R)    R        R        -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (D1  (R         R         (D0 R)    R        R        -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (E   (L         L         (F L)     L        L        -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (F   ((E L)     (E L)     (G L)     (E L)    (E L)    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (G   ((E L)     (E L)     (H R)     (E L)    (E L)    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (H   (-----     -----     (I R)     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (I   (-----     -----     (J mc R)  -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (J   (R         R         R         R        R        -----     -----
+        -----     (KL 1 R)  -----     -----    -----    -----))
+  (KL  (-----     (ML m1 L) -----     (TL R)   (TR R)   -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (ML  (L         L         L         L        L        -----     -----
+        -----     -----     (NL c R)  -----    -----    -----))
+  (NL  (R         R         (PL R)    R        R        -----     -----
+        -----     (NR R)    -----     -----    -----    -----))
+  (PL  ((NL R)    (NL R)    (SL mc R) (NL R)   (NL R)   -----     -----
+        -----     (NR R)    -----     -----    -----    -----))
+  (SL  (R         R         R         R        R        -----     -----
+        -----     (KL 1 R)  -----     -----    -----    -----))
+  (KR  (-----     (MR m1 R) -----     (TL R)   (TR R)   -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (MR  (R         R         R         R        R        -----     -----
+        -----     -----     (NR c R)  -----    -----    -----))
+  (NR  (R         R         (PR R)    R        R        -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (PR  ((NR R)    (NR R)    (SR mc L) (NR R)   (NR R)   -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (SR  (L         L         L         L        L        -----     -----
+        -----     (KR 1 R)  -----     -----    -----    -----))
+  (TL  ((TL0 R)   (TL1 R)   -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (TR  ((TR0 R)   (TR1 R)   -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (TL0 (R         R         R         R        R        -----     -----
+        (U 0 L)   (U 0 L)   -----     -----    -----    (U 0 L)))
+  (TL1 (R         R         R         R        R        -----     -----
+        (U 1 L)   (U 1 L)   R         -----    -----    (U 1 L)))
+  (TR0 (R         R         R         R        R        -----     -----
+        (U 0 R)   (U 0 R)   R         -----    -----    (U 0 R)))
+  (TR1 (R         R         R         R        R        -----     -----
+        (U 1 R)   (U 1 R)   R         -----    -----    (U 1 R)))
+  (U   ((C0 m0 L) (C1 m1 L) (Uc R)    -----    -----    (CB mS L) (CB mS L)
+        -----     -----     -----     -----    -----    -----))
+  (Uc  ((U0 mS R) (U1 mS R) -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (U0  ((U0 R)    (U1 0 R)  -----     -----    -----    (UB 0 L)  (UB 0 L)
+        -----     -----     -----     -----    -----    -----))
+  (U1  ((U0 1 R)  (U1 R)    -----     -----    -----    (UB 1 L)  (UB 1 L)
+        -----     -----     -----     -----    -----    -----))
+  (UB  (L         L         -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    (CB L)))
+  (V   (L         L         (W L)     L        L        -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (W   ((V L)     (V L)     (X1 R)    (V L)    (V L)    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X1  (-----     -----     (X2 R)    -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X2  ((X3 R)    -----     -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X3  (-----     -----     (X4 R)    -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X4  ((X5 R)    -----     -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X5  (-----     -----     (X6 R)    -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
+  (X6  ((ZR R)    -----     -----     -----    -----    -----     -----
+        -----     -----     -----     -----    -----    -----))
   (ZR  (R         R         R         R        R        (ZL L)    (ZL L)
         R         R         R         R        R        (ZL S L)))
-  (ZL  (L         L         (ZS S L)  error    error    error     error
-        (ZL 0 L)  (ZL 1 L)  (ZS S L)  error    error    error))
+  (ZL  (L         L         (ZS S L)  -----    -----    -----     -----
+        (ZL 0 L)  (ZL 1 L)  (ZS S L)  -----    -----    -----))
   (ZS  ((ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y L)     (Y L)
         (ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y S L)))
   ))
@@ -108,7 +108,7 @@
    (for/list
     ((rule (in-list (cadr rule)))
      (old-symbol (in-list symbols))
-     #:when (not (or (equal? rule 'stop) (equal? rule 'error))))
+     #:when (not (equal? rule '-----)))
     (case rule
      ((R)     (list (list old-state old-symbol) (list old-state old-symbol) 'R))
      ((L)     (list (list old-state old-symbol) (list old-state old-symbol) 'L))
@@ -122,7 +122,7 @@
 
 (define UTM
  (make-TM
-  'A '(stop error Y) 'B 'S '_ rules #:name 'UTM))
+  'A '(Y) 'B 'S '_ rules #:name 'UTM))
 
 (define input
 '(c c mc
@@ -155,7 +155,7 @@
    ((3 _) (2 1) L)
    ((3 1) (4 1) R))))
 
-(define BB-input
+(define encoded-BB+data
 '(c c mc   1 1 1 R 1 c
            1 1 1 R 1 c
                1 R 1 c c
@@ -167,7 +167,6 @@
          1 1 1 1 R 1 c c
          0 c 0 c 0 c c c mS))
 
-(UTM BB-input #:report 'short)
+(UTM encoded-BB+data #:report 'short)
 
 (BB '())
-

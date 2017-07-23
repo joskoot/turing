@@ -63,7 +63,7 @@
      (hash-set! register-hash bus-register-name current-tape-symbol)
      (define old-state (hash-ref register-hash state-register-name))
      (define old-symbol (hash-ref register-hash bus-register-name))
-     (define rule (find-rule old-state current-tape-symbol))
+     (define rule (find-rule old-state current-tape-symbol tape))
      (define old-registers
       (for/list ((register-name (in-list register-names)))
        (hash-ref register-hash register-name)))
@@ -127,9 +127,10 @@
     (values normal-hash (hash-set dummy-hash old-state rule))
     (values (hash-set normal-hash (car rule) rule) dummy-hash))))
  
- (define (find-rule old-state current-tape-symbol)
+ (define (find-rule old-state current-tape-symbol tape)
   (define (find-rule-error)
-   (error name "no rule for:~n old-state: ~s~nold-symbol: ~s" old-state current-tape-symbol))
+   (error name "no rule for:~n old-state: ~s~nold-symbol: ~s~ntape: ~s"
+    old-state current-tape-symbol tape))
   (define (find-dummy-rule) (hash-ref dummy-rule-hash old-state find-rule-error))
   (hash-ref normal-rule-hash (list old-state current-tape-symbol) find-dummy-rule))
  
