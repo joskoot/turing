@@ -62,12 +62,10 @@ This module provides one binding only, that of procedure @rack[make-TM].
 
 @section{Introduction}
 
-Procedure @rack[make-TM] returns a procedure that emulates a two-way single tape
+Procedure @rack[make-TM] returns a procedure that emulates a
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machine"].
-The reader of the present document is supposed have some foreknowledge of Turing-machines.
-Nevertheless,
-a short introduction with the details of the machines returned by procedure @rack[make-TM].
-
+Below a short introduction with the details of the Turing-machines
+returned by procedure @rack[make-TM].
 @elemtag["book" ""]
 @note{John E. Hopcroft and Jeffrey D. Ullman provide a comprehensive description
 of Turing-machines in chapter 6 of their book:
@@ -149,7 +147,7 @@ That's up to the programmer of the Turing-machine.
 
 @note{In real life tape-equipment usually the tape is moving
 with the tape-head in fixed position.
-Moving the tape-head, as usually assumed for Turing-machines, has the same effect
+Moving the tape-head has the same effect
 as keeping it at fixed position and moving the tape in opposit direction.}
 
 @note{The tape-head of a Turing-machine does not move while reading
@@ -918,7 +916,7 @@ It replaces each @itel{tape-symbol} @nonbreaking{@element['tt "(n m)"]} by one d
 State @element['tt "0"] indicates that there is no carry.
 State @element['tt "1"] indicates that a carry must be added.
 State @element['tt "A"] is the initial internal state and @element['tt "T"] the final state.
-The initial tape-content seems like a tape of two tracks,
+The initial tape-content seems a tape of two tracks,
 but it is replaced by a tape of one track only.
 
 @interaction[
@@ -938,13 +936,9 @@ but it is replaced by a tape of one track only.
    (define-values (q r) (quotient/remainder (+ n m c) 10))
    `((,c (,n ,m)) (,q ,r) L))))
 (code:line)
-(begin
- (printf "The rules~n")
- (pretty-print (take rules 30))
- (printf "etc.~n")
- (pretty-print (take (drop rules (- (quotient (length rules) 2) 15)) 30))
- (printf "etc.~n")
- (pretty-print (drop rules (- (length rules) 30))))
+(begin (printf " ~nThe rules:~n ~n")
+ (for ((rule (in-list rules)) (nl (in-cycle '(#f #f #f #t))))
+  (printf (if nl "~a~n" "~a ") (~s #:width 19 #:min-width 19 rule))))
 (code:line)
 (define TM (make-TM #:name 'decimal-addition
             'A   (code:comment "initial state")
@@ -990,7 +984,7 @@ but it is replaced by a tape of one track only.
 (code:line)
 (let ((n 9876) (m 987654))
  (define-values (nr-of-moves final-state output)
-  (TM (prepare-input n m) #:report 'short))
+  (TM (prepare-input n m) #:report 'long))
  (define sum (output->nr output))
  (values sum (= sum (+ n m))))
 (code:line)
@@ -1158,7 +1152,7 @@ First check that the input consists of @rack['<] and @rack['>] only.
 Put @itel{tape-symbol} @rack[s] at the left of the input
 and @itel{tape-symbol} @rack[e] at the right.
 This helps detecting the start and the end of the current content of the tape.
-Starting from the right go left look for a @rack['>]
+Starting from the right go left looking for a @rack['>]
 whose first preceding non-space symbol is @rack['<].
 When found replace the @rack['<] and the @rack['>]
 by spaces, go to the right of the input and repeat.
@@ -1927,7 +1921,7 @@ but it always is clear which meaning it has.
 (code:comment "Encoding of 3 state busy beaver.")
 (code:comment "Does move left of the data.")
 (code:line)
-(define encoded-BB+data
+(define encoded-BB3+data
 '(c c mc (code:comment "State 1.")
            1 1 1 R 1 c (code:comment "((1 B) (3 1) R)")
            1 1 1 R 1 c (code:comment "((1 0) (3 1) R)")
@@ -1948,7 +1942,7 @@ but it always is clear which meaning it has.
        (code:comment "The data (empty):")
        c mS))
 (code:line)
-(UTM encoded-BB+data)]
+(UTM encoded-BB3+data)]
 
 The @rack[UTM] requires many moves,
 but the final state and tape-content are correct!
