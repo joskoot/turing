@@ -98,11 +98,11 @@ contains the current tape-symbol.
 A Turing-machine must be given an input for the initial tape-content.
 The input must be a finite list of non-blank tape-symbols
 (the blank is a special tape-symbol used to indicate that a cell is empty;
-@elemref["item 3" "see item 3 below"]).
+@elemref["item 2" "see item 2 below"]).
 The Turing-machine starts with a given initial internal state for the control-unit
 and with the tape-head positioned at the start of the initial tape-content.
-If the input is not empty, the initial tape-content has no blank cell.
-If the input is empty, the initial tape-content consists of one single blank cell.
+If the input is not empty, the initial tape-content has no empty cell.
+If the input is empty, the initial tape-content consists of one single empty cell.
 The control-unit makes moves according to a program consisting of a finite set of
 instructions, which we call `rules'.
 The rule to be applied is determined by the current internal state of the control-unit
@@ -116,17 +116,17 @@ possibly, but not necessarily, with an ever growing tape-content.
 @inset{@itemlist[#:style 'ordered
           
 @item{Optionally writing a non-blank tape-symbol in the current cell.
-This step is not optional when the current cell is blank.
-A blank cell always is filled with a non-blank tape-symbol,
+This step is not optional when the current cell is empty.
+An empty cell always is filled with a non-blank tape-symbol,
 possibly but not necessarily with a space,
 which is not a blank.}
 
-@item{@elemtag["item 3"]{Optionally moving the tape-head one cell to the right or to the left.
+@item{@elemtag["item 2"]{Optionally moving the tape-head one cell to the right or to the left.
 When the tape-head moves left of the start of the tape-content or right of the end,
-a blank cell is added. This cell becomes the current one.
+an empty cell is added. This cell becomes the current one.
 In this way a tape is simulated with an infinite number of
-blank cells both at the left and at the right of the actual content.
-The new blank cell will be filled with a non-blank tape-symbol during the next move,
+empty cells both at the left and at the right of the actual content.
+The new empty cell will be filled with a non-blank tape-symbol during the next move,
 assuming a move will follow.}}
 
 @item{Optionally putting the control-unit in another internal state.}]}
@@ -192,7 +192,7 @@ or when it is the dummy, which matches every arbitrary tape-symbol.
 A rule whose @racket[new-tape-symbol] is a tape-symbol indicates that the content
 of the current cell must be replaced by this tape-symbol.
 A rule whose @racket[new-tape-symbol] is the dummy indicates that
-the current cell must not be altered, unless it is blank,
+the current cell must not be altered, unless it is empty,
 in which case it is filled with a space,
 but this does not occur in the present example.
 The Turing-machine replaces the fourth element by @rack['new].
@@ -413,8 +413,7 @@ During this operation the tape-head does not move.}
 @rack[move] @rack['N] : don't move the tape-head.@(linebreak)
 When the tape-head moves to the left of the left-most cell of the tape or to the right of
 the right-most cell,
-a blank cell is added and the tape-head is positioned at this cell.
-These are the only two situations in which a @rack[blank] is written.}
+an empty cell is added and the tape-head is positioned at this cell.}
 
 @item{The above process is repeated until the primary state equals a @rack[final-state]
       or the Turing-machine gets stuck because
@@ -1012,7 +1011,7 @@ In fact there are four states, but @itel{final-state} @ttt{T} does not count.
 Wikipedia article @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"].
 Another interesting point is, that the one shown here never writes a @rack[0].
 As in this example @rack[0] is a blank,
-it even would be impossible to write a @rack[0].}
+it even would be impossible to write a @rack[0] in an existing cell.}
 
 @note{
 Some authors make no distinction between a @italic{@ttt{blank}} and a @italic{@ttt{space}},
