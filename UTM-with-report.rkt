@@ -147,13 +147,13 @@
 (TM '(1 1 1))
 
 (define BB
- (make-TM 1 '(4) 'B 'S '_
+ (make-TM 1 '(Y) 'B 'S '_
  '(((1 _) (3 1) R)
    ((1 1) (1 1) R)
    ((2 _) (1 1) R)
    ((2 1) (3 1) L)
    ((3 _) (2 1) L)
-   ((3 1) (4 1) R))))
+   ((3 1) (Y 1) R))))
 
 (define encoded-BB+data
 '(c c mc   1 1 1 R 1 c
@@ -168,5 +168,7 @@
          0 c 0 c 0 c c c mS))
 
 (UTM encoded-BB+data #:report 'short)
+
+(display "What does the original BB do?\n")
 
 (BB '())
