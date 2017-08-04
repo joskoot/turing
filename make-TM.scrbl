@@ -65,7 +65,7 @@ This module provides one binding only, that of procedure @rack[make-TM].
 Procedure @rack[make-TM] returns a procedure that emulates a
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machine"].
 Below a short introduction with the details of the Turing-machines
-returned by procedure @rack[make-TM].
+as returned by procedure @rack[make-TM].
 
 @elemtag["book" ""]
 @note{John E. Hopcroft and Jeffrey D. Ullman provide a comprehensive description
@@ -133,8 +133,11 @@ assuming a move will follow.}}
 The blank is used to indicate that a cell is empty.
 One can imagine the tape to have an infinite number of empty cells both at the left
 and at the right of its current non-blank content.
-When the tape-head is reading from an empty cell,
+When the tape-head reads from an empty cell,
 it sends a blank to the control unit, for it must send something.
+For the control-unit receiving a blank via its data-bus
+is an indication that the current cell is empty.
+An empty cell always is the first or last one of the actual tape-content.
 
 @note{In the book @elemref["book" "Formal Languages and their Relation to Automata"]
 the word `blank' is introduced as a tape-symbol that can be read from an empty cell,
@@ -145,13 +148,17 @@ A space can be written in an existing cell within the current tape-content.
 It can be used to indicate that the cell is considered to be empty.
 The space and the blank are two distinct tape-symbols, though.
 The rules can interpret a space like any other non-blank tape-symbol.
-That's up to the programmer of the Turing-machine.}
+That's up to the programmer of the Turing-machine.
+When interpretring a space as an empty cell,
+the programmer of the Turing-machine should be aware of the fact that the space
+not necessarily is the first or last tape-symbol of the actual tape-content.}
 
 @note{In the book @elemref["book" "Formal Languages and their Relation to Automata"]
-the tape-head cannot be moved left of the start of the initial tape-content.
-The machines returned by procedure @rack[make-TM] can.
-They can always be simulated by Turing-machines that obey the restricted definition.
-See section @secref{Subroutine} for an example.}
+the tape-head always must be moved,
+but cannot be moved left of the start of the initial tape-content.
+The machines returned by procedure @rack[make-TM] can move left of the tape-content
+and allow rules that do not move the tape-head. 
+They can always be simulated by Turing-machines that obey the restricted definition.}
 
 @note{In real life tape-equipment usually the tape is moving
 with the tape-head in fixed position.
@@ -168,7 +175,9 @@ or to the left or remains where it is as indicated by the rule being applied.}
 usually destroyed all data following the newly written data,
 although with some effort most, but usually not all of it, could be recovered.
 This equipment was not designed for replacement of part of the data in the middle of a file.
-The tape-unit of a Turing-machine does not have this problem.}
+The tape-unit of a Turing-machine does not have this problem.
+When a tape-symbol is written into a cell,
+none of the cells at the left and the right are affected.}
 
 @subsection{Two simple examples}
 Let's start with a simple example of a Turing-machine.
@@ -226,7 +235,7 @@ the modified content of the tape.
 Let's see more details in a report of the moves.
 In such a report the new content of the tape is shown as
 @ttt{((tape-symbol ...) (current tape-symbol ...))} representing the content
-@ttt{(tape-symbol ... current tape-symbol...)} where @ttt{current} is the current tape-symbol.
+@ttt{(tape-symbol ... current tape-symbol ...)} where @ttt{current} is the current tape-symbol.
 With the given input,
 the following Turing-machine replaces the second and the fifth tape-symbol.
 
@@ -255,8 +264,8 @@ to be written into the current cell of the tape.
 However, the control-unit may have more registers.
 During a move new values can be put into the registers, possibly obtained from other registers.
 A Turing-machine with more than two registers
-is equivalent to a Turing-machine with only two registers
-as long as the combined contents of the registers is limited to a finite set.
+is equivalent to a Turing-machine with two registers only,
+provided the combined contents of the registers is limited to a finite set.
 Allowing more registers is a way to simplify the description of the rules.
 For example, multiple registers make it easier to describe rules that move part of the content
 of the tape to another position on the tape.
@@ -411,7 +420,7 @@ the old content of register @rack[#:extra], which becomes the new content of reg
 of the tape, replacing the former current @rack[tape-symbol].
 During this operation the tape-head does not move.
 The written @rack[tape-symbol] can be the same as the one already present in the current cell.
-If the input/output-register contains a @rack[blank] a @rack[space] is written.}
+However, when the input/output-register contains a @rack[blank] a @rack[space] is written.}
 
 @item{Finally the tape-head may be moved:@(linebreak)
 @rack[move] @rack['L] : move the tape-head one cell to the left.@(linebreak)
@@ -513,6 +522,8 @@ Hence, using @rack[dummy]s is not an offence against the formal definition of Tu
 and those that can contain a @rack[tape-symbol].
 The set of @rack[tape-symbol]s and the set of @rack[state]s are not required to be disjunct.
 This is not in contradiction with the formal definition of Turing-machines.
+It always is possible to rewrite the rules such as to make the set of states and the
+set of tape-symbols disjunct.
 When the primary state-register receives something that is not a @rack[final-state]
 nor one of the @rack[old-state]s,
 the Turing-machine will halt in a stuck state during the next attempt to make a move.}
@@ -644,6 +655,10 @@ id est consisting of spaces only.
   ((D /) (E /) L)
   ((E 1) (E 1) L)
   ((E S) (A S) R) (code:comment "We are at the start of the tape. Repeat.")
+  (code:comment "Index is zero or has been decreased to zero.")
+  (code:comment "Erase all following the first non-space.")
+  (code:comment "All preceding the non-space we are looking for,")
+  (code:comment "already has been erased.")
   ((G S) (G S) R) (code:comment "Keep looking for first non-space.")
   ((G _) (H _) R) (code:comment "Found the non-space.")
   ((G B) (I S) N) (code:comment "Error, no non-space found")
@@ -862,7 +877,7 @@ tape-symbols @element['tt "x"] and @element['tt "y"] are reverted to
 (code:comment " ")
 (adder '(1 0 1 1 + 1 0 1 1 1) #:report 'short)
 (code:comment " ")
-(adder '(0 0 0 1 1 + 0 0 1 1))
+(adder '(0 1 1 + 0 0 0 1 1) #:report 'short)
 (code:comment " ")
 (adder '(0 0 0 + 0 0) #:report 'short)
 (code:comment " ")
@@ -961,7 +976,7 @@ but it is replaced by a tape of one track only.
             '_   (code:comment "dummy")
             rules))
 (code:comment " ")
-(TM '((0 0) (0 0) (9 9) (0 0) (0 0) (9 9) (9 9)))
+(TM '((0 0) (0 0) (9 9) (0 0) (0 0) (9 9) (9 9)) #:report 'short)
 (code:comment " ")
 (code:comment "nr->lst takes an exact nonnegative integer and")
 (code:comment "returns its list of digits.")
@@ -1109,13 +1124,13 @@ If a required @rack[0] or @rack[1] is not found, the Turing-machine halts in sta
    ((2 1) (2 1) R)
    ((2 B) (3 e) N)
    ((2 _) (F _) N)
-   (code:comment "state 3: Go to the end of the tape.")
+   (code:comment "state 3: Go to the end of the tape (marked by one or more e's)")
    ((3 e) (4 e) L)
    ((3 _) (3 _) R)
    (code:comment "state 4: look for a 0 or a 1 at the left")
    ((4 s) (T e) N) (code:comment "Ok, no more 0s or 1s.")
-   ((4 0) (5 e) L) (code:comment "a 1 at the left is required.")
-   ((4 1) (6 e) L) (code:comment "a 0 at the left is required.")
+   ((4 0) (5 e) L) (code:comment "a 1 at the left is required. Mark the 0 as end of tape.")
+   ((4 1) (6 e) L) (code:comment "a 0 at the left is required. Mark the 1 as end of tape.")
    ((4 S) (4 e) L)
    (code:comment "state 5: look for a required 1 at the left.")
    ((5 0) (5 0) L) (code:comment "skip 0.")
@@ -1682,7 +1697,7 @@ Addison-Wesley, 1969, @nonbreaking{p 105-107} @nonbreaking{(ISBN 0-201-0298 3-9)
 as @elemref["book" "mentioned above"].
 Below the single track tape equivalent of the copied universal Turing-machine is used.
 In addition the copy is adapted such as to allow
-the encoded Turing-machine to move left of the data.
+the encoded Turing-machine to move left of its data.
 The universal Turing-machine erases the encoded program before halting,
 thus returning the resulting data only.
 
