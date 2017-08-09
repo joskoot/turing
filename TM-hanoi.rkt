@@ -23,8 +23,8 @@ The following registers are used:
 #:arg    : tape-symbol to be inserted.
 #:return : primary state to be assumed after insertion is complete.
 #:peg1   : starting peg.
-#:peg1   : destination peg.
-#:peg1   : third peg.
+#:peg2   : destination peg.
+#:peg3   : third peg.
 |#
 
 (define registers
