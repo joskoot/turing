@@ -1708,13 +1708,17 @@ It expects as input
 
 where the number of ones is the height of the tower, id est, the number of disks.
 @ttt{‹f›} is the starting peg, @ttt{‹t›} the peg of destination and @ttt{‹r›} the third peg.
+The three pegs must be distinct, of course. Tape-symbols @ttt{1}, @ttt{tower} and @ttt{disk}
+cannot be used for the names of the pegs.
+In the example below the pegs are called `@ttt{A}', `@ttt{B}' and `@ttt{C}'. 
 The machine replaces the input by a sequence of moves
 
-@inset{@ttt{[move ‹f› ‹t› ‹r› 1 ...+] ...}}
+@inset{@ttt{[disk ‹f› ‹t› ‹r› 1 ...+] ...}}
 
 where the number of ones indicates which disk is moved.
 The smallest disk is indicated by one @ttt{1}.
 Each larger disk by one more @ttt{1}.
+The largest disk is marked by as many ones as the height of the tower being moved.
 When a tower-instruction is found, it is replaced by a move-instruction
 and when there are two or more disks,
 a tower-instruction with one disk less
@@ -1744,7 +1748,7 @@ The following registers are used:
   (code:comment "If not found, halt.")
   (code:comment "Immediately make it a move instruction.")
   
-  ((start    tower) (getpegs1 move  _      _        _      _      _      _     ) R)
+  ((start    tower) (getpegs1 disk  _      _        _      _      _      _     ) R)
   ((start    blank) (halt     _     _      _        _      _      _      _     ) N)
   ((start    space) (halt     _     _      _        _      _      _      _     ) N)
   ((start    _    ) (start    _     _      _        _      _      _      _     ) R)
@@ -1796,7 +1800,7 @@ The following registers are used:
   (code:comment "m1 is a marked 1, the one being copied.")
 
   ((left     _    ) (_        _     _      _        _      _      _      _     ) L)
-  ((left     move ) (left1    _     _      _        _      _      _      _     ) N)
+  ((left     disk ) (left1    _     _      _        _      _      _      _     ) N)
   ((left1    _    ) (insert   _     _      left2    #:peg2 _      _      _     ) N)
   ((left2    _    ) (insert   _     _      left3    #:peg3 _      _      _     ) N)
   ((left3    _    ) (insert   _     _      left4    #:peg1 _      _      _     ) N)
@@ -1808,13 +1812,13 @@ The following registers are used:
   (code:comment "No more 1s to be copied.")
   ((left6    _    ) (rewind   _     _      _        _      _      _      _     ) L)
   ((left7    _    ) (left7    _     _      _        _      _      _      _     ) L)
-  ((left7    move ) (left8    _     _      _        _      _      _      _     ) N)
-  ((left8    move ) (insert   _     _      left9    1      _      _      _     ) N)
+  ((left7    disk ) (left8    _     _      _        _      _      _      _     ) N)
+  ((left8    disk ) (insert   _     _      left9    1      _      _      _     ) N)
   ((left9    m1   ) (left10   1     _      _        _      _      _      _     ) R)
   ((left9    _    ) (_        _     _      _        _      _      _      _     ) R)
   ((left10   1    ) (left11   m1    _      _        _      _      _      _     ) L)
   ((left10   _    ) (rewind   _     _      _        _      _      _      _     ) L)
-  ((left11   move ) (insert   _     _      left9    1      _      _      _     ) N)
+  ((left11   disk ) (insert   _     _      left9    1      _      _      _     ) N)
   ((left11   _    ) (_        _     _      _        _      _      _      _     ) L)
 
   (code:comment "Rewind the tape and start looking for tower instructions.")
@@ -1857,10 +1861,10 @@ The following registers are used:
   (if (zero? n) '()
    (append
     (expected (sub1 n) f r t)
-    (append (list 'move f t r) (make-list n 1))
+    (append (list 'disk f t r) (make-list n 1))
     (expected (sub1 n) r t f))))
  (define expected-tape (expected n 'A 'B 'C))
- (define nr-of-hanoi-moves (count (λ (x) (equal? x 'move)) tape))
+ (define nr-of-hanoi-moves (count (λ (x) (equal? x 'disk)) tape))
  (printf "nr of disks: ~s~nnr-Tm-moves: ~s~nnr of moves: ~s~n"
    n nr-TM-moves nr-of-hanoi-moves)
  (unless (equal? tape expected-tape)
@@ -1871,7 +1875,7 @@ The following registers are used:
 
 The number of moves of the Turing-machine grows fast for increasing number of disks.
 Many moves are required for insertion of tower-instructions.
-Subroutine @ttt{insert} inserts one tape-symbol at a time.
+Subroutine @ttt{insert} inserts one tape-symbol only at a time.
 Hence the machine frequently must move along possibly large parts of the tape.
 
 @section[#:tag "UTM"]{Universal Turing-machine}
