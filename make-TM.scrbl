@@ -55,6 +55,8 @@
 @(define (note . x) (inset (apply smaller x)))
 @(define (itel x) (italic (element 'tt x)))
 @(define (ttt . x) (nonbreaking (apply element 'tt x)))
+@(define (ignore . x) "")
+
 @title[#:version ""]{Turing-machines}
 @author{Jacob J. A. Koot}
 @(defmodule "make-TM.rkt" #:packages ())
@@ -62,9 +64,9 @@ This module provides one binding only, that of procedure @rack[make-TM].
 
 @section{Introduction}
 
-Procedure @rack[make-TM] returns procedures that emulates
-@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"].
-There are some slightly different ways to define a Turing-machine.
+Procedure @rack[make-TM] returns a procedure that emulates a
+@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machine"].
+Some slightly different definitions of this abstract machine exist.
 Below the details of the machines as returned by procedure @rack[make-TM].
 
 @note{@elemtag["Hopcroft&Ullman"]{
@@ -86,7 +88,7 @@ Together the cells form the tape-content.
 The data-bus transports one tape-symbol at a time.
 The first cell of the tape-content is considered to be at the left,
 the last one to be at the right.
-In the @elemref["figure" "figure"] above they are blue.
+In the @elemref["figure" "figure above"] they are blue.
 The current cell (red) is the one below the tape-head and
 contains the current tape-symbol.
 @elemtag["configuration"]{
@@ -97,7 +99,7 @@ the current tape-content and the current position of the tape-head.}
 A Turing-machine must be given an input for the initial tape-content.
 The input must be a finite list of non-blank tape-symbols
 (the blank is a special tape-symbol used to indicate that a cell is empty;
-@elemref["item 2" "see item 2 below"]).
+@elemref["blank" "see below"]).
 The Turing-machine starts with a given initial internal state for the control-unit
 and with the tape-head positioned at the start of the initial tape-content.
 If the input is not empty, the initial tape-content has no empty cell.
@@ -114,24 +116,26 @@ possibly, but not necessarily, with an ever growing tape-content.
 
 @inset{@itemlist[#:style 'ordered
           
-@item{Optionally writing a non-blank tape-symbol in the current cell.
-This step is not optional when the current cell is empty.}
+@item{Optionally writing a non-blank tape-symbol in the current cell of the tape.
+This step is not optional when this cell is empty.}
 
-@item{@elemtag["item 2"]{Optionally moving the tape-head one cell to the right or to the left.
+@item{@elemtag["blank"]{Optionally moving the tape-head one cell to the right or to the left.
 When the tape-head moves left of the start of the tape-content or right of the end,
 an empty cell is added. This cell becomes the current one.
 In this way a tape is simulated with an infinite number of
-empty cells both at the left and at the right of the actual content.}}
-
-@item{Optionally putting the control-unit in another internal state.}]}
-
+empty cells both at the left and at the right of the actual content.
 The blank is used to indicate that a cell is empty.
 When the tape-head reads from an empty cell,
 it sends a blank to the control unit, for it must send something.
-If the tape-content has an empty cell,
-it always is the first or the last one and it is the current one.
+The tape-content never contains more than one empty cell.
+If it has an empty cell,
+it is the first or the last one and it is the current one.
+The imaginary infinite number of empty cells at the left and the right of the current tape-content
+are not considered to be part of the current tape-content.}}
 
-@note{In the book @elemref["Hopcroft&Ullman" "Formal Languages and their Relation to Automata"]
+@item{Optionally putting the control-unit in another internal state.}]}
+
+@ignore{In the book @elemref["Hopcroft&Ullman" "Formal Languages and their Relation to Automata"]
 the word `blank' is introduced as a tape-symbol that can be read from an empty cell,
 but cannot be written,
 although some pages further on this restriction is relaxed.
@@ -145,7 +149,7 @@ When interpreting a space as an empty cell,
 the programmer should be aware of the fact that a space
 not necessarily marks the first or the last cell of the current tape-content.}
 
-@note{In the book @elemref["Hopcroft&Ullman" "Formal Languages and their Relation to Automata"]
+@ignore{In the book @elemref["Hopcroft&Ullman" "Formal Languages and their Relation to Automata"]
 the tape-head always must be moved,
 but cannot be moved left of the start of the initial tape-content.
 The machines returned by procedure @rack[make-TM] can move left of the tape-content
@@ -155,21 +159,19 @@ They can always be simulated by Turing-machines that obey the restricted definit
 @note{In real life tape-equipment usually the tape is moving
 with the tape-head in fixed position.
 Moving the tape-head has the same effect
-as keeping it at fixed position and moving the tape in opposit direction.}
-
-@note{The tape-head of a Turing-machine does not move while reading
+as keeping it at fixed position and moving the tape in opposit direction.
+The tape-head of a Turing-machine does not move while reading
 from a cell or writing into a cell.
 Only after it has done its reading from and its writing into the current cell,
 the tape-head is moved one cell to the right
-or to the left or remains where it is as indicated by the rule being applied.}
-
-@note{Magnetic tape-equipment of the old days
+or to the left or remains where it is as indicated by the rule being applied.
+Magnetic tape-equipment of the old days
 usually destroyed all data following the newly written data,
 although with some effort most, but usually not all of it, could be recovered.
 This equipment was not designed for replacement of part of the data in the middle of a file.
 The tape-unit of a Turing-machine does not have this problem.
 When a tape-symbol is written into a cell,
-none of the cells at the left and the right are affected.}
+none of the other cells is affected, nor at the left nor at the right.}
 
 @subsection{Two simple examples}
 Let's start with a simple example of a Turing-machine.
@@ -178,7 +180,6 @@ Its states are the initial state @rack['A], the intermediate states @rack['B], @
 In the rules @rack['R] indicates a move of the tape-head one cell to the right.
 In this example the other two options @rack['N] (no move) and @rack['L] (move left)
 are not used.
-@rack['_] is a dummy, which is not a tape-symbol.
 In this example a rule has the form:
 
 @inset{@verbatim["((old-state old-tape-symbol) (new-state new-tape-symbol) move)"]}
@@ -195,10 +196,10 @@ move            = " (racket(or/c 'R 'L 'N))]}
 A rule applies when its @rack[old-state]
 equals the current state of the control-unit
 and the @rack[old-tape-symbol] equals the current tape-symbol read from the tape,
-or when it is the dummy, which matches every arbitrary tape-symbol.
+or when it is the @ttt{dummy}, which is not a tape-symbol, but always matches.
 A rule whose @racket[new-tape-symbol] is a tape-symbol indicates that the content
 of the current cell must be replaced by this tape-symbol.
-A rule whose @racket[new-tape-symbol] is the dummy indicates that
+A rule whose @racket[new-tape-symbol] is the @ttt{dummy} indicates that
 the current cell must not be altered, unless it is empty,
 in which case it is filled with a space,
 but this does not occur in the present example.
@@ -232,6 +233,7 @@ representing the content
 
 @inset{@ttt{(tape-symbol ... current-tape-symbol tape-symbol ...)}}
 
+and indicating that the tape-head is positioned at the @ttt{current-tape-symbol}.
 The control unit has two registers,
 one for the internal state and one connected to the data-bus and
 containing the tape-symbol read from or to be written into the current cell of the tape.
@@ -248,11 +250,11 @@ With the given input, the following Turing-machine replaces the second and the f
   'space  (code:comment "Not used.")
   '_      (code:comment "The dummy.")
   (code:comment "The rules:")
-  (code:comment "Replace 'did by 'will and continue.")
-  (code:comment "Replace 'yesterday? by 'tomorrow? and halt.")
-  (code:comment "Don't change any other tape-symbol and continue.")
-  '(((A        did) (A will     ) R)
+  '((code:comment "Replace 'did by 'will and continue.")
+    ((A        did) (A will     ) R)
+    (code:comment "Replace 'yesterday? by 'tomorrow? and halt.")
     ((A yesterday?) (T tomorrow?) N)
+    (code:comment "Don't change any other tape-symbol and continue.")
     ((A          _) (A _        ) R))))
 (code:comment " ")
 (TM '(What did you do yesterday?) #:report 'long)]
@@ -263,7 +265,8 @@ has at least two registers.
 The first one is the primary state-register and the second one the input/output-register.
 Te latter always contains the tape-symbol read from or
 to be written into the current cell of the tape.
-However, the control-unit may have more registers.
+However, the control-unit can have more registers, but always restricted to a fixed
+finite number of them.
 During a move new values can be put into the registers, possibly obtained from other registers.
 A Turing-machine with more than two registers
 is equivalent to a Turing-machine with two registers only,
@@ -282,13 +285,6 @@ compare section @secref["Inserting symbols"] with section @secref["More register
 The tape can have more than one track, but with one tape-head only.
 Such a tape can be simulated by using tape-symbols consisting of
 tuples (e.g. lists or vectors) of as many elements as there are tracks.
-When writing in one of the tracks, a complete tuple must be provided.
-For example, @rack[((state (A B C)) (new-state (A BB C)) move)]
-might refer to a tape of three tracks.
-It replaces @rack['B] by @rack['BB] in the second track without affecting the other two tracks.
-This may imply that a separate rule is required for each feasible
-tuple with @rack['B] for its second element.
-
 It is possible to simulate a Turing-machine
 with more than one tape, each one with its own tape-head.
 To simulate such a Turing-machine with n tapes, use a multiple track tape with 2n tracks.
@@ -460,7 +456,7 @@ can be called as follows:
 The @rack[output] is the final tape-content but without heading or trailing
 @rack[blank] or @rack[space]s.
 It can contain @rack[space]s, but not at the begin nor at the end.
-It never contains a blank.
+It never contains a @rack[blank].
 
 If @rack[register-values] is @rack[#f] all @rack[registers] are initialized with the
 @rack[blank], the primary state-register excepted, which is initialized with the
@@ -482,7 +478,7 @@ For each move the report shows:
 @nonbreaking{@ttt{((h ...) (c t ...))}},
 where the new position of the tape-head is at tape-symbol @rack['c].}]}
 
-@note{Internally the tape-content and the position of the tape-head are
+@ignore{Internally the tape-content and the position of the tape-head are
 represented by two lists, the head @ttt{(h ...)} and the tail @ttt{(c t ...)},
 but with the head in @racketlink[reverse]{reversed} order.
 This simplifies movement of the tape-head.
@@ -529,7 +525,7 @@ every @rack[rule] whose @rack[old-symbol] is the @rack[dummy]
 can be written as a finite collection of regular @rack[rule]s.
 Hence, using @rack[dummy]s is not an offence against the formal definition of Turing-machines.}
 
-@note{No distinction is made between registers that can contain a @rack[state]
+@ignore{No distinction is made between registers that can contain a @rack[state]
 and those that can contain a @rack[tape-symbol].
 The set of @rack[tape-symbol]s and the set of @rack[state]s are not required to be disjunct.
 This is not in contradiction with the formal definition of Turing-machines.
@@ -588,8 +584,7 @@ As another example consider:
 
 It is obvious that the above Turing-machine, no matter its initial tape-content, never halts,
 although it never reproduces the same @elemref["configuration" "configuration"].
-
-@note{Procedure @rack[make-TM] could be adapted such as to
+@ignore{Procedure @rack[make-TM] could be adapted such as to
 predict the infinite loops of the last two examples just by checking the @rack[rules].
 It also could be adapted such as to produce
 Turing-machines that can detect a repeated @elemref["configuration" "configuration"].
@@ -597,7 +592,6 @@ These adaptations have not been made,
 for the Halting Problem states that there is no algorithm (procedure that always terminates)
 that for every @elemref["configuration" "configuration"] of every arbitrary Turing-machine
 can predict whether or not the machine will halt.}
-
 Halting or not may depend on the initial tape-content.
 For example, the following Turing-machine halts only when its @rack[input]
 contains @rack[tape-symbol] @rack[0].
@@ -675,10 +669,8 @@ id est consisting of spaces only.
   ((G B) (I S) N) (code:comment "Error, no non-space found")
   ((H _) (H S) R) (code:comment "Erase all following the non-space.")
   ((H B) (T S) N) (code:comment "Done.")
-  ((I B) (J S) R) (code:comment "Error case.")
-  ((I _) (I S) L) (code:comment "Erase the whole tape and")
-  ((J B) (F S) N) (code:comment "halt in final state F.")
-  ((J _) (J S) R)))
+  ((I B) (F S) N) (code:comment "Error case.")
+  ((I _) (I S) L) (code:comment "Erase the tape and halt in state F.\n  ")))
 (code:comment " ")
 (define TM
  (make-TM
@@ -706,7 +698,7 @@ id est consisting of spaces only.
 (code:comment " ")
 (code:comment "No non-space present with the given index yields final state F:")
 (code:comment " ")
-(TM '(/) #:report 'long)]
+(TM '(1 1 1 / S S x S S) #:report 'short)]
 
 @subsection{Remove symbols}
 The following Turing-machine always halts.
@@ -785,8 +777,8 @@ A correct input is defined as follows:
 operand = bit ...+
 bit     = 0 | 1"]}
 
-An incorrect input yields @itel{final-state} @element['tt "F"].
-A correct input yields @itel{final-state} @element['tt "T"] and @ttt{output}
+An incorrect input yields final state @rack['F].
+A correct input yields final state @rack['T] and @ttt{output}
 @nonbreaking{@rack[(bit bit ...)]}
 showing the sum of the two operands.
 More precisely the @ttt{output} is @nonbreaking{@rack[(1 bit ...)]} or @rack[(0)],
@@ -801,13 +793,13 @@ The refrasing in @rack[x] and @rack[y] is necessary in order to know
 which part of the sum already has been established and to which part of the
 remaining zeros and ones of the first operand each next bit of the first operand must be added.
 Bits of the second operand are processed starting from the least significant one.
-Every such bit is replaced by a @itel["space"] before it is processed.
+Every such bit is replaced by a space before it is processed.
 The significance of this bit is the same as that of
 the right-most bit @nonbreaking{@element['tt "0-or-1"]} of the first operand.
 After all bits of the second operand have been processed,
 the @element['tt "+"] is removed,
 tape-symbols @element['tt "x"] and @element['tt "y"] are reverted to
-@element['tt "0"] and @element['tt "1"] and leading zeros are removed.
+@rack[0]] and @rack[1] and leading zeros are removed.
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -955,10 +947,10 @@ The Turing-machine passes first to the end of the input.
 Subsequently it does the adddition in one pass to the left
 going from the least to the most significant digit.
 Redundant heading zeros are not removed.
-It replaces each @itel{tape-symbol} @nonbreaking{@element['tt "(n m)"]} by one decimal digit.
-State @element['tt "0"] indicates that there is no carry.
-State @element['tt "1"] indicates that a carry must be added.
-State @element['tt "A"] is the initial internal state and @element['tt "T"] the final state.
+It replaces each tape-symbol @nonbreaking{@element['tt "(n m)"]} by one decimal digit.
+State @rack[0] indicates that there is no carry.
+State @rack[1] indicates that a carry must be added.
+State @rack['A] is the initial internal state and @rack['T] the final state.
 The initial tape-content seems a tape of two tracks,
 but it is replaced by a tape of one track only.
 
@@ -1041,16 +1033,17 @@ but it is replaced by a tape of one track only.
  (and (= (output->nr output) (+ n m)) (eq? final-state 'T)))]
 
 @subsection{@hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "Busy beaver"]}
-@subsubsection{3 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]}
-In fact there are four states, but @itel{final-state} @rack['T] does not count.
+@subsubsub*section{@larger{@larger{Three state
+   @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]}}}
+In fact there are four states, but final state @rack['T] does not count.
 
-@note{The Turing-machine program shown here takes 2 moves less than the one shown in
+@ignore{The Turing-machine program shown here takes 2 moves less than the one shown in
 Wikipedia article @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"].
 Another interesting point is, that the one shown here never writes a @rack[0].
 As in this example @rack[0] is a blank,
 it even would be impossible to write a @rack[0] in an existing cell.}
 
-@note{Some authors make no distinction between a @italic{@ttt{blank}} and a @italic{@ttt{space}},
+@ignore{Some authors make no distinction between a @italic{@ttt{blank}} and a @italic{@ttt{space}},
 meaning that they allow writing a @italic{@ttt{blank}}.
 I prefer to make the distinction,
 because it always allows a Turing-machine-program
@@ -1075,8 +1068,9 @@ to find the real start and end of the current tape-content.}
   rules))
 (TM '() #:report 'long)]
 
-@subsubsection{4 state @hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]}
-In fact there are five states, but @itel{final-state} @rack['T] does not count.
+@subsubsub*section{@larger{@larger{Four state
+@hyperlink["https://en.wikipedia.org/wiki/Busy_beaver" "busy beaver"]}}}
+In fact there are five states, but final state @rack['T] does not count.
 For every non-final state @rack[X] there are two rules,
 @rack[((X _) (? ?) ?)] and
 @rack[((X 1) (? ?) ?)].
@@ -1109,8 +1103,8 @@ This removes the distinction between these two tape-symbols.
 
 The following Turing-machine halts on every arbitrary input.
 If the input is a list of zeros and ones with as many zeros as ones,
-the @itel{final-state} is @rack['T].
-In all other cases the @itel{final-state} is @rack['F].
+the final state is @rack['T].
+In all other cases the final state is @rack['F].
 The Turing-machine accepts an empty input immediately.
 If the input is not empty, a starting mark @rack['s] is added at the left,
 the input is checked to consist of zeros and ones only
@@ -1189,13 +1183,13 @@ If a required @rack[0] or @rack[1] is not found, the Turing-machine halts in sta
 The following two Turing-machines read @rack['<] as a left parenthesis
 an @rack['>] as a right parenthesis.
 The Turing-machines halt in state @rack[T] if the parentheses are well balanced
-and no other symbols occur in the @itel{input}.
+and no other symbols occur in the input.
 In all other cases the Turing-machines halt in state @rack[F].
 The second example uses a counter.
 The method used in the first example is as follows.
 First check that the input consists of @rack['<] and @rack['>] only.
-Put @itel{tape-symbol} @rack[s] at the left of the input
-and @itel{tape-symbol} @rack[e] at the right.
+Put tape-symbol @rack[s] at the left of the input
+and tape-symbol @rack[e] at the right.
 This helps detecting the start and the end of the current tape-content.
 Starting from the right go left looking for a @rack['>]
 whose first preceding non-space symbol is @rack['<].
@@ -1399,12 +1393,12 @@ the counter is checked to be zero.
 
 The following Turing-machine always halts.
 For an input consisting of @rack['a]s and @rack['b]s only
-the @itel{final-state} is @rack['T] and symbol @rack['x] is inserted
+the final state is @rack['T] and symbol @rack['x] is inserted
 between each @rack['a] and an immediately following @rack['b].
 The insertion of @rack['x] requires that the tape-symbols
 preceding the @rack['b] are shifted one cell to the left.
 An input containing anything other than @rack['a] or @rack['b]
-yields @itel{final-state} @rack['F].
+yields final state @rack['F].
 @rack[0] is the initial state.
 
 @interaction[
@@ -1766,153 +1760,101 @@ The following registers are used:
   (code:comment "If there are no more tower-instructions,")
   (code:comment "halt in succesful state 'halt.")
   
-  ((start     tower)
-   (from      disk  _      _        _      _      _      _    ) R)
-  ((start     blank)
-   (halt      _     _      _        _      _      _      _    ) N)
-  ((start     space)
-   (halt      _     _      _        _      _      _      _    ) N)
-  ((start     _    )
-   (start     _     _      _        _      _      _      _    ) R)
+  ((start     tower) (from      disk  _      _        _      _      _      _    ) R)
+  ((start     blank) (halt      _     _      _        _      _      _      _    ) N)
+  ((start     space) (halt      _     _      _        _      _      _      _    ) N)
+  ((start     _    ) (start     _     _      _        _      _      _      _    ) R)
 
   (code:comment "Extract the three pegs of the tower instruction.")
   (code:comment "Put them in registers #:from, #:onto and #:third.")
 
-  ((from      _    )
-   (onto      _     _      _        _      #:bus  _      _    ) R)
-  ((onto      _    )
-   (thrd      _     _      _        _      _      #:bus  _    ) R)
-  ((thrd      _    )
-   (right1    _     _      _        _      _      _      #:bus) R)
+  ((from      _    ) (onto      _     _      _        _      #:bus  _      _    ) R)
+  ((onto      _    ) (thrd      _     _      _        _      _      #:bus  _    ) R)
+  ((thrd      _    ) (right1    _     _      _        _      _      _      #:bus) R)
 
   (code:comment "Insert a tower instruction at the right.")
   (code:comment "Copy the height, but with one 1 less.")
   (code:comment "m1 is a marked 1, the one being copied.")
   (code:comment "Dont copy the first 1.")
   
-  ((right1    1    )
-   (right2    _     _      _        _      _      _      _    ) R)
-  ((right2    1    )
-   (right3    m1    _      _        _      _      _      _    ) R)
+  ((right1    1    ) (right2    _     _      _        _      _      _      _    ) R)
+  ((right2    1    ) (right3    m1    _      _        _      _      _      _    ) R)
   (code:comment "If there is one disk only in the original tower-instruction,")
   (code:comment "do not insert tower-instructions at the left and the right.")
-  ((right2    _    )
-   (rewind    _     _      _        _      _      _      _    ) L)
+  ((right2    _    ) (rewind    _     _      _        _      _      _      _    ) L)
   (code:comment "Insert a tower instruction at the right.")
   (code:comment "First go to the right of the new disk-instruction.")
-  ((right3    1    )
-   (_         _     _      _        _      _      _      _    ) R)
+  ((right3    1    ) (_         _     _      _        _      _      _      _    ) R)
   (code:comment "Insert 'tower and three pegs.")
-  ((right3    _    )
-   (insert+R  _     _      right4   tower  _      _      _    ) N)
-  ((right4    _    )
-   (insert+R  _     _      right5   #:thrd _      _      _    ) N)
-  ((right5    _    )
-   (insert+R  _     _      right6   #:onto _      _      _    ) N)
-  ((right6    _    )
-   (insert+R  _     _      right7  #:from _      _      _    ) N)
+  ((right3    _    ) (insert+R  _     _      right4   tower  _      _      _    ) N)
+  ((right4    _    ) (insert+R  _     _      right5   #:thrd _      _      _    ) N)
+  ((right5    _    ) (insert+R  _     _      right6   #:onto _      _      _    ) N)
+  ((right6    _    ) (insert+R  _     _      right7  #:from _      _      _    ) N)
   (code:comment "Insert a 1.")
-  ((right7    _    )
-   (insert    _     _      right8   1      _      _      _    ) N)
+  ((right7    _    ) (insert    _     _      right8   1      _      _      _    ) N)
   (code:comment "Go back to marked 1.")
-  ((right8    m1   )
-   (right9    1     _      _        _      _      _      _    ) R)
-  ((right8    _    )
-   (_         _     _      _        _      _      _      _    ) L)
+  ((right8    m1   ) (right9    1     _      _        _      _      _      _    ) R)
+  ((right8    _    ) (_         _     _      _        _      _      _      _    ) L)
   (code:comment "Marked 1 found.")
   (code:comment "No more 1s to be copied.")
   (code:comment "Go insert tower.instruction at the left.")
-  ((right9  tower)
-   (left      _     _      _        _      _      _      _    ) R)
+  ((right9  tower) (left      _     _      _        _      _      _      _    ) R)
   (code:comment "Next 1 to be copied. mark it.")
-  ((right9     1    )
-   (right10    m1    _      _        _      _      _      _    ) R)
-  ((right10    1    )
-   (right10    _     _      _        _      _      _      _    ) R)
+  ((right9     1    ) (right10    m1    _      _        _      _      _      _    ) R)
+  ((right10    1    ) (right10    _     _      _        _      _      _      _    ) R)
   (code:comment "Go to the tower-instruction being inserted.")
   (code:comment "skip to the right of the three pegs.")
-  ((right10   tower)
-   (right11   _     _      _        _      _      _      _    ) R)
-  ((right11   _    )
-   (right12   _     _      _        _      _      _      _    ) R)
-  ((right12   _    )
-   (right13   _     _      _        _      _      _      _    ) R)
-  ((right13   _    )
-   (right14   _     _      _        _      _      _      _    ) R)
+  ((right10   tower) (right11   _     _      _        _      _      _      _    ) R)
+  ((right11   _    ) (right12   _     _      _        _      _      _      _    ) R)
+  ((right12   _    ) (right13   _     _      _        _      _      _      _    ) R)
+  ((right13   _    ) (right14   _     _      _        _      _      _      _    ) R)
   (code:comment "We are at the right of the three pegs.")
   (code:comment "Insert a 1 and go back to the marked 1.")
-  ((right14   _    )
-   (insert    _     _      right15  1      _      _      _    ) N)
-  ((right15   m1   )
-   (right16   1     _      _        _      _      _      _    ) R)
-  ((right15   _    )
-   (right15   _     _      _        _      _      _      _    ) L)
+  ((right14   _    ) (insert    _     _      right15  1      _      _      _    ) N)
+  ((right15   m1   ) (right16   1     _      _        _      _      _      _    ) R)
+  ((right15   _    ) (right15   _     _      _        _      _      _      _    ) L)
   (code:comment "Copy next 1.")
-  ((right16   1    )
-   (right10   m1    _      _        _      _      _      _    ) R)
+  ((right16   1    ) (right10   m1    _      _        _      _      _      _    ) R)
   (code:comment "No more 1s to be copied,")
   (code:comment "go inserting tower instruction at the left.")
-  ((right16   _    )
-   (left      _     _      _        _      _      _      _    ) L)
+  ((right16   _    ) (left      _     _      _        _      _      _      _    ) L)
 
   (code:comment "Insert a tower instruction at the left.")
   (code:comment "Copy the height, but with one 1 less.")
   (code:comment "m1 is a marked 1, the one being copied.")
 
-  ((left      _    )
-   (_         _     _      _        _      _      _      _    ) L)
-  ((left      disk )
-   (left1     _     _      _        _      _      _      _    ) N)
-  ((left1     _    )
-   (insert    _     _      left2    #:onto _      _      _    ) N)
-  ((left2     _    )
-   (insert    _     _      left3    #:thrd _      _      _    ) N)
-  ((left3     _    )
-   (insert    _     _      left4    #:from _      _      _    ) N)
-  ((left4     _    )
-   (insert    _     _      left5    tower  _      _      _    ) N)
-  ((left5     _    )
-   (left5     _     _      _        _      _      _      _    ) R)
+  ((left      _    ) (_         _     _      _        _      _      _      _    ) L)
+  ((left      disk ) (left1     _     _      _        _      _      _      _    ) N)
+  ((left1     _    ) (insert    _     _      left2    #:onto _      _      _    ) N)
+  ((left2     _    ) (insert    _     _      left3    #:thrd _      _      _    ) N)
+  ((left3     _    ) (insert    _     _      left4    #:from _      _      _    ) N)
+  ((left4     _    ) (insert    _     _      left5    tower  _      _      _    ) N)
+  ((left5     _    ) (left5     _     _      _        _      _      _      _    ) R)
   (code:comment "Don't copy the first 1.")
-  ((left5     1    )
-   (left6     _     _      _        _      _      _      _    ) R)
-  ((left6     1    )
-   (left7     m1    _      _        _      _      _      _    ) L)
+  ((left5     1    ) (left6     _     _      _        _      _      _      _    ) R)
+  ((left6     1    ) (left7     m1    _      _        _      _      _      _    ) L)
   (code:comment "No more 1s to be copied.")
-  ((left6     _    )
-   (rewind    _     _      _        _      _      _      _    ) L)
+  ((left6     _    ) (rewind    _     _      _        _      _      _      _    ) L)
   (code:comment "Go left to the point where to insert the 1.")
-  ((left7     _    )
-   (left7     _     _      _        _      _      _      _    ) L)
-  ((left7     disk )
-   (left8     _     _      _        _      _      _      _    ) N)
+  ((left7     _    ) (left7     _     _      _        _      _      _      _    ) L)
+  ((left7     disk ) (left8     _     _      _        _      _      _      _    ) N)
   (code:comment "Insert the 1.")
-  ((left8     disk )
-   (insert    _     _      left9    1      _      _      _    ) N)
+  ((left8     disk ) (insert    _     _      left9    1      _      _      _    ) N)
   (code:comment "Go back to the marked 1.")
-  ((left9     m1   )
-   (left10    1     _      _        _      _      _      _    ) R)
-  ((left9     _    )
-   (_         _     _      _        _      _      _      _    ) R)
+  ((left9     m1   ) (left10    1     _      _        _      _      _      _    ) R)
+  ((left9     _    ) (_         _     _      _        _      _      _      _    ) R)
   (code:comment "Copy more 1s, if any left, else rewind and restart.")
-  ((left10    1    )
-   (left11    m1    _      _        _      _      _      _    ) L)
-  ((left10    _    )
-   (rewind    _     _      _        _      _      _      _    ) L)
-  ((left11    disk )
-   (insert    _     _      left9    1      _      _      _    ) N)
-  ((left11    _    )
-   (_         _     _      _        _      _      _      _    ) L)
+  ((left10    1    ) (left11    m1    _      _        _      _      _      _    ) L)
+  ((left10    _    ) (rewind    _     _      _        _      _      _      _    ) L)
+  ((left11    disk ) (insert    _     _      left9    1      _      _      _    ) N)
+  ((left11    _    ) (_         _     _      _        _      _      _      _    ) L)
 
   (code:comment "Rewind the tape and")
   (code:comment "start looking for another tower instruction.")
 
-  ((rewind    blank)
-   (start     _     _      _        _      _      _      _    ) R)
-  ((rewind    space)
-   (start     _     _      _        _      _      _      _    ) R)
-  ((rewind    _    )
-   (rewind    _     _      _        _      _      _      _    ) L)
+  ((rewind    blank) (start     _     _      _        _      _      _      _    ) R)
+  ((rewind    space) (start     _     _      _        _      _      _      _    ) R)
+  ((rewind    _    ) (rewind    _     _      _        _      _      _      _    ) L)
 
   (code:comment "Subroutine for insertion of tape-symbol in register #:arg")
   (code:comment "at the right of the current tape-symbol.")
@@ -1922,20 +1864,13 @@ The following registers are used:
   (code:comment "where to return to and to insert the tape-symbol.")
   (code:comment "Obviously tape-symbol 'mark must not be used in any other way.")
 
-  ((insert    _    )
-   (insert1   mark   #:bus _        _      _      _      _    ) R)
-  ((insert1   _    )
-   (insert1   #:prev #:bus _        _      _      _      _    ) R)
-  ((insert1   blank)
-   (insert2   #:prev _     _        _      _      _      _    ) L)
-  ((insert1   space)
-   (insert2   #:prev _     _        _      _      _      _    ) L)
-  ((insert2   _    )
-   (insert2   _      _     _        _      _      _      _    ) L)
-  ((insert2   mark )
-   (#:return  #:arg  _     _        _      _      _      _    ) N)
-  ((insert2   markR)
-   (#:return  #:arg  _     _        _      _      _      _    ) R)
+  ((insert    _    ) (insert1   mark   #:bus _        _      _      _      _    ) R)
+  ((insert1   _    ) (insert1   #:prev #:bus _        _      _      _      _    ) R)
+  ((insert1   blank) (insert2   #:prev _     _        _      _      _      _    ) L)
+  ((insert1   space) (insert2   #:prev _     _        _      _      _      _    ) L)
+  ((insert2   _    ) (insert2   _      _     _        _      _      _      _    ) L)
+  ((insert2   mark ) (#:return  #:arg  _     _        _      _      _      _    ) N)
+  ((insert2   markR) (#:return  #:arg  _     _        _      _      _      _    ) R)
 
   ((insert+R  _    )
    (insert1   markR  #:bus _        _      _      _      _    ) R)))
@@ -2036,8 +1971,8 @@ plus the marked version of each symbol obtained by prefixing it with an @ttt{m}.
 @rack['B] is the blank and @rack['S] the space.
 Marking a blank produces a marked space: @rack['mS].
 All rules treat @rack['B] and @rack['S] identically.
-The marker is used to identify the current state of the encoded Turing-machine and
-the current position of its tape-head within the data.
+The marker is used to identify the rule of the encoded Turing-machine
+currently being applied and the current position of its tape-head within the data.
 The marker is used too when looking for the encoded rules of the new state
 while applying a rule of the encoded Turing-machine.
 Hence the marker can have three different meanings,
