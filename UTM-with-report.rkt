@@ -58,7 +58,7 @@
   (TR  ((TR0 R)   (TR1 R)   -----     -----    -----    -----     -----
         -----     -----     -----     -----    -----    -----))
   (TL0 (R         R         R         R        R        -----     -----
-        (U 0 L)   (U 0 L)   -----     -----    -----    (U 0 L)))
+        (U 0 L)   (U 0 L)   R         -----    -----    (U 0 L)))
   (TL1 (R         R         R         R        R        -----     -----
         (U 1 L)   (U 1 L)   R         -----    -----    (U 1 L)))
   (TR0 (R         R         R         R        R        -----     -----
@@ -146,7 +146,7 @@
 
 (TM '(1 1 1))
 
-(define BB
+(define BB3
  (make-TM 1 '(Y) 'B 'S '_
  '(((1 _) (3 1) R)
    ((1 1) (1 1) R)
@@ -155,7 +155,7 @@
    ((3 _) (2 1) L)
    ((3 1) (Y 1) R))))
 
-(define encoded-BB+data
+(define encoded-BB3+data
 '(c c mc   1 1 1 R 1 c
            1 1 1 R 1 c
                1 R 1 c c
@@ -167,8 +167,30 @@
          1 1 1 1 R 1 c c
          0 c 0 c 0 c c c mS))
 
-(UTM encoded-BB+data #:report 'short)
+(UTM encoded-BB3+data #:report 'short)
 
 (display "What does the original BB do?\n")
 
-(BB '())
+(BB3 '())
+
+; BB4, but without report:
+
+(printf "~nUTM on encoded BB4, but without report.~n~n")
+
+(define encoded-BB4+data
+'(c c mc       1 1 R 1 c
+               1 1 R 1 c
+               1 1 L 1 c c
+                 1 L 1 c
+                 1 L 1 c
+             1 1 1 L 0 c c
+         1 1 1 1 1 R 1 c
+         1 1 1 1 1 R 1 c
+           1 1 1 1 L 1 c c
+           1 1 1 1 R 1 c
+           1 1 1 1 R 1 c
+                 1 R 0 c c
+             0 c 0 c 0 c c c mS))
+           
+(UTM encoded-BB4+data #:report #f)
+                 

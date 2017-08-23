@@ -119,21 +119,22 @@ possibly, but not necessarily, with an ever growing tape-content.
 @item{Optionally writing a non-blank tape-symbol in the current cell of the tape.
 This step is not optional when this cell is empty.}
 
-@item{@elemtag["blank"]{Optionally moving the tape-head one cell to the right or to the left.
+@item{Optionally moving the tape-head one cell to the right or to the left.
 When the tape-head moves left of the start of the tape-content or right of the end,
 an empty cell is added. This cell becomes the current one.
 In this way a tape is simulated with an infinite number of
-empty cells both at the left and at the right of the actual content.
-The blank is used to indicate that a cell is empty.
+empty cells both at the left and at the right of the actual content.}
+
+@item{Optionally putting the control-unit in another internal state.}]}
+
+@elemtag["blank"]{The blank is used to indicate that a cell is empty.
 When the tape-head reads from an empty cell,
 it sends a blank to the control unit, for it must send something.
 The tape-content never contains more than one empty cell.
 If it has an empty cell,
 it is the first or the last one and it is the current one.
 The imaginary infinite number of empty cells at the left and the right of the current tape-content
-are not considered to be part of the current tape-content.}}
-
-@item{Optionally putting the control-unit in another internal state.}]}
+are not considered to be part of the current tape-content.}
 
 @ignore{In the book @elemref["Hopcroft&Ullman" "Formal Languages and their Relation to Automata"]
 the word `blank' is introduced as a tape-symbol that can be read from an empty cell,
@@ -186,24 +187,25 @@ In this example a rule has the form:
 
 where:
 
-@inset{@verbatim[
-"old-state       = state
-new-state       = state
-old-tape-symbol = tape-symbol | dummy
-new-tape-symbol = tape-symbol | dummy
-move            = " (racket(or/c 'R 'L 'N))]}
+@inset{@tabular[#:sep (list (hspace 1) "=" (hspace 1))
+(list
+ (list @ttt{old-state} "state")
+ (list @ttt{new-state} "state")
+ (list @ttt{old-tape-symbol} "tape-symbol | dummy")
+ (list @ttt{new-tape-symbol} "tape-symbol | dummy")
+ (list @ttt{move} @(racket(or/c 'R 'L 'N))))]}
 
-A rule applies when its @rack[old-state]
+A rule applies when its @ttt{old-state}
 equals the current state of the control-unit
-and the @rack[old-tape-symbol] equals the current tape-symbol read from the tape,
-or when it is the @ttt{dummy}, which is not a tape-symbol, but always matches.
-A rule whose @racket[new-tape-symbol] is a tape-symbol indicates that the content
+and the @ttt{old-tape-symbol} equals the current tape-symbol read from the tape,
+or when it is the dummy, which is not a tape-symbol, but matches every tape-symbol.
+A rule whose @ttt{new-tape-symbol} is a tape-symbol indicates that the content
 of the current cell must be replaced by this tape-symbol.
-A rule whose @racket[new-tape-symbol] is the @ttt{dummy} indicates that
+A rule whose @ttt{new-tape-symbol} is the dummy indicates that
 the current cell must not be altered, unless it is empty,
 in which case it is filled with a space,
 but this does not occur in the present example.
-The Turing-machine replaces the fourth element by @rack['new].
+The machine replaces the fourth element of the initial tape-content by @rack['new].
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -265,12 +267,11 @@ has at least two registers.
 The first one is the primary state-register and the second one the input/output-register.
 Te latter always contains the tape-symbol read from or
 to be written into the current cell of the tape.
-However, the control-unit can have more registers, but always restricted to a fixed
-finite number of them.
+However, the control-unit can have more registers,
+provided the combined contents of the registers is limited to a finite set.
 During a move new values can be put into the registers, possibly obtained from other registers.
 A Turing-machine with more than two registers
 is equivalent to a Turing-machine with two registers only,
-provided the combined contents of the registers is limited to a finite set.
 Allowing more registers is a way to simplify the description of the rules.
 For example, multiple registers make it easier to describe rules that move part of the content
 of the tape to another position on the tape.
@@ -282,7 +283,7 @@ For an example,
 compare section @secref["Inserting symbols"] with section @secref["More registers"].
 
 @subsection{Multiple tracks/tapes}
-The tape can have more than one track, but with one tape-head only.
+The tape can have more than one track.
 Such a tape can be simulated by using tape-symbols consisting of
 tuples (e.g. lists or vectors) of as many elements as there are tracks.
 It is possible to simulate a Turing-machine
@@ -584,14 +585,6 @@ As another example consider:
 
 It is obvious that the above Turing-machine, no matter its initial tape-content, never halts,
 although it never reproduces the same @elemref["configuration" "configuration"].
-@ignore{Procedure @rack[make-TM] could be adapted such as to
-predict the infinite loops of the last two examples just by checking the @rack[rules].
-It also could be adapted such as to produce
-Turing-machines that can detect a repeated @elemref["configuration" "configuration"].
-These adaptations have not been made,
-for the Halting Problem states that there is no algorithm (procedure that always terminates)
-that for every @elemref["configuration" "configuration"] of every arbitrary Turing-machine
-can predict whether or not the machine will halt.}
 Halting or not may depend on the initial tape-content.
 For example, the following Turing-machine halts only when its @rack[input]
 contains @rack[tape-symbol] @rack[0].
@@ -1751,8 +1744,7 @@ The following registers are used:
 @interaction0[
 (require "make-TM.rkt" racket)
 
-(define registers
-  '(#:state   #:bus #:prev #:return #:arg  #:from #:onto #:thrd))
+(define registers   '(#:state   #:bus #:prev #:return #:arg  #:from #:onto #:thrd))
 
 (define rules
 '((code:comment "First look for a tower instruction.")
@@ -1789,7 +1781,7 @@ The following registers are used:
   ((right3    _    ) (insert+R  _     _      right4   tower  _      _      _    ) N)
   ((right4    _    ) (insert+R  _     _      right5   #:thrd _      _      _    ) N)
   ((right5    _    ) (insert+R  _     _      right6   #:onto _      _      _    ) N)
-  ((right6    _    ) (insert+R  _     _      right7  #:from _      _      _    ) N)
+  ((right6    _    ) (insert+R  _     _      right7   #:from _      _      _    ) N)
   (code:comment "Insert a 1.")
   ((right7    _    ) (insert    _     _      right8   1      _      _      _    ) N)
   (code:comment "Go back to marked 1.")
@@ -1797,11 +1789,11 @@ The following registers are used:
   ((right8    _    ) (_         _     _      _        _      _      _      _    ) L)
   (code:comment "Marked 1 found.")
   (code:comment "No more 1s to be copied.")
-  (code:comment "Go insert tower.instruction at the left.")
-  ((right9  tower) (left      _     _      _        _      _      _      _    ) R)
+  (code:comment "Go insert tower-instruction at the left.")
+  ((right9     tower) (left      _     _      _       _      _      _      _    ) R)
   (code:comment "Next 1 to be copied. mark it.")
-  ((right9     1    ) (right10    m1    _      _        _      _      _      _    ) R)
-  ((right10    1    ) (right10    _     _      _        _      _      _      _    ) R)
+  ((right9     1    ) (right10    m1    _      _      _      _      _      _    ) R)
+  ((right10    1    ) (right10    _     _      _      _      _      _      _    ) R)
   (code:comment "Go to the tower-instruction being inserted.")
   (code:comment "skip to the right of the three pegs.")
   ((right10   tower) (right11   _     _      _        _      _      _      _    ) R)
@@ -2100,7 +2092,7 @@ but it always is clear which one it has.
 (code:comment "Find marker in data region and write the new symbol.")
 (code:comment "Mark the symbol moved to.")
   (TL0 (R         R         R         R        R        -----     -----
-        (U 0 L)   (U 0 L)   -----     -----    -----    (U 0 L)))
+        (U 0 L)   (U 0 L)   R         -----    -----    (U 0 L)))
   (TL1 (R         R         R         R        R        -----     -----
         (U 1 L)   (U 1 L)   R         -----    -----    (U 1 L)))
   (TR0 (R         R         R         R        R        -----     -----
