@@ -66,11 +66,12 @@ This module provides one binding only, that of procedure @rack[make-TM].
 
 Procedure @rack[make-TM] returns a procedure that emulates a
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machine"].
-Some slightly different definitions of this abstract machine exist.
+The concept of Turing-machines can formally be defined in some slightly different flavors.
 Below the details of the machines as returned by procedure @rack[make-TM].
+The description is informal.
 
 @note{@elemtag["Hopcroft&Ullman"]{
-John E. Hopcroft and Jeffrey D. Ullman provide a comprehensive description
+John E. Hopcroft and Jeffrey D. Ullman provide a comprehensive and formal description
 of Turing-machines in chapter 6 of their book:
 @nonbreaking{“Formal Languages and their Relation to Automata”},
 @nonbreaking{Addison-Wesley} 1969 @nonbreaking{(ISBN 0-201-0298 3-9)}.}}
@@ -117,7 +118,7 @@ possibly, but not necessarily, with an ever growing tape-content.
 @inset{@itemlist[#:style 'ordered
           
 @item{Optionally writing a non-blank tape-symbol in the current cell of the tape.
-This step is not optional when this cell is empty.}
+This step is not optional when the cell is empty.}
 
 @item{Optionally moving the tape-head one cell to the right or to the left.
 When the tape-head moves left of the start of the tape-content or right of the end,
@@ -329,6 +330,11 @@ A simpler way of using marks is shown in section @secref["UTM"].
  (nr-of-registers (and/c exact-integer? (>=/c 2)))
  (           move (or/c 'R 'L 'N)))]{
 Procedure @rack[make-TM] returns a procedure that emulates a Turing-machine.
+In the grammar the right-hand side after an equal-sign shows which form the @italic{value}
+of the non-terminal at the left must have, not the form of the non-terminal itself.
+For example, read @nonbreaking{`@rack[final-states] @ttt{=} @rack[(final-state ...)]'} as
+@nonbreaking{`@rack[final-states] @ttt{=} @rack[(listof final-state)]'}.
+
 Keywords are reserved for the names of registers.
 Providing
 
@@ -357,7 +363,7 @@ equality or being distinct to be understood in the sense of @rack[equal?].
  2. The list of @rack[final-states] must not contain duplicates.@(linebreak)
  3. The list of @rack[final-states] must not contain any @rack[old-state].@(linebreak)
  4. The @rack[rules] must have distinct @rack[selector]s
-       @smaller{(the machine must be deterministic)}@(linebreak)
+    (the machine must be deterministic)@(linebreak)
  5. All @rack[register-name]s must be distinct.@(linebreak)
  6. Every @rack[updater] must have as many elements as there are @rack[registers].@(linebreak)
  7. Every keyword in an @rack[updater] must be one of the @rack[register-name]s.}
@@ -1699,18 +1705,19 @@ The following Turing-machine solves the puzzle of the
 It produces the shortest path of moving a tower from one of three pegs to another one.
 It expects as input
 
-@inset{@ttt{(tower ‹from› ‹onto› ‹third› 1 ...+)}}
+@inset{@ttt{tower} ‹from› ‹onto› ‹third› @rack[1] ...@smaller{@superscript{+}}}
 
 where the number of ones is the height of the tower, id est, the number of disks.
-@ttt{‹from›} is the starting peg, @ttt{‹onto›} the peg of destination
-and @ttt{‹third›} the third peg.
+‹from› is the starting peg, ‹onto› the peg of destination
+and ‹third› the third peg.
 The three pegs must be distinct, of course.
 Tape-symbols @rack[1], @rack['tower], @rack['disk] and @rack['mark]
 cannot be used for the names of the pegs.
 In the example below the pegs are called @rack['A]', @rack['B] and @rack['C]. 
 The machine replaces the input by a sequence of moves
 
-@inset{@ttt{[disk ‹from› ‹onto› ‹third› 1 ...+] ...}}
+@inset{[@ttt{disk} ‹from› ‹onto› ‹third› @rack[1] ...@smaller{@superscript{+}}]
+...@smaller{@superscript{+}}}
 
 where the number of ones indicates which disk is moved.
 The smallest disk is indicated by one @rack[1].
@@ -1728,18 +1735,18 @@ The following registers are used:
 @tabular[#:sep (hspace 1)
 (list
  (list " " " " "Required registers.")
- (list @ttt{#:state}  ":" "The primary state.")
- (list @ttt{#:bus}    ":" "The input/output-register.")
+ (list @rack[#:state]  ":" "The primary state.")
+ (list @rack[#:bus]    ":" "The input/output-register.")
  (list " " " " " ")
  (list " " " " "Additional registers.")
- (list @ttt{#:from}   ":" "Starting peg.")
- (list @ttt{#:onto}   ":" "Destination peg.")
- (list @ttt{#:third}  ":" "Third peg.")
+ (list @rack[#:from]   ":" "Starting peg.")
+ (list @rack[#:onto]   ":" "Destination peg.")
+ (list @rack[#:third]  ":" "Third peg.")
  (list " " " " " ")
  (list " " " " (list "Registers for subroutine " @ttt{insert} "."))
- (list @ttt{#:prev}   ":" "Previous tape-symbol during insertion.")
- (list @ttt{#:arg}    ":" "Tape-symbol to be inserted.")
- (list @ttt{#:return} ":" "Primary state to be assumed after insertion."))]
+ (list @rack[#:prev]   ":" "Previous tape-symbol during insertion.")
+ (list @rack[#:arg]    ":" "Tape-symbol to be inserted.")
+ (list @rack[#:return] ":" "Primary state to be assumed after insertion."))]
 
 @interaction0[
 (require "make-TM.rkt" racket)
@@ -2215,7 +2222,24 @@ but it always is clear which one it has.
        (code:comment "The data, empty but marked as the current tape-symbol:")
        c mS))
 (code:comment " ")
-(UTM encoded-BB3+data)]
+(UTM encoded-BB3+data)
+(code:comment " ")
+(define encoded-BB4+data
+'(c c mc       1 1 R 1 c
+               1 1 R 1 c
+               1 1 L 1 c c
+                 1 L 1 c
+                 1 L 1 c
+             1 1 1 L 0 c c
+         1 1 1 1 1 R 1 c
+         1 1 1 1 1 R 1 c
+           1 1 1 1 L 1 c c
+           1 1 1 1 R 1 c
+           1 1 1 1 R 1 c
+                 1 R 0 c c
+             0 c 0 c 0 c c c mS))
+(code:comment " ")
+(UTM encoded-BB4+data #:report #f)]
 
 The @rack[UTM] requires many moves,
 but the final state and tape-content are correct!
@@ -2225,6 +2249,6 @@ but be aware that the output has almost 4450 lines
 with widths up to 160 characters.
 On my simple PC, using DrRacket, it takes about a minute, display of the output included.
 @hyperlink["UTM-with-report.rkt" "UTM-with-report.rkt"]
-runs both examples of the above interaction.
+runs the three UTM calls of the above interaction with reports of the first two.
 
 @larger{@larger{@bold{The end}}}
