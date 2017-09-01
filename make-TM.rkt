@@ -6,11 +6,8 @@
 
 (define
  (make-TM
-  init-state final-states
-  blank space dummy
-  rules
-  #:registers (registers 2)
-  #:name (name 'TM-without-name))
+  init-state final-states blank space dummy rules
+  #:registers (registers 2) #:name (name 'TM-without-name))
  
  ; First check the registers argument.
  ; The register-names and the nr-of-registers are required for checking the rules.
