@@ -65,10 +65,11 @@
 
 Module @hyperlink["make-TM.rkt" "make-TM.rkt"]
 provides one binding only, that of procedure @rack[make-TM],
-which returns procedures that emulate
+wich returns procedures that emulate
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"].
-There are some slightly different flavors of Turing-machines.
-Below the details of the machines returned by procedure @rack[make-TM].
+There are several flavors of Turing-machines.
+For every flavor there is an equivalent machine of the most restricted flavor.
+Below the details of the less restricted machines as returned by procedure @rack[make-TM].
 
 @note{@elemtag["Hopcroft&Ullman"]{
 John E. Hopcroft and Jeffrey D. Ullman provide a comprehensive description
@@ -246,9 +247,9 @@ has at least two registers.
 The first one is the primary state-register and the second one the input/output-register.
 Te latter always contains the tape-symbol read from or
 to be written into the current cell of the tape.
-However, the control-unit can have more registers,
-provided the combined contents of the registers is limited to a finite set.
-During a move new values can be put into the registers, possibly obtained from other registers.
+However, the control-unit can have more registers.
+During a move new states and tape-symbols can be put into the registers,
+possibly obtained from other registers.
 For every Turing-machine with more than two registers there
 is an equivalent Turing-machine with two registers only.
 It always is possible, although it may be tedious, to rewrite rules with more than two registers
@@ -257,7 +258,7 @@ by including the contents of the additional registers in the primary state.
 For an example,
 compare section @secref["Inserting symbols"] with section @secref["More registers"].
 Allowing more registers is a way to simplify the description of the rules.
-For example, multiple registers make it easier to describe rules that move part of the content
+For example, additional registers make it easier to describe rules that move part of the content
 of the tape to another position on the tape.
 They also make it easier to simulate subroutines. See section @secref{Subroutine}.
 
@@ -267,13 +268,17 @@ Such a tape can be simulated by using tape-symbols consisting of
 tuples (e.g. lists or vectors) of as many elements as there are tracks.
 
 @note{Tape-symbols not necessarily are symbols of Racket in the sense of predicate @rack[symbol?].
-They can be arbitrary values, keywords excepted.}
+They can be arbitrary values, keywords and the dummy excepted.}
 
 It is possible to simulate a Turing-machine
 with more than one tape, each one with its own tape-head.
 To simulate a Turing-machine with n tapes, one can use a multiple track tape with 2n tracks.
 Track i+n can be used for a mark that indicates the current position in track i.
 To read from or to write into track i, the mark in track i+n must first be looked for.
+However, a whole tuple must be written, one element for each track,
+which may complicate the program of rules.
+A separate rule would be required for every feasible tuple,
+which may lead to a large number of rules.
 
 Another way to simulate multiple tapes is to place their contents one after another in sections
 with separators between them.
@@ -282,6 +287,8 @@ In each section one symbol should be marked as the current one within that secti
 A variation of this method is used in chapter @secref["UTM"].
 By deletion or insertion of separators the machine can even vary the number of sections
 while it is running.
+An individual section can grow by moving all cells at the left/right one or more cells to the
+left/right. In a similar way it is possible to remove part of a section.
 
 @section{Procedure make-TM}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
@@ -294,8 +301,8 @@ while it is running.
 (space           tape-symbol)
 (rules           (rule ...))
 (registers       (code:line @#,element["roman"]{default =} 2)
-                 (code:line (register-name register-name register-name ...))
-                 nr-of-registers)
+                 (code:line (register-name @#,(elem (list (ttt "...") (superscript "2+")))))
+                 (code:line @#,(racket (and/c exact-integer? (>=/c 2)))))
 (name            (code:line @#,(element "roman" "default =") @#,(racket 'TM-without-name))
                  (code:line @#,(rack symbol?)))
 (final-state     state)
@@ -311,36 +318,19 @@ while it is running.
 (tape-symbol     (code:line @#,(racket (not/c (or/c dummy keyword?)))))
 (dummy           (code:line @#,(racket (not/c keyword?))))
 (register-name   (code:line @#,(racket keyword?)))
-(nr-of-registers (code:line @#,(racket (and/c exact-integer? (>=/c 2)))))
 (move            (code:line @#,(racket (or/c 'R 'L 'N)))))]{
 Procedure @rack[make-TM] returns a procedure that emulates a Turing-machine.
-          
-The lines with equal-signs are simplified contracts.
-They do not form a grammar,
-which would be odd,
-because @rack[make-TM] is a procedure.
-For example read
-@inset{@rack[final-states] @ttt{=} @rack[(final-state ...)]}
-as
-@inset{@rack[final-states] @ttt{:} @rack[(listof final-state)]}
-interpreting @rack[final-state] as a contract.
 
 Registers are identified by keywords.
-Providing
-
-@inset{@rack[#:registers n]}
-
+Providing@(linebreak)@(hspace 5)
+@nonbreaking{@rack[#:registers n]}@(linebreak)
 with @racketlink[exact-integer? "exact integer"] @ttt{n≥2} is the same as providing:
-
-@inset{@rack[#:registers (for/list ((k (in-range n))) (string->keyword (~s k)))]}
-
-For example,
-
-@inset{@nonbreaking{@rack[#:registers]@(hspace 1)@rack[3]}}
-
-does the same as:
-
-@inset{@nonbreaking{@rack[#:registers]@(hspace 1)@rack['(#:0 #:1 #:2)]}}
+@(linebreak)@(hspace 5)
+@nonbreaking{@rack[#:registers (for/list ((k (in-range n))) (string->keyword (~s k)))].}
+@(linebreak)For example,
+@(linebreak)@(hspace 5)@nonbreaking{@rack[#:registers]@(hspace 1)@rack[3]}
+@(linebreak)does the same as:
+@(linebreak)@(hspace 5)@nonbreaking{@rack[#:registers]@(hspace 1)@rack['(#:0 #:1 #:2)]}
 
 The first @rack[register-name] is for the primary state-register and the second one
 for the input/output-register.
@@ -365,11 +355,7 @@ The @rack[name] is attached to the returned procedure
 by means of Racket's procedure @rack[procedure-rename].
 The @rack[name] is used in error-messages and when printing a report.
 
-@note{The set of @rack[state]s and the set of @rack[tape-symbol]s are not required to be disjunct.
-This is not in contradiction with the formal definitions of Turing-machines
-I have seen in literature, up to now.
-It is not necessary to require the two sets to be disjunct,
-because it always is possible to rewrite the rules such as to make the two sets disjunct.}
+@note{The set of @rack[state]s and the set of @rack[tape-symbol]s are not required to be disjunct.}
 
 @section{Running a Turing-machine}
 The control-unit interprets the @rack[rules] as follows,
@@ -583,9 +569,9 @@ contains @rack[tape-symbol] @rack[0].
 In the examples @rack['B] usually is the blank, @rack['S] the space and @rack['_] the dummy.
 Usually @rack['T] is the final state for an accepted input and @rack['F] for a rejected input.
 
-Many of the examples are inspired by material of Jay McCarthy
+@note{Many of the examples are inspired by material of Jay McCarthy
 that can be found in @hyperlink["http://jeapostrophe.github.io/2013-10-29-tmadd-post.html"
-                                "http://jeapostrophe.github.io/2013-10-29-tmadd-post.html"].
+                                "http://jeapostrophe.github.io/2013-10-29-tmadd-post.html"].}
 
 @subsection{Blank → space}
 
@@ -661,7 +647,7 @@ id est consisting of spaces only.
 (code:comment " ")
 (code:comment "The TM is not confused when one or more of the tape-symbols are slashes.")
 (code:comment " ")
-(TM '(1 1 1 / / / / x / / /))
+(TM '(1 1 1 / / / / 1 / / /))
 (code:comment " ")
 (code:comment "No non-space present with the given index yields final state F:")
 (code:comment " ")
@@ -1231,7 +1217,7 @@ See @hyperlink["https://en.wikipedia.org/wiki/Catalan_number" "Catalan numbers"]
  (unless (= cnt expected)
   (error 'parentheses "k=~s, found ~s, expected ~s" k cnt expected)))
 (code:comment " ")
-(for/fold ((total 0)) ((k (in-range 0 11)))
+(for/fold ((total 0)) ((k (in-range 0 11 2)))
  (printf "~s parentheses.~n" k)
  (define counter
   (for*/fold ((cnt 0)) ((n (in-range (arithmetic-shift 1 k))))
@@ -1305,6 +1291,8 @@ the counter is checked to be zero.
 (code:comment " ")
 (define TM (make-TM 1 '(F T) 'B 'S '_ rules))
 (code:comment " ")
+(TM '(< < < > > < > >) #:report 'short)
+(code:comment " ")
 (code:comment "match-parentheses does the same as the TM. Used for tests.")
 (code:comment "The same as in the previous example.")
 (code:comment "To do: to avoid duplicate code in interactions.") 
@@ -1359,31 +1347,31 @@ yields final state @rack['F].
 (code:comment " ")
 (define rules
 '((code:comment "Look for a.")
-  ((0  a) (1  a) R)
-  ((0  b) (0  b) R)
-  ((0  B) (T  S) N)
-  ((0  _) (F  _) N)
+  ((0     a) (1     a) R)
+  ((0     b) (0     b) R)
+  ((0     B) (T     S) N)
+  ((0     _) (F     _) N)
   (code:comment "Symbol a found, is next symbol b?")
-  ((1  a) (1  a) R) (code:comment "Keep looking for b.")
-  ((1  b) (2  M) L) (code:comment "yes, mark it M and proceed.")
-  ((1  _) (F  _) N)
-  ((1  B) (T  S) N)
+  ((1     a) (1     a) R) (code:comment "Keep looking for b.")
+  ((1     b) (2     M) L) (code:comment "yes, mark it M and proceed.")
+  ((1     _) (F     _) N)
+  ((1     B) (T     S) N)
   (code:comment "Rewind the tape.")
-  ((2  B) (3  S) R)
-  ((2  _) (2  _) L)
+  ((2     B) (3     S) R)
+  ((2     _) (2     _) L)
   (code:comment "Shift every symbol one cell to the left up to mark M.")
   (code:comment "Replace a or b or x by S.")
   (code:comment "Replace preceding S by a or b or x.")
   (code:comment "Replace M by b and replace preceding S by x.")
   (code:comment "Memorize the symbol in the new state.")
-  ((3  a) (4a S) L)
-  ((3  b) (4b S) L)
-  ((3  x) (4x S) L)
-  ((3  M) (4M b) L)
-  ((4a S) (5  a) R) (code:comment "Continue the shift.")
-  ((4b S) (5  b) R) (code:comment "Continue the shift.")
-  ((4x S) (5  x) R) (code:comment "Continue the shift.")
-  ((4M S) (0  x) R) (code:comment "Shift completed. Look for next a followed by b.")
+  ((3     a) ((4 a) S) L)
+  ((3     b) ((4 b) S) L)
+  ((3     x) ((4 x) S) L)
+  ((3     M) ((4 M) b) L)
+  (((4 a) S) (5     a) R) (code:comment "Continue the shift.")
+  (((4 b) S) (5     b) R) (code:comment "Continue the shift.")
+  (((4 x) S) (5     x) R) (code:comment "Continue the shift.")
+  (((4 M) S) (0     x) R) (code:comment "Shift completed. Look for next a followed by b.")
   (code:comment "Go to the right of the space inserted in state 3 and continue the shift.")
   ((5  S) (3  S) R)))
 (code:comment " ")
@@ -1391,7 +1379,7 @@ yields final state @rack['F].
 (code:comment " ")
 (code:comment "Example:")
 (code:comment " ")
-(TM '(b a b a b a))
+(TM '(b a b a b a) #:report 'short)
 (code:comment " ")
 (code:comment "Let's test the TM.")
 (code:comment "The following procedure does the same as the TM")
@@ -1677,7 +1665,7 @@ where the number of ones indicates which disk is moved.
 The smallest disk is indicated by one @rack[1].
 Each larger disk by one more @rack[1].
 The largest disk is marked by as many ones as the height of the tower being moved.
-When a tower-instruction is found, it is replaced by a move-instruction
+When a tower-instruction is found, it is replaced by a disk-instruction
 and when there are two or more disks,
 a tower-instruction with one disk less
 is inserted both at the left and at the right
@@ -1695,9 +1683,9 @@ The following registers are used:
  (list " " " " "Additional registers.")
  (list @rack[#:from]   ":" "Starting peg.")
  (list @rack[#:onto]   ":" "Destination peg.")
- (list @rack[#:third]  ":" "Third peg.")
+ (list @rack[#:thrd]   ":" "Third peg.")
  (list " " " " " ")
- (list " " " " (list "Registers for subroutines " @ttt{insert} "and " @ttt{insertR} "."))
+ (list " " " " (list "Registers for subroutines " @ttt{insert} " and " @ttt{insertR} "."))
  (list @rack[#:prev]   ":" "Previous tape-symbol during insertion.")
  (list @rack[#:arg]    ":" "Tape-symbol to be inserted.")
  (list @rack[#:return] ":" "Primary state to be assumed after insertion."))]
