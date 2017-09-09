@@ -65,7 +65,7 @@
 
 Module @hyperlink["make-TM.rkt" "make-TM.rkt"]
 provides one binding only, that of procedure @rack[make-TM],
-wich returns procedures that emulate
+which returns procedures that emulate
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"].
 There are several flavors of Turing-machines.
 For every flavor there is an equivalent machine of the most restricted flavor.
@@ -139,13 +139,11 @@ possibly, but not necessarily, with an ever growing tape-content.
 with the tape-head in fixed position.
 Moving the tape-head has the same effect
 as keeping it at fixed position and moving the tape in opposit direction.}
-
 @note{The tape-head of a Turing-machine does not move while reading
 from a cell or writing into a cell.
 Only after it has done its reading from and its writing into the current cell,
 the tape-head is moved one cell to the right
 or to the left or remains where it is as indicated by the rule being applied.}
-
 @note{Magnetic tape-equipment of the old days
 usually destroyed all data following the newly written data,
 although with some effort most, but usually not all of it, could be recovered.
@@ -158,9 +156,6 @@ none of the other cells is affected, nor at the left nor at the right.}
 Let's start with a simple example of a Turing-machine.
 Its states are the initial state @rack['A], the intermediate states @rack['B], @rack['C] and
 @rack['D] and the final state @rack['T].
-In the rules @rack['R] indicates a move of the tape-head one cell to the right.
-The other two options @rack['N] (no move) and @rack['L] (move left)
-are not used.
 In this example a rule has the form:
 
 @inset{@verbatim["((old-state old-tape-symbol) (new-state new-tape-symbol) move)"]}
@@ -175,6 +170,8 @@ where:
  (list @ttt{new-tape-symbol} "tape-symbol | dummy")
  (list @ttt{move} @(racket(or/c 'R 'L 'N))))]}
 
+@rack['R] indicates a move of the tape-head one cell to the right,
+@rack['N] no move and @rack['L] a move one cell to the left.
 A rule applies when its @ttt{old-state}
 equals the current state of the control-unit
 and the @ttt{old-tape-symbol} equals the current tape-symbol read from the tape,
@@ -326,7 +323,7 @@ Providing@(linebreak)@(hspace 5)
 @nonbreaking{@rack[#:registers n]}@(linebreak)
 with @racketlink[exact-integer? "exact integer"] @ttt{n≥2} is the same as providing:
 @(linebreak)@(hspace 5)
-@nonbreaking{@rack[#:registers (for/list ((k (in-range n))) (string->keyword (~s k)))].}
+@nonbreaking{@rack[#:registers (for/list ((k (in-range n))) (string->keyword (~s k)))]}
 @(linebreak)For example,
 @(linebreak)@(hspace 5)@nonbreaking{@rack[#:registers]@(hspace 1)@rack[3]}
 @(linebreak)does the same as:
@@ -355,7 +352,7 @@ The @rack[name] is attached to the returned procedure
 by means of Racket's procedure @rack[procedure-rename].
 The @rack[name] is used in error-messages and when printing a report.
 
-@note{The set of @rack[state]s and the set of @rack[tape-symbol]s are not required to be disjunct.}
+The set of @rack[state]s and the set of @rack[tape-symbol]s are not required to be disjunct.
 
 @section{Running a Turing-machine}
 The control-unit interprets the @rack[rules] as follows,
@@ -414,7 +411,7 @@ the old content of register @rack[#:extra], which becomes the new content of reg
 of the tape, replacing the former current @rack[tape-symbol].
 During this operation the tape-head does not move.
 The written @rack[tape-symbol] can be the same as the one already present in the current cell.
-However, when the input/output-register contains a @rack[blank] a @rack[space] is written.}
+When the input/output-register contains a @rack[blank], a @rack[space] is written.}
 
 @item{Finally the tape-head may be moved:@(linebreak)
 @rack[move] @rack['L] : move the tape-head one cell to the left.@(linebreak)
@@ -637,9 +634,9 @@ id est consisting of spaces only.
 (code:comment " ")
 (TM '(1 1 1 / a b c d e f))
 (code:comment " ")
-(define input '(a S b S c S d S e S f S g S h S i S j S k))
+(define input '(a S b S c S d S e S f S))
 (code:comment " ")
-(for ((k (in-range 0 15)))
+(for ((k (in-range 0 10)))
  (define-values (nr-of-moves final-state output)
   (TM (append (make-list k 1) '(/) input)))
  (printf "k=~s, nr-of-moves=~s, final-state=~s, tape=~s~n"
@@ -647,11 +644,7 @@ id est consisting of spaces only.
 (code:comment " ")
 (code:comment "The TM is not confused when one or more of the tape-symbols are slashes.")
 (code:comment " ")
-(TM '(1 1 1 / / / / 1 / / /))
-(code:comment " ")
-(code:comment "No non-space present with the given index yields final state F:")
-(code:comment " ")
-(TM '(1 1 1 / S S x S S))]
+(TM '(1 1 1 / / / / 1 / / /))]
 
 @subsection{Remove symbols}
 The following Turing-machine always halts.
@@ -1655,7 +1648,7 @@ and ‹third› the third peg.
 The three pegs must be distinct, of course.
 Tape-symbols @rack[1], @rack['tower], @rack['disk], @rack['mark] and @rack['markR]
 cannot be used for the names of the pegs.
-In the example below the pegs are called @rack['A]', @rack['B] and @rack['C]. 
+In the example below the pegs are called @rack['A], @rack['B] and @rack['C]. 
 The machine replaces the input by a sequence of moves
 
 @inset{[@ttt{disk} ‹from› ‹onto› ‹third› @rack[1] ...@smaller{@superscript{+}}]
@@ -1805,7 +1798,7 @@ The following registers are used:
   (code:comment "where to return to and to insert the tape-symbol.")
   (code:comment "Obviously tape-symbols 'mark and 'markR")
   (code:comment "must not be used in any other way.")
-  (code:comment "insertR does the same as insert, but ends with the")
+  (code:comment "insertR does the same as insert, but returns with the")
   (code:comment "tape-head at the cell at the right of the inserted cell.")
 
   ((insert  _    ) (insert1  mark   #:bus _       _      _      _      _    ) R)
@@ -1823,7 +1816,7 @@ The following registers are used:
   '(halt)
   'blank
   'space
-  '_
+  '_ (code:comment "dummy")
   rules
   #:registers registers
   #:name 'TM-hanoi))
