@@ -143,6 +143,7 @@
    ((3 B) (Y 0) R) ((3 0) (Y 0) R) ((3 1) (3 1) L))))
 
 (UTM input #:report 'short)
+(time (UTM input))
 
 (TM '(1 1 1))
 
@@ -168,6 +169,7 @@
          0 c 0 c 0 c c c mS))
 
 (UTM encoded-BB3+data #:report 'short)
+(time (UTM encoded-BB3+data))
 
 (display "What does the original BB do?\n")
 
@@ -192,5 +194,5 @@
                  1 R 0 c c
              0 c 0 c 0 c c c mS))
            
-(UTM encoded-BB4+data #:report #f)
+(time (UTM encoded-BB4+data #:report #f))
                  
