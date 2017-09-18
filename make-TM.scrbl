@@ -66,11 +66,8 @@
 Module @hyperlink["make-TM.rkt" "make-TM.rkt"]
 provides one binding only, that of procedure @rack[make-TM],
 which returns procedures that emulate
-@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"].
-There are several flavors of Turing-machines.
-For every machine of a less restricted flavor
-there is an equivalent machine of the most restricted flavor.
-Below the details of the less restricted machines as returned by procedure @rack[make-TM].
+@hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"]
+of a flavor as described in this introduction.
 
 @note{@elemtag["Hopcroft&Ullman"]{
 John E. Hopcroft and Jeffrey D. Ullman provide a comprehensive description
@@ -266,7 +263,7 @@ Such a tape can be simulated by using tape-symbols consisting of
 tuples (e.g. lists or vectors) of as many elements as there are tracks.
 
 @note{Tape-symbols not necessarily are symbols of Racket in the sense of predicate @rack[symbol?].
-They can be arbitrary values, keywords and the dummy excepted.}
+They can be arbitrary values other than keywords and the dummy.}
 
 It is possible to simulate a Turing-machine
 with more than one tape, each one with its own tape-head.
@@ -286,12 +283,12 @@ A variation of this method is used in chapter @secref["UTM"].
 By deletion or insertion of separators the machine can even vary the number of sections
 while it is running.
 An individual section can grow by moving all cells at the left/right one or more cells to the
-left/right. In a similar way it is possible to remove part of a section.
+left/right. In a similar way it is possible to remove part or all of a section.
 
 @section{Procedure make-TM}
 @defform-remove-empty-lines[@defform[#:kind "procedure"
 (make-TM initial-state final-states blank space dummy rules
-          [#:registers registers] [#:name name])
+          [#:registers registers #:name name])
 #:grammar(
 (initial-state   state)
 (final-states    (final-state ...))
@@ -370,7 +367,8 @@ the cell currently under the tape-head.
       else it continues with the following steps.}
 
 @item{The current @rack[tape-symbol] is read and put into the input/output-register.@(linebreak)
-      The tape-head does not move during this reading.}
+      The tape-head does not move during this reading.
+      If the current cell is empty, the input/output-register receives the @rack[blank].}
 
 @item{A @rack[rule] is looked for.
 A @rack[rule] applies if its @rack[old-state] equals the current primary state
@@ -482,7 +480,7 @@ unless it halts with an error because it cannot find an applying @rack[rule]
 or runs out of memory because of an ever growing tape-content.
 (An abstract Turing-machine has an infinite tape and cannot run out of memory)
                                                  
-@note{A Turing-machines returned by procedure @rack[make-TM] may,
+@note{A Turing-machine returned by procedure @rack[make-TM] may,
 but does not necessarily limit the input to a predefined set of @rack[tape-symbol]s.
 It can use the union of the set of @rack[tape-symbol]s in the @rack[input] and
 those that can be extracted from the @rack[rules] given to procedure @rack[make-TM].
@@ -1007,9 +1005,9 @@ In fact there are four states, but final state @rack['T] does not count.
 
 @subsubsub*section{@larger{@larger{Four state busy beaver}}}
 In fact there are five states, but final state @rack['T] does not count.
-For every non-final state @rack[X] there are two rules,
-@rack[((X _) (? ?) ?)] and
-@rack[((X 1) (? ?) ?)].
+For every non-final state @rack[old-state] there are two rules,
+@rack[((old-state _) (new-state 1) move)] and
+@rack[((old-state 1) (new-state 0-or-1) move)].
 This implies that a blank @rack['B] and tape-symbol @rack[0] always
 are treated in the same way whenever encountered as the current tape-symbol.
 This removes the distinction between these two tape-symbols.
