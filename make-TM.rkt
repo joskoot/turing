@@ -115,6 +115,7 @@
  (define bus-register-name (cadr register-names))
  (define set-of-final-states (apply set final-states))
  (define (dummy? x) (equal? x dummy))
+ (define (blank? x) (equal? x dummy))
  
  (define-values (normal-rule-hash dummy-rule-hash)
   (for/fold ((normal-hash (hash)) (dummy-hash (hash))) ((rule (in-list rules)))
@@ -134,7 +135,7 @@
  (define (check-TM-arguments input register-values report limit)
   (unless (list? input) (raise-argument-error name "list of tape-symbols" input))
   (when (ormap dummy? input) (error name "dummy not allowed in input: ~s" input))
-  (when (member blank input) (error name "blank not allowed in input: ~s" input))
+  (when (ormap blank? input) (error name "blank not allowed in input: ~s" input))
   (when (ormap keyword? input) (error name "keyword not allowed in input: ~s" input))
   (cond
    ((list? register-values)

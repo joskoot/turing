@@ -373,9 +373,9 @@ the cell currently under the tape-head.
 @item{A @rack[rule] is looked for.
 A @rack[rule] applies if its @rack[old-state] equals the current primary state
 and the @rack[old-symbol] matches the current @rack[tape-symbol] in the input/output-register.
-The @rack[dummy] matches every tape-symbol.
+The @rack[dummy] matches every @rack[tape-symbol].
 Every other @rack[old-symbol] matches only when equal to the current @rack[tape-symbol].
-A @rack[rule] whose @rack[old-symbol] equals the current tape-symbol
+A @rack[rule] whose @rack[old-symbol] equals the current @rack[tape-symbol]
 prevails over a @rack[rule] with the same @rack[old-state] and
 whose @rack[old-symbol] is the @rack[dummy].
 For @rack[rules] with the same @rack[old-state] the @rack[dummy]
@@ -458,11 +458,11 @@ For each move the report shows:
 @item{The move counter, starting from 1.}
 @item{The @rack[rule] being applied.}
 @item{The original and new contents of the @rack[registers],
-      the original content of the input/output-register showing the read tape-symbol,
-      the new content showing the tape-symbol to be written.}
+      the original content of the input/output-register showing the read @rack[tape-symbol],
+      the new content showing the @rack[tape-symbol] to be written.}
 @item{The new position of the tape-head and the new tape-content shown as
 @nonbreaking{@ttt{((h ...) (c t ...))}},
-where the new position of the tape-head is at tape-symbol @ttt{c}.}]}
+where the new position of the tape-head is at @rack[tape-symbol] @ttt{c}.}]}
 
 If @rack[report] is @rack['short] the Turing-machine
 prints a short record of the moves it makes (on the @racket[current-output-port])
@@ -910,8 +910,8 @@ but it is replaced by a tape of one track only.
   (list
    '((A _) (A _) R) (code:comment "First go to the right.")
    '((A B) (0 S) L)
-   '((0 B) (T S) L) (code:comment "All done.")
-   '((1 B) (T 1) L))
+   '((0 B) (T 0) N) (code:comment "All done.")
+   '((1 B) (T 1) N))
   (for*/list
    ((c (in-range 0 2))   (code:comment "0 = no carry, 1 = carry")
     (n (in-range 0 10))  (code:comment "digit of first operand")
@@ -1107,8 +1107,9 @@ If a required @rack[0] or @rack[1] is not found, the Turing-machine halts in sta
 (code:comment " ")
 (for*/and ((n0 (in-range 0 10)) (n1 (in-range 0 10)))
  (define input (append (make-list n0 0) (make-list n1 1)))
+ (define expected-state (if (= n0 n1) 'T 'F))
  (for/and ((n (in-range 0 100)))
-  (test (shuffle input) (if (= n0 n1) 'T 'F))))]
+  (test (shuffle input) expected-state)))]
 
 @subsection{Matching parentheses}
 
@@ -1639,18 +1640,19 @@ The following Turing-machine solves the puzzle of the
 It produces the shortest path of moving a tower from one of three pegs to another one.
 It expects as input
 
-@inset{@ttt{tower} ‹from› ‹onto› ‹third› @rack[1] ...@smaller{@superscript{+}}}
+@inset{@ttt{tower} ‹from› ‹onto› ‹thrd› @rack[1] ...@smaller{@superscript{+}}}
 
 where the number of ones is the height of the tower, id est, the number of disks.
 ‹from› is the starting peg, ‹onto› the peg of destination
-and ‹third› the third peg.
+and ‹thrd› the third peg.
 The three pegs must be distinct, of course.
-Tape-symbols @rack[1], @rack['tower], @rack['disk], @rack['mark] and @rack['markR]
+Tape-symbols @rack[1], @rack['m1], @rack['tower], @rack['disk], @rack['mark] and @rack['markR]
 cannot be used for the names of the pegs.
 In the example below the pegs are called @rack['A], @rack['B] and @rack['C]. 
-The machine replaces the input by a sequence of moves
+The machine does not check the correctness of the input.
+It replaces the input by a sequence of moves
 
-@inset{[@ttt{disk} ‹from› ‹onto› ‹third› @rack[1] ...@smaller{@superscript{+}}]
+@inset{[@ttt{disk} ‹from› ‹onto› ‹thrd› @rack[1] ...@smaller{@superscript{+}}]
 ...@smaller{@superscript{+}}}
 
 where the number of ones indicates which disk is moved.
@@ -1699,7 +1701,7 @@ The following registers are used:
   ((start   _    ) (start   _     _      _        _      _      _      _    ) R)
 
   (code:comment "Extract the three pegs of the tower instruction.")
-  (code:comment "Put them in registers #:from, #:onto and #:third.")
+  (code:comment "Put them in registers #:from, #:onto and #:thrd.")
 
   ((from    _    ) (onto    _     _      _        _      #:bus  _      _    ) R)
   ((onto    _    ) (thrd    _     _      _        _      _      #:bus  _    ) R)
@@ -1822,12 +1824,14 @@ The following registers are used:
 (code:comment " ")
 (code:comment "Result for 5 disks:")
 (code:comment " ")
-(define-values (nr-of-moves state tape) (TM-hanoi '(tower A B C 1 1 1 1 1)))
+(define-values (nr-of-moves state tape)
+ (TM-hanoi '(tower A B C 1 1 1 1 1)))
 (let loop ((tape tape) (move-nr 1))
  (cond
   ((null? tape) (newline))
   ((eq? (car tape) 'disk)
-   (printf "~n~a : disk " (~s #:min-width 2 #:align 'right move-nr))
+   (printf "~n~a : disk "
+    (~s #:min-width 2 #:align 'right move-nr))
    (loop (cdr tape) (add1 move-nr)))
   (else
    (printf "~s " (car tape))
@@ -1900,7 +1904,7 @@ An omitted rule is included as a @rack[0].
 A state with omitted rules @rack[0] only is interpreted as a final state.
 
 The universal Turing-machine accepts symbols
-@rack['B] , @rack[1], @rack['c], @rack['R], @rack['R], @rack['S], @rack['B]
+@rack['B] ,@rack['S], @rack[1], @rack['c], @rack['R], @rack['R], @rack['S], @rack['B]
 plus the marked version of each symbol obtained by prefixing it with an @ttt{m}.
 @rack['B] is the blank and @rack['S] the space.
 Marking a blank produces a marked space: @rack['mS].
