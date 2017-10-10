@@ -236,10 +236,10 @@ With the given input, the following Turing-machine replaces the second and the f
 (code:comment " ")
 (TM '(What did you do yesterday?) #:report 'long)]
 
-@subsection{Additional registers}
-The control unit of a Turing-machine emulated by a procedure made by @rack[make-TM]
-has at least two registers.
-The first one is the primary state-register and the second one the input/output-register.
+@subsection[#:tag "Additional registers"]{Additional registers}
+The control unit of a Turing-machine made by procedure @rack[make-TM]
+has at least two registers,
+the primary state-register and the input/output-register.
 Te latter always contains the tape-symbol read from or
 to be written into the current cell of the tape.
 However, the control-unit can have more registers.
@@ -351,7 +351,9 @@ by means of Racket's procedure @rack[procedure-rename].
 The @rack[name] is used in error-messages and when printing a report.
 
 The set of @rack[state]s and the set of @rack[tape-symbol]s are not required to be disjunct.
-@(linebreak)It always is possible to rewrite the rules such as to produce two disjunct sets.
+@(linebreak)
+For example, @rack[((A B) (B A register #,(tt "...")) move)] is a permitted @rack[rule]
+provided the @rack[updater] has the correct number of elements.
 
 @section{Running a Turing-machine}
 The control-unit interprets the @rack[rules] as follows,
@@ -393,7 +395,7 @@ The element with index k of the @rack[updater]
 of the @rack[rule] indicates what to put in register k.
 Let x be element k of the @rack[updater].
 
-∘ If x is a @rack[dummy] register k remains unaffected.@(linebreak)
+∘ If x is the @rack[dummy] register k remains unaffected.@(linebreak)
 ∘ If x is a @rack[register-name] the old content of that register is put into register k.
 @(linebreak)
 ∘ If x is a @rack[state] or a @rack[tape-symbol], it is put into register k.
@@ -478,7 +480,8 @@ When @rack[limit] is @rack[#f] and the Turing-machine never reaches a @rack[fina
 the procedure keeps running forever,
 unless it halts with an error because it cannot find an applying @rack[rule]
 or runs out of memory because of an ever growing tape-content.
-(An abstract Turing-machine has an infinite tape and cannot run out of memory)
+
+@note{An abstract Turing-machine has an infinite tape and cannot run out of memory.}
                                                  
 @note{A Turing-machine returned by procedure @rack[make-TM] may,
 but does not necessarily limit the input to a predefined set of @rack[tape-symbol]s.
@@ -520,10 +523,8 @@ arbitrary @rack[input] if it would not be halted by the @rack[limit]:
 (TM '() #:report 'short #:limit 5)]
 
 In this example @rack[rule] @rack['(((A _) (A S) N))] alone already implies an infinite loop.
-While the @rack[TM] is running,
-its @elemref["configuration" "configuration"] never changes after the first move,
-which could be detected while the @rack[TM] is running.
-However, the @rack[TM] does no such check.
+While @rack[TM] is running,
+its @elemref["configuration" "configuration"] never changes after the first move.
 As another example consider:
 
 @interaction[
@@ -892,7 +893,7 @@ an exact integer between 0 (inclusive) and 10 (exclusive).
 The Turing-machine adds the numbers @element['tt "n..."] and @element['tt "m..."] and
 returns the sum @element['tt "s..."].
 The Turing-machine passes first to the end of the input.
-Subsequently it does the adddition in one pass to the left
+Subsequently it does the addition in one pass to the left
 going from the least to the most significant digit.
 Redundant heading zeros are not removed.
 It replaces each tape-symbol @nonbreaking{@element['tt "(n m)"]} by one decimal digit.
@@ -1140,7 +1141,9 @@ There are two recurrent relations starting with @nonbreaking{C@subscript{0} = 1}
 @bold{@larger{Σ}}@subscript{(k=0:n)}(C@subscript{k}C@subscript{n@subscript{@ttt{-}}k})}.
 See @hyperlink["https://en.wikipedia.org/wiki/Catalan_number" "Catalan numbers"].}
 
-@interaction[
+@(define my-eval (make-base-eval))
+
+@interaction[#:eval my-eval
 (require racket "make-TM.rkt")
 (code:comment " ")
 (define rules
@@ -1179,7 +1182,7 @@ See @hyperlink["https://en.wikipedia.org/wiki/Catalan_number" "Catalan numbers"]
 (code:comment " ")
 (define TM (make-TM 0 '(T F) 'B 'S '_ rules #:name 'parentheses))
 (code:comment " ")
-(code:comment "match-parentheses does the same as the TM. Used for tests.")
+(code:comment #,(elemtag "mp" "match-parentheses does the same as the TM. Used for tests."))
 (code:comment " ")
 (define (match-parentheses lst)
  (define (match-parentheses lst n)
@@ -1194,7 +1197,7 @@ See @hyperlink["https://en.wikipedia.org/wiki/Catalan_number" "Catalan numbers"]
 (code:comment "Try all (expt 2 k) inputs of k elements,")
 (code:comment "k running from 0 to 10 (inclusive).")
 (code:comment "A total of 2047 tests of which only 65 yield final state T.")
-(code:comment " ")
+(code:comment #,(elemtag "Catalan" " "))
 (define (Catalan n)
  (cond
   ((zero? n) 1)
@@ -1240,9 +1243,7 @@ or, if no @rack[0] can be found, a @rack[1] is added at the end.
 After all parentheses have been processed,
 the counter is checked to be zero.
 
-@interaction[
-(require "make-TM.rkt")
-(code:comment " ")
+@interaction[#:eval my-eval
 (define rules
 '(
   (code:comment "Check the input.")
@@ -1286,27 +1287,7 @@ the counter is checked to be zero.
 (code:comment " ")
 (TM '(< < < > > < > >) #:report 'short)
 (code:comment " ")
-(code:comment "match-parentheses does the same as the TM. Used for tests.")
-(code:comment "The same as in the previous example.")
-(code:comment "To do: to avoid duplicate code in interactions.") 
-(code:comment " ")
-(define (match-parentheses lst)
- (define (match-parentheses lst n)
-  (cond
-   ((null? lst) (if (zero? n) 'T 'F))
-   ((eq? (car lst) '<) (match-parentheses (cdr lst) (add1 n)))
-   ((zero? n) 'F)
-   (else (match-parentheses (cdr lst) (sub1 n)))))
- (match-parentheses lst 0))
-(code:comment " ")
 (code:comment "Test now.")
-(code:comment " ")
-(define (Catalan n)
- (cond
-  ((zero? n) 1)
-  (else
-   (define m (sub1 n))
-   (/ (* (+ (* 4 m) 2) (Catalan m)) (+ m 2)))))
 (code:comment " ")
 (for/and ((k (in-range 0 17 2)))
  (define counter
@@ -1315,10 +1296,12 @@ the counter is checked to be zero.
     (for/list ((k (in-range 0 k)))
      (if (zero? (bitwise-and (arithmetic-shift 1 k) n)) '< '>)))
    (define-values (nr-of-moves state output) (TM input #:report #f))
+   (code:comment #,(list "match-parentheses has been defined " (elemref "mp" "above")))
    (unless (eq? state (match-parentheses input)) (error 'Test "test failed"))
    (cond
     ((eq? state 'T) (add1 cnt))
     (else cnt))))
+ (code:comment #,(list "Catalan has been defined " (elemref "Catalan" "above")))
  (define ok (= counter (Catalan (/ k 2))))
  (printf "k=~s, count=~s, ok=~s~n" k counter ok)
  ok)]
@@ -1557,8 +1540,6 @@ The registers are called @rack[#:state], @rack[#:current] and @rack[#:previous].
    (equal? state 'T))))]
 
 @subsection{Subroutine}
-Every Turing-machine whose tape can be extended at both ends
-can be simulated by a Turing-machine that never extends its tape at the left.
 The Turing-machine below starts in state @rack[1].
 The program includes a subroutine that starts with state @rack[sub0]
 and wants two arguments, the state to return to and a tape-symbol to be inserted.
@@ -1666,7 +1647,7 @@ is inserted both at the left and at the right
 using the same method of inserting one tape-symbol at a time as in section @secref["Subroutine"].
 The machine keeps looking for new tower-instructions
 and halts when there are no more of them.
-The following registers are used:
+The following @seclink["Additional registers" "registers"] are used:
 
 @tabular[#:sep (hspace 1)
 (list
@@ -2084,9 +2065,8 @@ but it always is clear which one it has.
   (ZL  (L         L         (ZS S L)  -----    -----    -----     -----
         (ZL 0 L)  (ZL 1 L)  (ZS S L)  -----    -----    -----))
   (ZS  ((ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y L)     (Y L)
-        (ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y S L)))
-  (code:comment "Y is the final state of the UTM.")
-  ))
+        (ZS S L)  (ZS S L)  (ZS S L)  (ZS S L) (ZS S L) (Y S L)))))
+(code:comment "Y is the final state of the UTM.")
 (code:comment " ")
 (code:comment "We have to expand UTM-rules-table to a list of rules.")
 (code:comment " ")
