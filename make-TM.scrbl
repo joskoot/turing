@@ -351,9 +351,6 @@ by means of Racket's procedure @rack[procedure-rename].
 The @rack[name] is used in error-messages and when printing a report.
 
 The set of @rack[state]s and the set of @rack[tape-symbol]s are not required to be disjunct.
-@(linebreak)
-For example, @rack[((A B) (B A register #,(tt "...")) move)] is a permitted @rack[rule]
-provided the @rack[updater] has the correct number of elements.
 
 @section{Running a Turing-machine}
 The control-unit interprets the @rack[rules] as follows,
@@ -583,7 +580,7 @@ When a rule instructs to write a blank, in fact a space is written:
    ((B blank) (C blank) R) (code:comment "A space is written.")
    ((C blank) (T y) N))
   #:name 'TM:blank->space))
-(TM '())]
+(TM '() #:report 'long)]
 
 @subsection{List-ref}
 The following Turing-machine expects as input @ttt{(1 ... / tape-symbol ...)}.
@@ -892,7 +889,7 @@ where each @element['tt "n"] and each @element['tt "m"] is a decimal digit coded
 an exact integer between 0 (inclusive) and 10 (exclusive).
 The Turing-machine adds the numbers @element['tt "n..."] and @element['tt "m..."] and
 returns the sum @element['tt "s..."].
-The Turing-machine passes first to the end of the input.
+The Turing-machine first passes to the end of the input.
 Subsequently it does the addition in one pass to the left
 going from the least to the most significant digit.
 Redundant heading zeros are not removed.
