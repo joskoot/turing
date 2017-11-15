@@ -103,11 +103,9 @@ The Turing-machine starts with a given initial internal state for the control-un
 and with the tape-head positioned at the begin of the initial tape-content.
 If the input is not empty, the initial tape-content has no empty cell.
 If the input is empty, the initial tape-content consists of one single empty cell.
-The control-unit makes moves according to a finite set of
-instructions, which we call `rules'.
+The control-unit makes moves according to a finite set of rules.
 The rule to be applied is determined by the current internal state of the control-unit
-and the current tape-symbol.
-@nonbreaking{A move consists of three steps:}
+and the current tape-symbol. A move consists of three steps:
 
 @inset{@itemlist[#:style 'ordered
           
@@ -133,15 +131,16 @@ If there is no matching rule, the machine halts in a stuck state.
 If it never reaches a final state and never gets stuck, it runs forever,
 possibly, but not necessarily, with an ever growing tape-content.
 
-@note{In real life tape-equipment usually the tape is moving
-with the tape-head in fixed position.
+@note{In real life tape-equipment usually the tape is moving with the tape-head in fixed position.
 Moving the tape-head has the same effect
 as keeping it at fixed position and moving the tape in opposit direction.}
+
 @note{The tape-head of a Turing-machine does not move while reading
-from a cell or writing into a cell.
+from or writing into a cell.
 Only after it has done its reading from and its writing into the current cell,
 the tape-head is moved one cell to the right
 or to the left or remains where it is as indicated by the rule being applied.}
+
 @note{Magnetic tape-equipment of the old days
 usually destroyed all data following the newly written data,
 although with some effort most, but usually not all of it, could be recovered.
@@ -366,7 +365,7 @@ the cell currently under the tape-head.
       else it continues with the following steps.}
 
 @item{The current @rack[tape-symbol] is read and put into the input/output-register.@(linebreak)
-      The tape-head does not move during this reading.
+      The tape-head does not move during this step.
       If the current cell is empty, the input/output-register receives the @rack[blank].}
 
 @item{A @rack[rule] is looked for.
@@ -408,7 +407,7 @@ the old content of register @rack[#:extra], which becomes the new content of reg
 
 @item{Now the @rack[tape-symbol] of the input/output-register is written in the current cell
 of the tape, replacing the former current @rack[tape-symbol].
-During this operation the tape-head does not move.
+During this step the tape-head does not move.
 The written @rack[tape-symbol] can be the same as the one already present in the current cell.
 When the input/output-register contains a @rack[blank], a @rack[space] is written.}
 
@@ -540,6 +539,7 @@ As another example consider:
 
 It is obvious that the above Turing-machine, no matter its initial tape-content, never halts,
 although it never reproduces the same @elemref["configuration" "configuration"].
+
 Halting or not may depend on the initial tape-content.
 For example, the following Turing-machine halts only when its @rack[input]
 contains @rack[tape-symbol] @rack[0].
@@ -889,7 +889,7 @@ where each @element['tt "n"] and each @element['tt "m"] is a decimal digit coded
 an exact integer between 0 (inclusive) and 10 (exclusive).
 The Turing-machine adds the numbers @element['tt "n..."] and @element['tt "m..."] and
 returns the sum @element['tt "s..."].
-The Turing-machine first passes to the end of the input.
+The machine first passes to the end of the input.
 Subsequently it does the addition in one pass to the left
 going from the least to the most significant digit.
 Redundant heading zeros are not removed.
@@ -1025,8 +1025,8 @@ This removes the distinction between these two tape-symbols.
  (make-TM #:name 'BB4
   'A   (code:comment "The initial state.")
   '(T) (code:comment "The final state.")
-  'B   (code:comment "The blank.")
-  'space-not-used
+  'blank
+  'space
   '_   (code:comment "The dummy.")
   rules))
 (BB4 '())]
@@ -1135,7 +1135,7 @@ and the Turing-machine halts in state @rack[F].
 ways to write n pairs of matching parentheses, n≥0.@(linebreak)
 There are two recurrent relations starting with @nonbreaking{C@subscript{0} = 1}:@(linebreak)
 @nonbreaking{C@subscript{n+1} = ((4n+2)C@subscript{n})/(n+2) =
-@bold{@larger{Σ}}@subscript{(k=0:n)}(C@subscript{k}C@subscript{n@subscript{@ttt{-}}k})}.
+@bold{@larger{Σ}}@subscript{(k=0@bold{:}n)}(C@subscript{k}C@subscript{n@subscript{@ttt{-}}k})}.
 See @hyperlink["https://en.wikipedia.org/wiki/Catalan_number" "Catalan numbers"].}
 
 @(define my-eval (make-base-eval))
@@ -1275,7 +1275,7 @@ the counter is checked to be zero.
   ((A 0) (A 0) R)
   ((A 1) (F 1) N) (code:comment "Counter is not zero. Wrong.")
   ((A /) (B S) L) (code:comment "Counter is zero. OK.")
-  (code:comment "Erase the counter (the parentheses already have been erased.")
+  (code:comment "Erase the counter (the parentheses already have been erased)")
   ((B _) (B S) L)
   ((B S) (T S) N)
   ((B B) (T S) N)))
