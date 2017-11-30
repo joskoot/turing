@@ -382,7 +382,7 @@ but is not required to be at the end.
 The order of the @rack[rules] is irrelevant.
 When there is no matching @rack[rule]
 the Turing-machine halts in a stuck state by raising an @rack[error].
-Because @rack[make-TM] checks that the @rack[selector]s of the @rack[rules] are distinct,
+Because procedure @rack[make-TM] checks that the @rack[selector]s of the @rack[rules] are distinct,
 there can never be more than one applying @rack[rule]
 (the Turing-machine is deterministic)}
 
@@ -464,7 +464,7 @@ where the new position of the tape-head is at @rack[tape-symbol] @ttt{c}.}]}
 
 If @rack[report] is @rack['short] the Turing-machine
 prints a short record of the moves it makes (on the @racket[current-output-port])
-For each move the report shows the move-counter,
+For each move the report shows one line containing the move-counter,
 the old and new primary state, the new tape-content and the new position of the tape-head.
 
 If @rack[report] is @rack[#f], which is the default value, no report is written.
@@ -1624,7 +1624,7 @@ where the number of ones is the height of the tower, id est, the number of disks
 ‹from› is the starting peg, ‹onto› the peg of destination
 and ‹thrd› the third peg.
 The three pegs must be distinct, of course.
-Tape-symbols @rack[1], @rack['m1], @rack['tower], @rack['disk], @rack['mark] and @rack['markR]
+Tape-symbols @rack[1], @rack['m1], @rack['tower], @rack['disk], @rack['insertL] and @rack['markR]
 cannot be used for the names of the pegs.
 In the example below the pegs are called @rack['A], @rack['B] and @rack['C]. 
 The machine does not check the correctness of the input.
@@ -1657,7 +1657,7 @@ The following @seclink["Additional registers" "registers"] are used:
  (list @rack[#:onto]   ":" "Destination peg.")
  (list @rack[#:thrd]   ":" "Third peg.")
  (list " " " " " ")
- (list " " " " (list "Registers for subroutines " @ttt{insert} " and " @ttt{insertR} "."))
+ (list " " " " (list "Registers for subroutines " @ttt{insertL} " and " @ttt{insertR} "."))
  (list @rack[#:prev]   ":" "Previous tape-symbol during insertion.")
  (list @rack[#:arg]    ":" "Tape-symbol to be inserted.")
  (list @rack[#:return] ":" "Primary state to be assumed after insertion."))]
@@ -1704,7 +1704,7 @@ The following @seclink["Additional registers" "registers"] are used:
   ((right5  _    ) (insertR _     _      right6   #:onto _      _      _    ) N)
   ((right6  _    ) (insertR _     _      right7   #:from _      _      _    ) N)
   (code:comment "Insert a 1.")
-  ((right7  _    ) (insert  _     _      right8   1      _      _      _    ) N)
+  ((right7  _    ) (insertL _     _      right8   1      _      _      _    ) N)
   (code:comment "Go back to marked 1.")
   ((right8  m1   ) (right9  1     _      _        _      _      _      _    ) R)
   ((right8  _    ) (_       _     _      _        _      _      _      _    ) L)
@@ -1723,7 +1723,7 @@ The following @seclink["Additional registers" "registers"] are used:
   ((right13 _    ) (right14  _     _      _       _      _      _      _    ) R)
   (code:comment "We are at the right of the three pegs.")
   (code:comment "Insert a 1 and go back to the marked 1.")
-  ((right14 _    ) (insert   _     _      right15 1      _      _      _    ) N)
+  ((right14 _    ) (insertL  _     _      right15 1      _      _      _    ) N)
   ((right15 m1   ) (right16  1     _      _       _      _      _      _    ) R)
   ((right15 _    ) (right15  _     _      _       _      _      _      _    ) L)
   (code:comment "Copy next 1.")
@@ -1738,10 +1738,10 @@ The following @seclink["Additional registers" "registers"] are used:
 
   ((left    _    ) (_        _     _      _       _      _      _      _    ) L)
   ((left    disk ) (left1    _     _      _       _      _      _      _    ) N)
-  ((left1   _    ) (insert   _     _      left2   #:onto _      _      _    ) N)
-  ((left2   _    ) (insert   _     _      left3   #:thrd _      _      _    ) N)
-  ((left3   _    ) (insert   _     _      left4   #:from _      _      _    ) N)
-  ((left4   _    ) (insert   _     _      left5   tower  _      _      _    ) N)
+  ((left1   _    ) (insertL  _     _      left2   #:onto _      _      _    ) N)
+  ((left2   _    ) (insertL  _     _      left3   #:thrd _      _      _    ) N)
+  ((left3   _    ) (insertL  _     _      left4   #:from _      _      _    ) N)
+  ((left4   _    ) (insertL  _     _      left5   tower  _      _      _    ) N)
   ((left5   _    ) (left5    _     _      _       _      _      _      _    ) R)
   (code:comment "Don't copy the first 1.")
   ((left5   1    ) (left6    _     _      _       _      _      _      _    ) R)
@@ -1752,14 +1752,14 @@ The following @seclink["Additional registers" "registers"] are used:
   ((left7   _    ) (left7    _     _      _       _      _      _      _    ) L)
   ((left7   disk ) (left8    _     _      _       _      _      _      _    ) N)
   (code:comment "Insert the 1.")
-  ((left8   disk ) (insert   _     _      left9   1      _      _      _    ) N)
+  ((left8   disk ) (insertL  _     _      left9   1      _      _      _    ) N)
   (code:comment "Go back to the marked 1.")
   ((left9   m1   ) (left10   1     _      _       _      _      _      _    ) R)
   ((left9   _    ) (_        _     _      _       _      _      _      _    ) R)
   (code:comment "Copy more 1s, if any left, else rewind and restart.")
   ((left10  1    ) (left11   m1    _      _       _      _      _      _    ) L)
   ((left10  _    ) (rewind   _     _      _       _      _      _      _    ) L)
-  ((left11  disk ) (insert   _     _      left9   1      _      _      _    ) N)
+  ((left11  disk ) (insertL  _     _      left9   1      _      _      _    ) N)
   ((left11  _    ) (_        _     _      _       _      _      _      _    ) L)
 
   (code:comment "Rewind the tape and")
@@ -1773,21 +1773,21 @@ The following @seclink["Additional registers" "registers"] are used:
   (code:comment "at the right of the current tape-symbol.")
   (code:comment "Return in state #:return with")
   (code:comment "the tape-head at the inserted tape-symbol.")
-  (code:comment "Tape-symbol 'mark or 'markR is used to identify the cell")
+  (code:comment "Tape-symbol 'insertL or 'markR is used to identify the cell")
   (code:comment "where to return to and to insert the tape-symbol.")
-  (code:comment "Obviously tape-symbols 'mark and 'markR")
+  (code:comment "Obviously tape-symbols 'insertL and 'markR")
   (code:comment "must not be used in any other way.")
-  (code:comment "insertR does the same as insert, but returns with the")
+  (code:comment "insertR does the same as insertL, but returns with the")
   (code:comment "tape-head at the cell at the right of the inserted cell.")
 
-  ((insert  _    ) (insert1  mark   #:bus _       _      _      _      _    ) R)
-  ((insert1 _    ) (insert1  #:prev #:bus _       _      _      _      _    ) R)
-  ((insert1 blank) (insert2  #:prev _     _       _      _      _      _    ) L)
-  ((insert1 space) (insert2  #:prev _     _       _      _      _      _    ) L)
-  ((insert2 _    ) (insert2  _      _     _       _      _      _      _    ) L)
-  ((insert2 mark ) (#:return #:arg  _     _       _      _      _      _    ) N)
-  ((insert2 markR) (#:return #:arg  _     _       _      _      _      _    ) R)
-  ((insertR _    ) (insert1  markR  #:bus _       _      _      _      _    ) R)))
+  ((insertL _    ) (insert1  insertL #:bus _       _      _      _      _    ) R)
+  ((insert1 _    ) (insert1  #:prev  #:bus _       _      _      _      _    ) R)
+  ((insert1 blank) (insert2  #:prev  _     _       _      _      _      _    ) L)
+  ((insert1 space) (insert2  #:prev  _     _       _      _      _      _    ) L)
+  ((insert2 _    ) (insert2  _       _     _       _      _      _      _    ) L)
+  ((insert2 insertL) (#:return #:arg   _     _       _      _      _      _    ) N)
+  ((insert2 markR) (#:return #:arg   _     _       _      _      _      _    ) R)
+  ((insertR _    ) (insert1  markR   #:bus _       _      _      _      _    ) R)))
 (code:comment " ")
 (define TM-hanoi
  (make-TM
