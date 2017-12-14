@@ -590,7 +590,7 @@ the one with index k in the list @ttt{(tape-symbol ...+)} excepted.
 Spaces in this list do not count for the index.
 If there are less than k+1 non-spaces,
 the Turing-machine halts in state @rack[F] with empty tape,
-id est consisting of spaces only.
+id est, consisting of spaces only.
 
 @interaction[
 (require racket "make-TM.rkt")
@@ -1618,22 +1618,20 @@ The following Turing-machine solves the puzzle of the
 It produces the shortest path of moving a tower from one of three pegs to another one.
 It expects as input
 
-@inset{@ttt{tower} ‹from› ‹onto› ‹thrd› @rack[1] ...@smaller{@superscript{+}}}
+@inset{@ttt{tower A B C} @rack[1] ...@smaller{@superscript{+}}}
 
 where the number of ones is the height of the tower, id est, the number of disks.
-‹from› is the starting peg, ‹onto› the peg of destination
-and ‹thrd› the third peg.
-The three pegs must be distinct, of course.
-Tape-symbols @rack[1], @rack['m1], @rack['tower], @rack['disk], @rack['insertL] and @rack['markR]
-cannot be used for the names of the pegs.
-In the example below the pegs are called @rack['A], @rack['B] and @rack['C]. 
-The machine does not check the correctness of the input.
-It replaces the input by a sequence of moves
+@ttt{A} is the hanoiing peg, @ttt{B} the peg of destination
+and @ttt{C} the third peg.
+The machine checks the correctness of the input.
+It replaces a correct input by a sequence of moves:
 
 @inset{[@ttt{disk} ‹from› ‹onto› ‹thrd› @rack[1] ...@smaller{@superscript{+}}]
 ...@smaller{@superscript{+}}}
 
-where the number of ones indicates which disk is moved.
+where the number of ones indicates which disk is moved
+and @ttt{‹from›}, @ttt{‹onto›} and @ttt{‹thrd›} are
+the current hanoiing peg, the current peg of destination and the third peg.
 The smallest disk is indicated by one @rack[1].
 Each larger disk by one more @rack[1].
 The largest disk is marked by as many ones as the height of the tower being moved.
@@ -1668,15 +1666,42 @@ The following @seclink["Additional registers" "registers"] are used:
 (define registers '(#:state #:bus #:prev #:return #:arg  #:from #:onto #:thrd))
 
 (define rules
-'((code:comment "First look for a tower instruction.")
-  (code:comment "Immediately make it a disk instruction.")
-  (code:comment "If there are no more tower-instructions,")
-  (code:comment "halt in succesful state 'halt.")
+'((code:comment "First check the input.")
+
+  ((check  tower) (check1  _     _      _        _      _      _      _    ) R)
+  ((check  _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((check1 A    ) (check2  _     _      _        _      _      _      _    ) R)
+  ((check1 _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((check2 B    ) (check3  _     _      _        _      _      _      _    ) R)
+  ((check2 _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((check3 C    ) (check4  _     _      _        _      _      _      _    ) R)
+  ((check3 _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((check4 1    ) (check5  _     _      _        _      _      _      _    ) R)
+  ((check4 _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((check5 1    ) (check5  1     _      _        _      _      _      _    ) R)
+  ((check5 blank) (rewind  _     _      _        _      _      _      _    ) L)
+  ((check5 _    ) (wrong   _     _      _        _      _      _      _    ) N)
   
-  ((start   tower) (from    disk  _      _        _      _      _      _    ) R)
-  ((start   blank) (halt    _     _      _        _      _      _      _    ) N)
-  ((start   space) (halt    _     _      _        _      _      _      _    ) N)
-  ((start   _    ) (start   _     _      _        _      _      _      _    ) R)
+  (code:comment "Rewind the tape and switch to state 'hanoi'.")
+
+  ((rewind  blank) (hanoi    _     _      _       _      _      _      _    ) R)
+  ((rewind  space) (hanoi    _     _      _       _      _      _      _    ) R)
+  ((rewind  _    ) (rewind   _     _      _       _      _      _      _    ) L)
+
+  (code:comment "In state hanoi the TM starts looking for a tower instruction.")
+  (code:comment "If a tower instruction is found,")
+  (code:comment "immediately make it a disk instruction and,")
+  (code:comment "when the tower has more than one disk,")
+  (code:comment "insert a tower instruction with one disk less")
+  (code:comment "both immediately at the left and at the right")
+  (code:comment "of the new disk instruction.")
+  (code:comment "If there are no more tower-instructions,")
+  (code:comment "the TM halts in succesful state 'halt'.")
+  
+  ((hanoi   tower) (from    disk  _      _        _      _      _      _    ) R)
+  ((hanoi   blank) (halt    _     _      _        _      _      _      _    ) N)
+  ((hanoi   space) (halt    _     _      _        _      _      _      _    ) N)
+  ((hanoi   _    ) (hanoi   _     _      _        _      _      _      _    ) R)
 
   (code:comment "Extract the three pegs of the tower instruction.")
   (code:comment "Put them in registers #:from, #:onto and #:thrd.")
@@ -1762,13 +1787,6 @@ The following @seclink["Additional registers" "registers"] are used:
   ((left11  disk ) (insertL  _     _      left9   1      _      _      _    ) N)
   ((left11  _    ) (_        _     _      _       _      _      _      _    ) L)
 
-  (code:comment "Rewind the tape and")
-  (code:comment "start looking for another tower instruction.")
-
-  ((rewind  blank) (start    _     _      _       _      _      _      _    ) R)
-  ((rewind  space) (start    _     _      _       _      _      _      _    ) R)
-  ((rewind  _    ) (rewind   _     _      _       _      _      _      _    ) L)
-
   (code:comment "Subroutine for insertion of tape-symbol in register #:arg")
   (code:comment "at the right of the current tape-symbol.")
   (code:comment "Return in state #:return with")
@@ -1780,19 +1798,19 @@ The following @seclink["Additional registers" "registers"] are used:
   (code:comment "insertR does the same as insertL, but returns with the")
   (code:comment "tape-head at the cell at the right of the inserted cell.")
 
-  ((insertL _    ) (insert1  insertL #:bus _       _      _      _      _    ) R)
-  ((insert1 _    ) (insert1  #:prev  #:bus _       _      _      _      _    ) R)
-  ((insert1 blank) (insert2  #:prev  _     _       _      _      _      _    ) L)
-  ((insert1 space) (insert2  #:prev  _     _       _      _      _      _    ) L)
-  ((insert2 _    ) (insert2  _       _     _       _      _      _      _    ) L)
-  ((insert2 insertL) (#:return #:arg   _     _       _      _      _      _    ) N)
-  ((insert2 markR) (#:return #:arg   _     _       _      _      _      _    ) R)
-  ((insertR _    ) (insert1  markR   #:bus _       _      _      _      _    ) R)))
+  ((insertL _      ) (insert1  insertL #:bus _    _      _      _      _    ) R)
+  ((insert1 _      ) (insert1  #:prev  #:bus _    _      _      _      _    ) R)
+  ((insert1 blank  ) (insert2  #:prev  _     _    _      _      _      _    ) L)
+  ((insert1 space  ) (insert2  #:prev  _     _    _      _      _      _    ) L)
+  ((insert2 _      ) (insert2  _       _     _    _      _      _      _    ) L)
+  ((insert2 insertL) (#:return #:arg   _     _    _      _      _      _    ) N)
+  ((insert2 markR  ) (#:return #:arg   _     _    _      _      _      _    ) R)
+  ((insertR _      ) (insert1  markR   #:bus _    _      _      _      _    ) R)))
 (code:comment " ")
 (define TM-hanoi
  (make-TM
-  'start
-  '(halt)
+  'check
+  '(halt wrong)
   'blank
   'space
   '_ (code:comment "dummy")
@@ -1846,7 +1864,7 @@ The following @seclink["Additional registers" "registers"] are used:
  (printf " ~nAll is well.~n"))]
 
 For a tower of h disks the number of times a disk is to be moved is 2@superscript{h}@ttt{-}1.
-The number of moves of the Turing-machine grows even much faster.
+The number of moves of the Turing-machine grows much faster.
 Many moves are required for insertion of tower-instructions.
 Subroutine @ttt{insert} handles one tape-symbol at a time only.
 Hence the machine frequently must move along possibly large parts of the tape,
