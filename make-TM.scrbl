@@ -7,6 +7,7 @@
   racket
   scribble/html-properties
   "make-TM.rkt"
+  (for-template "make-TM.rkt")
   (for-label "make-TM.rkt"
              racket (only-in typed/racket Setof Exact-Nonnegative-Integer Sequenceof))
   (for-syntax racket))
@@ -104,8 +105,8 @@ and with the tape-head positioned at the begin of the initial tape-content.
 If the input is not empty, the initial tape-content has no empty cell.
 If the input is empty, the initial tape-content consists of one single empty cell.
 The control-unit makes moves according to a finite set of rules.
-The rule to be applied is determined by the current internal state of the control-unit
-and the current tape-symbol. A move consists of three steps:
+The rule to be applied is determined by the internal state of the control-unit
+and the current tape-symbol. @nonbreaking{A move} consists of three steps:
 
 @inset{@itemlist[#:style 'ordered
           
@@ -278,7 +279,7 @@ Another way to simulate multiple tapes is to place their contents one after anot
 with separators between them.
 The separators must be tape-symbols that do not occur within the sections, of course.
 In each section one symbol should be marked as the current one within that section.
-A variation of this method is used in chapter @secref["UTM"].
+A variation of this method is used in section @secref["UTM"].
 By deletion or insertion of separators the machine can even vary the number of sections
 while it is running.
 An individual section can grow by moving all cells at the left/right one or more cells to the
@@ -295,7 +296,8 @@ left/right. In a similar way it is possible to remove part or all of a section.
 (space           tape-symbol)
 (rules           (rule ...))
 (registers       (code:line @#,element["roman"]{default =} 2)
-                 (code:line (register-name @#,(elem (list (ttt "...") (superscript "2+")))))
+                 (code:line (register-name register-name register-name @#,(elem
+                                                                           (list (ttt "...")))))
                  (code:line @#,(racket (and/c exact-integer? (>=/c 2)))))
 (name            (code:line @#,(element "roman" "default =") @#,(racket 'TM-without-name))
                  (code:line @#,(rack symbol?)))
@@ -335,15 +337,14 @@ equality or being distinct to be understood in the sense of @rack[equal?].
 When not all of these conditions are satisfied,
 procedure @rack[make-TM] raises an @rack[error].
 
-@inset{
- 1. The @rack[space], the @rack[blank] and the @rack[dummy] must be distinct.@(linebreak)
- 2. The list of @rack[final-states] must not contain duplicates.@(linebreak)
- 3. The list of @rack[final-states] must not contain any @rack[old-state].@(linebreak)
- 4. The @rack[rules] must have distinct @rack[selector]s
-    (the machine must be deterministic)@(linebreak)
- 5. All @rack[register-name]s must be distinct.@(linebreak)
- 6. Every @rack[updater] must have as many elements as there are @rack[registers].@(linebreak)
- 7. Every keyword in an @rack[updater] must be one of the @rack[register-name]s.}
+@inset{@itemlist[#:style 'ordered
+@item{The @rack[space], the @rack[blank] and the @rack[dummy] must be distinct.}
+@item{The list of @rack[final-states] must not contain duplicates.}
+@item{The list of @rack[final-states] must not contain any @rack[old-state].}
+@item{The @rack[rules] must have distinct @rack[selector]s (the machine must be deterministic)}
+@item{All @rack[register-name]s must be distinct.}
+@item{Every @rack[updater] must have as many elements as there are @rack[registers].}
+@item{Every keyword in an @rack[updater] must be one of the @rack[register-name]s.}]}
 
 The @rack[name] is attached to the returned procedure
 by means of Racket's procedure @rack[procedure-rename].
@@ -366,7 +367,7 @@ the cell currently under the tape-head.
 
 @item{The current @rack[tape-symbol] is read and put into the input/output-register.@(linebreak)
       The tape-head does not move during this step.
-      If the current cell is empty, the input/output-register receives the @rack[blank].}
+      If the current cell is empty, the input/output-register receives a @rack[blank].}
 
 @item{A @rack[rule] is looked for.
 A @rack[rule] applies if its @rack[old-state] equals the current primary state
@@ -392,7 +393,7 @@ of the @rack[rule] indicates what to put in register k.
 Let x be element k of the @rack[updater].
 
 ∘ If x is the @rack[dummy] register k remains unaffected.@(linebreak)
-∘ If x is a @rack[register-name] the old content of that register is put into register k.
+∘ If x is a @rack[register-name] the old content of the register is put into register k.
 @(linebreak)
 ∘ If x is a @rack[state] or a @rack[tape-symbol], it is put into register k.
 
@@ -425,7 +426,7 @@ an empty cell is added and the tape-head is positioned at this cell.}
       and the current @rack[tape-symbol].}]}
 
 A procedure returned by procedure @rack[make-TM],
-say @(larger (bold (element 'tt (larger (bold "Turing-machine"))))),
+say @(bold (element 'tt (larger (bold "Turing-machine")))),
 can be called as follows:
 
 @defproc[#:link-target? #f
@@ -539,7 +540,6 @@ As another example consider:
 
 It is obvious that the above Turing-machine, no matter its initial tape-content, never halts,
 although it never reproduces the same @elemref["configuration" "configuration"].
-
 Halting or not may depend on the initial tape-content.
 For example, the following Turing-machine halts only when its @rack[input]
 contains @rack[tape-symbol] @rack[0].
@@ -719,13 +719,13 @@ The Turing-machine halts with every arbitrary input.
 A correct input is defined as follows:
 
 @inset{@verbatim[
-"input   = (operand + operand)
-operand = bit ...+
-bit     = 0 | 1"]}
+"input   := (operand + operand)
+operand := bit ...+
+bit     := 0 | 1"]}
 
 An incorrect input yields final state @rack['F].
 A correct input yields final state @rack['T] and @ttt{output}
-@nonbreaking{@rack[(bit bit ...)]}
+@nonbreaking{@rack[(bit ...+)]}
 showing the sum of the two operands.
 More precisely the @ttt{output} is @nonbreaking{@rack[(1 bit ...)]} or @rack[(0)],
 id est, without leading zeros.
@@ -1618,11 +1618,12 @@ The following Turing-machine solves the puzzle of the
 It produces the shortest path of moving a tower from one of three pegs to another one.
 It expects as input
 
-@inset{@ttt{tower A B C} @rack[1] ...@smaller{@superscript{+}}}
+@inset{@ttt{tower} ‹from› ‹onto› ‹thrd› @rack[1] ...@smaller{@superscript{+}}}
 
 where the number of ones is the height of the tower, id est, the number of disks.
-@ttt{A} is the hanoiing peg, @ttt{B} the peg of destination
-and @ttt{C} the third peg.
+‹from› is the starting peg, ‹onto› the peg of destination and ‹thrd› the third peg.
+The pegs must be called @ttt{A}, @ttt{B} and @ttt{C}
+in arbitrary order.
 The machine checks the correctness of the input.
 It replaces a correct input by a sequence of moves:
 
@@ -1630,8 +1631,8 @@ It replaces a correct input by a sequence of moves:
 ...@smaller{@superscript{+}}}
 
 where the number of ones indicates which disk is moved
-and @ttt{‹from›}, @ttt{‹onto›} and @ttt{‹thrd›} are
-the current hanoiing peg, the current peg of destination and the third peg.
+and ‹from›, ‹onto› and ‹thrd› are
+the peg the disk is taken from, the peg it is put onto and the third peg.
 The smallest disk is indicated by one @rack[1].
 Each larger disk by one more @rack[1].
 The largest disk is marked by as many ones as the height of the tower being moved.
@@ -1668,27 +1669,48 @@ The following @seclink["Additional registers" "registers"] are used:
 (define rules
 '((code:comment "First check the input.")
 
-  ((check  tower) (check1  _     _      _        _      _      _      _    ) R)
-  ((check  _    ) (wrong   _     _      _        _      _      _      _    ) N)
-  ((check1 A    ) (check2  _     _      _        _      _      _      _    ) R)
-  ((check1 _    ) (wrong   _     _      _        _      _      _      _    ) N)
-  ((check2 B    ) (check3  _     _      _        _      _      _      _    ) R)
-  ((check2 _    ) (wrong   _     _      _        _      _      _      _    ) N)
-  ((check3 C    ) (check4  _     _      _        _      _      _      _    ) R)
-  ((check3 _    ) (wrong   _     _      _        _      _      _      _    ) N)
-  ((check4 1    ) (check5  _     _      _        _      _      _      _    ) R)
-  ((check4 _    ) (wrong   _     _      _        _      _      _      _    ) N)
-  ((check5 1    ) (check5  1     _      _        _      _      _      _    ) R)
-  ((check5 blank) (rewind  _     _      _        _      _      _      _    ) L)
-  ((check5 _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((start  tower) (start1  _     _      _        _      _      _      _    ) R)
+  ((start  _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  (code:comment "Check the three pegs to be A, B and C in arbitrary order.")
+  ((start1 A    ) (A       _     _      _        _      _      _      _    ) R)
+  ((start1 B    ) (B       _     _      _        _      _      _      _    ) R)
+  ((start1 C    ) (C       _     _      _        _      _      _      _    ) R)
+  ((start1 _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((A      B    ) (AB      _     _      _        _      _      _      _    ) R)
+  ((A      C    ) (AC      _     _      _        _      _      _      _    ) R)
+  ((A      _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((B      A    ) (BA      _     _      _        _      _      _      _    ) R)
+  ((B      C    ) (BC      _     _      _        _      _      _      _    ) R)
+  ((B      _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((C      A    ) (CA      _     _      _        _      _      _      _    ) R)
+  ((C      B    ) (CB      _     _      _        _      _      _      _    ) R)
+  ((C      _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((AB     C    ) (start2  _     _      _        _      _      _      _    ) R)
+  ((AB     _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((AC     B    ) (start2  _     _      _        _      _      _      _    ) R)
+  ((AC     _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((BA     C    ) (start2  _     _      _        _      _      _      _    ) R)
+  ((BA     _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((BC     A    ) (start2  _     _      _        _      _      _      _    ) R)
+  ((BC     _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((CA     B    ) (start2  _     _      _        _      _      _      _    ) R)
+  ((CA     _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((CB     A    ) (start2  _     _      _        _      _      _      _    ) R)
+  ((CB     _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  (code:comment "At least one 1 required.")
+  ((start2 1    ) (start3  _     _      _        _      _      _      _    ) R)
+  ((start2 _    ) (wrong   _     _      _        _      _      _      _    ) N)
+  ((start3 1    ) (start3  _     _      _        _      _      _      _    ) R)
+  ((start3 blank) (rewind  _     _      _        _      _      _      _    ) L)
+  ((start3 _    ) (wrong   _     _      _        _      _      _      _    ) N)
   
   (code:comment "Rewind the tape and switch to state 'hanoi'.")
 
-  ((rewind  blank) (hanoi    _     _      _       _      _      _      _    ) R)
-  ((rewind  space) (hanoi    _     _      _       _      _      _      _    ) R)
-  ((rewind  _    ) (rewind   _     _      _       _      _      _      _    ) L)
+  ((rewind blank) (hanoi    _     _      _       _      _      _      _    ) R)
+  ((rewind space) (hanoi    _     _      _       _      _      _      _    ) R)
+  ((rewind _    ) (rewind   _     _      _       _      _      _      _    ) L)
 
-  (code:comment "In state hanoi the TM starts looking for a tower instruction.")
+  (code:comment "In state 'hanoi' the TM looks for a tower instruction.")
   (code:comment "If a tower instruction is found,")
   (code:comment "immediately make it a disk instruction and,")
   (code:comment "when the tower has more than one disk,")
@@ -1791,9 +1813,9 @@ The following @seclink["Additional registers" "registers"] are used:
   (code:comment "at the right of the current tape-symbol.")
   (code:comment "Return in state #:return with")
   (code:comment "the tape-head at the inserted tape-symbol.")
-  (code:comment "Tape-symbol 'insertL or 'markR is used to identify the cell")
+  (code:comment "Tape-symbol 'insertL or 'insertR is used to identify the cell")
   (code:comment "where to return to and to insert the tape-symbol.")
-  (code:comment "Obviously tape-symbols 'insertL and 'markR")
+  (code:comment "Obviously tape-symbols 'insertL and 'insertR")
   (code:comment "must not be used in any other way.")
   (code:comment "insertR does the same as insertL, but returns with the")
   (code:comment "tape-head at the cell at the right of the inserted cell.")
@@ -1804,16 +1826,16 @@ The following @seclink["Additional registers" "registers"] are used:
   ((insert1 space  ) (insert2  #:prev  _     _    _      _      _      _    ) L)
   ((insert2 _      ) (insert2  _       _     _    _      _      _      _    ) L)
   ((insert2 insertL) (#:return #:arg   _     _    _      _      _      _    ) N)
-  ((insert2 markR  ) (#:return #:arg   _     _    _      _      _      _    ) R)
-  ((insertR _      ) (insert1  markR   #:bus _    _      _      _      _    ) R)))
+  ((insert2 insertR) (#:return #:arg   _     _    _      _      _      _    ) R)
+  ((insertR _      ) (insert1  insertR #:bus _    _      _      _      _    ) R)))
 (code:comment " ")
 (define TM-hanoi
  (make-TM
-  'check
-  '(halt wrong)
+  'start        (code:comment "initial state")
+  '(halt wrong) (code:comment "final states")
   'blank
   'space
-  '_ (code:comment "dummy")
+  '_            (code:comment "dummy")
   rules
   #:registers registers
   #:name 'TM-hanoi))
@@ -1822,6 +1844,8 @@ The following @seclink["Additional registers" "registers"] are used:
 (code:comment " ")
 (define-values (nr-of-moves state tape)
  (TM-hanoi '(tower A B C 1 1 1 1 1)))
+(unless (eq? state 'halt)
+ (error 'TM-hanoi "incorrect final state: ~s" state))
 (let loop ((tape tape) (move-nr 1))
  (cond
   ((null? tape) (newline))
@@ -1837,9 +1861,10 @@ The following @seclink["Additional registers" "registers"] are used:
 (code:comment " ")
 (define (test height)
  (printf " ~n")
+ (define pegs (shuffle '(A B C)))
  (define ones (make-list height 1))
  (define-values (nr-of-TM-moves state tape)
-  (TM-hanoi (append '(tower A B C) ones)))
+  (TM-hanoi (append (cons 'tower pegs) ones)))
  (code:comment "Simple procedure computing the expected results.")
  (define (compute-expected height f t r)
   (if (zero? height) '()
@@ -1848,7 +1873,7 @@ The following @seclink["Additional registers" "registers"] are used:
     (append (list 'disk f t r) (make-list height 1))
     (compute-expected (sub1 height) r t f))))
  (code:comment "Compare tape returned by TM-hanoi with expected tape.")
- (define expected-tape (compute-expected height 'A 'B 'C))
+ (define expected-tape (apply compute-expected height pegs))
  (unless (equal? tape expected-tape)
   (error 'TM-hanoi "Wrong results for ~s disks." height))
  (code:comment "Show some results.")
@@ -1856,7 +1881,8 @@ The following @seclink["Additional registers" "registers"] are used:
  (define nr-of-hanoi-moves (count disk? tape))
  (define (pad n) (~s #:width 6 #:align 'right n))
  (printf "nr of disks: ~a~nnr of moves: ~a~nnr TM moves: ~a~n"
-  (pad height) (pad nr-of-hanoi-moves) (pad nr-of-TM-moves)))
+  (pad height) (pad nr-of-hanoi-moves) (pad nr-of-TM-moves))
+ #t)
 (code:comment " ")
 (code:comment "Test heights 1 up to and including 8 disks.")
 (code:comment " ")
