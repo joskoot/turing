@@ -62,7 +62,7 @@
 
 @title[#:version ""]{Turing-machines}
 @author{Jacob J. A. Koot}
-@(defmodule "make-TM.rkt" #:packages ())
+@(defmodule turing/make-TM #:packages ())
 
 @section{Introduction}
 
