@@ -1,23 +1,14 @@
 #lang scribble/manual
 
 @(require
+  racket
   scribble/core
   scribble/eval
-  racket/match
-  racket
-  scribble/html-properties
+  scribble/racket
   "make-TM.rkt"
-  (for-template "make-TM.rkt")
-  (for-label "make-TM.rkt"
-             racket (only-in typed/racket Setof Exact-Nonnegative-Integer Sequenceof))
+  (for-template "make-TM.rkt" racket)
+  (for-label "make-TM.rkt" racket)
   (for-syntax racket))
-
-@(define (make-color-style color elem)
-  (define prop:color (color-property color))
-  (define color-style (style #f (list prop:color)))
-  (element color-style elem))
-
-@(define (red elem) (make-color-style "red" elem))
 
 @(define-syntax-rule
   (Interaction x ...)
@@ -75,7 +66,7 @@
 
 @section{Introduction}
 
-Module @hyperlink["make-TM.rkt" "make-TM.rkt"]
+Module @hyperlink["../../make-TM.rkt" "make-TM.rkt"]
 provides one binding only, that of procedure @rack[make-TM],
 which returns procedures that emulate
 @hyperlink["https://en.wikipedia.org/wiki/Turing_machine" "Turing-machines"]
@@ -194,7 +185,6 @@ but this does not occur in the present example.
 The machine replaces the fourth element of the initial tape-content by @rack['new].
 
 @Interaction[
-(code:comment " ")
 (define TM
  (make-TM #:name 'first-example
   'A      (code:comment "The initial state.")
@@ -227,7 +217,6 @@ containing the tape-symbol read from or to be written into the current cell of t
 With the given input, the following Turing-machine replaces the second and the fifth tape-symbol.
 
 @Interaction[
-(code:comment " ")
 (define TM
  (make-TM #:name 'second-example
   'A      (code:comment "The initial state.")
@@ -295,7 +284,7 @@ An individual section can grow by moving all cells at the left/right one or more
 left/right. In a similar way it is possible to remove part or all of a section.
 
 @section{Procedure make-TM}
-@defform-remove-empty-lines[@defform[#:kind "procedure"
+@defform-remove-empty-lines[@defform[#:kind "procedure" #:id make-TM
 (make-TM initial-state final-states blank space dummy rules
           [#:registers registers #:name name])
 #:grammar(
@@ -578,8 +567,7 @@ that can be found in @hyperlink["http://jeapostrophe.github.io/2013-10-29-tmadd-
 
 When a rule instructs to write a blank, in fact a space is written:
 
-@interaction[
-(require "make-TM.rkt")
+@Interaction[
 (define TM
  (make-TM 'A '(T) 'blank 'space 'dummy
  '(((A blank) (B x) R)
@@ -599,7 +587,6 @@ the Turing-machine halts in state @rack[F] with empty tape,
 id est, consisting of spaces only.
 
 @Interaction[
-(code:comment " ")
 (define rules
 (code:comment "B is the blank, S the space and _ the dummy.")
 '(((A 1) (B S) R) (code:comment "Go erase the first non-space.")
@@ -658,7 +645,6 @@ where natural number k is written as `@ttt["* ..."]' with k stars.
 The Turing-machine never moves left of the begin of the input.
 
 @Interaction[
-(code:comment " ")
 (define rules
 '((code:comment "State 0 : Inspect the very first cell.")
   (code:comment "          Mark start * with x or start + with p.")
@@ -752,7 +738,6 @@ tape-symbols @element['tt "x"] and @element['tt "y"] are reverted to
 @rack[0] and @rack[1] and leading zeros are removed.
 
 @Interaction[
-(code:comment " ")
 (define rules
 '((code:comment "Check the input.")
   (code:comment "At least one bit required preceding +.")
@@ -904,7 +889,6 @@ The initial tape-content seems a tape of two tracks,
 but it is replaced by a tape of one track only.
 
 @Interaction[
-(code:comment " ")
 (define rules
  (append
   (list
@@ -1052,7 +1036,6 @@ and the process is repeated until there are no more @rack[0]s or @rack[1]s.
 If a required @rack[0] or @rack[1] is not found, the Turing-machine halts in state @rack['F].
 
 @Interaction[
-(code:comment " ")
 (define rules
  '((code:comment "state 0: starting state.")
    (code:comment "Accept empty input, otherwise add starting mark s.")
@@ -1137,11 +1120,7 @@ There are two recurrent relations starting with @nonbreaking{C@subscript{0} = 1}
 @bold{@larger{Σ}}@subscript{(k=0@bold{:}n)}(C@subscript{k}C@subscript{n@subscript{@ttt{-}}k})}.
 See @hyperlink["https://en.wikipedia.org/wiki/Catalan_number" "Catalan numbers"].}
 
-@(define my-eval (make-base-eval))
-
-@interaction[#:eval my-eval
-(require racket "make-TM.rkt")
-(code:comment " ")
+@Interaction[
 (define rules
   (code:comment "state 0")
   (code:comment "accept empty input.")
@@ -1239,7 +1218,7 @@ or, if no @rack[0] can be found, a @rack[1] is added at the end.
 After all parentheses have been processed,
 the counter is checked to be zero.
 
-@interaction[#:eval my-eval
+@Interaction[
 (define rules
 '(
   (code:comment "Check the input.")
@@ -1315,7 +1294,6 @@ yields final state @rack['F].
 @rack[0] is the initial state.
 
 @Interaction[
-(code:comment " ")
 (define rules
 '((code:comment "Look for a.")
   ((0     a) (1     a) R)
@@ -1388,7 +1366,6 @@ While copying, the @ttt{x}s of the previous number are replaced by @ttt{y}s
 such as to indicate they already have been copied.
 
 @Interaction[ 
-(code:comment " ")
 (define rules
 '((code:comment "Form zero.")
   ((0 B) (1 /) R)
@@ -1430,8 +1407,7 @@ Every next number is formed by copying the most recent one
 while converting o and i of the original to 0 and 1.
 i is added to the copy before generating the next number.
 
-@interaction[
-(require "make-TM.rkt")
+@Interaction[
 (define rules
 '(
   (code:comment "First form tape (/ o /).")
@@ -1482,7 +1458,6 @@ in order to make space for an x.
 The registers are called @rack[#:state], @rack[#:current] and @rack[#:previous].
 
 @Interaction[
-(code:comment " ")
 (define rules
  '((code:comment "look for a.")
    ((0 a) (1 a          B        ) R) (code:comment "a found.")
@@ -1553,8 +1528,6 @@ The subroutine uses a mark @rack['M] indicating to which cell it must move
 the tape-head before returning. This mark must not occur in the input.
 
 @interaction[
-(require "make-TM.rkt")
-(code:comment " ")
 (define registers
  '(#:state          (code:comment "Primary state.")
    #:current-symbol (code:comment "Current tape-symbol.")
@@ -1935,7 +1908,6 @@ Hence the marker can have three different meanings,
 but it always is clear which one it has.
 
 @Interaction[
-(code:comment " ")
 (code:comment "Consider:")
 (code:comment " ")
 (define TM
