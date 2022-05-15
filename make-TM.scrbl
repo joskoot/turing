@@ -19,6 +19,17 @@
 
 @(define (red elem) (make-color-style "red" elem))
 
+@(define-syntax-rule
+  (Interaction x ...)
+  (interaction
+   #:eval
+   (make-base-eval
+    #:lang
+    '(begin
+      (require racket "make-TM.rkt")
+      (print-reader-abbreviations #f)
+      (print-as-expression #f))) x ...))
+
 @; With thanks to Dupéron Georges
 @(define (defform-remove-empty-lines the-defform)
   (define 5blanks
@@ -60,7 +71,7 @@
 
 @title[#:version ""]{Turing-machines}
 @author{Jacob J. A. Koot}
-@(defmodule turing/make-TM #:packages ())
+@(defmodule "make-TM.rkt" #:packages ())
 
 @section{Introduction}
 
@@ -182,8 +193,7 @@ in which case it is filled with a space,
 but this does not occur in the present example.
 The machine replaces the fourth element of the initial tape-content by @rack['new].
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (code:comment " ")
 (define TM
  (make-TM #:name 'first-example
@@ -216,8 +226,7 @@ the first one for the internal state and the second one connected to the data-bu
 containing the tape-symbol read from or to be written into the current cell of the tape.
 With the given input, the following Turing-machine replaces the second and the fifth tape-symbol.
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (code:comment " ")
 (define TM
  (make-TM #:name 'second-example
@@ -507,8 +516,7 @@ Argument @rack[limit] provides protection.
 The following trivial Turing-machine obviously would loop forever with
 arbitrary @rack[input] if it would not be halted by the @rack[limit]:
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (define TM (make-TM
             'A   (code:comment "initial state")
             '()  (code:comment "no final states")
@@ -524,8 +532,7 @@ While @rack[TM] is running,
 its @elemref["configuration" "configuration"] never changes after the first move.
 As another example consider:
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (define TM (make-TM
             'A     (code:comment "initial state")
             '()    (code:comment "no final state")
@@ -544,8 +551,7 @@ Halting or not may depend on the initial tape-content.
 For example, the following Turing-machine halts only when its @rack[input]
 contains @rack[tape-symbol] @rack[0].
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (define TM (make-TM #:name 'TM-does-it-halt?
             'A     (code:comment "initial state")
             '(T)   (code:comment "Final state")
@@ -592,8 +598,7 @@ If there are less than k+1 non-spaces,
 the Turing-machine halts in state @rack[F] with empty tape,
 id est, consisting of spaces only.
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (code:comment " ")
 (define rules
 (code:comment "B is the blank, S the space and _ the dummy.")
@@ -652,8 +657,7 @@ This is like addition of zero, one or more natural numbers,
 where natural number k is written as `@ttt["* ..."]' with k stars.
 The Turing-machine never moves left of the begin of the input.
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (code:comment " ")
 (define rules
 '((code:comment "State 0 : Inspect the very first cell.")
@@ -747,8 +751,7 @@ the @element['tt "+"] is removed,
 tape-symbols @element['tt "x"] and @element['tt "y"] are reverted to
 @rack[0] and @rack[1] and leading zeros are removed.
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (code:comment " ")
 (define rules
 '((code:comment "Check the input.")
@@ -900,8 +903,7 @@ State @rack['A] is the initial internal state and @rack['T] the final state.
 The initial tape-content seems a tape of two tracks,
 but it is replaced by a tape of one track only.
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (code:comment " ")
 (define rules
  (append
@@ -982,8 +984,7 @@ but it is replaced by a tape of one track only.
 @subsubsub*section{@larger{@larger{Three state busy beaver}}}
 In fact there are four states, but final state @rack['T] does not count.
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (define rules
  '(((A 0) (C 1) R)
    ((A 1) (A 1) R)
@@ -1010,8 +1011,7 @@ This implies that a blank @rack['B] and tape-symbol @rack[0] always
 are treated in the same way whenever encountered as the current tape-symbol.
 This removes the distinction between these two tape-symbols.
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (define rules
  '(((A _) (B 1) R)
    ((A 1) (B 1) L)
@@ -1051,8 +1051,7 @@ the tape-head is positioned at the rightmost @rack[0] or @rack[1]
 and the process is repeated until there are no more @rack[0]s or @rack[1]s.
 If a required @rack[0] or @rack[1] is not found, the Turing-machine halts in state @rack['F].
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (code:comment " ")
 (define rules
  '((code:comment "state 0: starting state.")
@@ -1315,8 +1314,7 @@ An input containing anything other than @rack['a] or @rack['b]
 yields final state @rack['F].
 @rack[0] is the initial state.
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (code:comment " ")
 (define rules
 '((code:comment "Look for a.")
@@ -1389,8 +1387,7 @@ and copying the previous number, which has the form @ttt{x ...}.
 While copying, the @ttt{x}s of the previous number are replaced by @ttt{y}s
 such as to indicate they already have been copied.
 
-@interaction[
-(require racket "make-TM.rkt") 
+@Interaction[ 
 (code:comment " ")
 (define rules
 '((code:comment "Form zero.")
@@ -1484,8 +1481,7 @@ It memorizes the previously replaced symbol when shifting tape-symbols to the le
 in order to make space for an x.
 The registers are called @rack[#:state], @rack[#:current] and @rack[#:previous].
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (code:comment " ")
 (define rules
  '((code:comment "look for a.")
@@ -1938,8 +1934,7 @@ while applying a rule of the encoded Turing-machine.
 Hence the marker can have three different meanings,
 but it always is clear which one it has.
 
-@interaction[
-(require racket "make-TM.rkt")
+@Interaction[
 (code:comment " ")
 (code:comment "Consider:")
 (code:comment " ")
